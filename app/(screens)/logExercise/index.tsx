@@ -1,0 +1,171 @@
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedTextInput } from "@/components/ThemedTextInput";
+import { ThemedView } from "@/components/ThemedView";
+import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
+import React, { useRef, useState } from "react";
+import { Pressable, ScrollView, Text } from "react-native";
+import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
+import { SetCard } from "../../../components/exercise/SetCard";
+
+export default function Index() {
+  const scrollRef = useRef<ScrollView>(null);
+  const addExerciseLogMutation = trpc.fitness.addExerciseLog.useMutation();
+
+  const [titleError, setTitleError] = useState(false);
+
+  const [title, setTitle] = useState("");
+  const [sets, setSets] = useState<
+    { id: number; reps: string; value: string }[]
+  >([]);
+
+  const addSet = () => {
+    const newSet = { id: Date.now(), reps: "10-12", value: "0" };
+    setSets((prev) => [...prev, newSet]);
+  };
+
+  const removeSet = (id: number) => {
+    setSets((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const updateReps = (id: number, newReps: string) => {
+    setSets((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, reps: newReps } : s))
+    );
+  };
+
+  const updateValue = (id: number, newValue: string) => {
+    setSets((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, value: newValue } : s))
+    );
+  };
+
+  const copySet = (id: number) => {
+    setSets((prev) => {
+      const setToCopy = prev.find((s) => s.id === id);
+      if (!setToCopy) return prev;
+
+      const newSet = {
+        ...setToCopy,
+        id: Date.now(), // benzersiz id
+      };
+
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 100); // çok kısa bir gecikme, animasyon düzgün olur
+
+      return [...prev, newSet];
+    });
+  };
+
+  const logExercise = async () => {
+    if (!title.trim()) {
+      setTitleError(true);
+      console.warn("Please enter an exercise name");
+      return;
+    }
+
+    if (sets.length === 0) {
+      console.warn("Add at least one set");
+      return;
+    }
+
+    try {
+      const formattedSets = sets.map(({ value, reps }) => ({
+        setType: "kg" as const, // or dynamically set based on UI if you add a unit picker later
+        value: value || "", // now a string, can be empty if optional
+        reps: reps || "", // also a string, optional
+      }));
+
+      const payload = {
+        date: new Date().toISOString(),
+        activity: title.trim(),
+        sets: formattedSets,
+      };
+
+      await addExerciseLogMutation.mutateAsync(payload);
+
+      console.log("Exercise logged successfully!", payload);
+
+      setTitle("");
+      setSets([]);
+    } catch (error) {
+      console.error("Failed to log exercise:", error);
+    }
+  };
+
+  return (
+    <ScrollView ref={scrollRef} className="flex-1 p-4">
+      <ThemedView className="mb-8">
+        <ThemedText type="title" className="font-bold mb-4">
+          Exercise Name
+        </ThemedText>
+        {titleError ? (
+          <>
+            <Text className="text-red-500 mb-2">
+              Please enter an exercise name
+            </Text>
+            <ThemedTextInput
+              value={title}
+              onChangeText={setTitle}
+              className="bg-gray-200 dark:bg-gray-900 border border-red-500 p-3 rounded-lg w-full mb-4 text-3xl"
+            />
+          </>
+        ) : (
+          <ThemedTextInput
+            value={title}
+            onChangeText={setTitle}
+            className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg w-full mb-4 text-3xl"
+          />
+        )}
+      </ThemedView>
+
+      <ThemedView className="w-full">
+        {sets.map((set, index) => (
+          <Animated.View
+            key={set.id}
+            layout={LinearTransition}
+            entering={FadeInUp.springify().damping(15)}
+          >
+            <SetCard
+              id={set.id}
+              index={index}
+              reps={set.reps}
+              value={set.value}
+              onRepsChange={updateReps}
+              onValueChange={updateValue}
+              onRemove={removeSet}
+              onCopy={copySet}
+            />
+          </Animated.View>
+        ))}
+
+        <Animated.View
+          layout={LinearTransition}
+          className="flex-row items-center justify-between mt-2 mb-8"
+        >
+          <Pressable
+            onPress={addSet}
+            className="bg-blue-200 dark:bg-[#11203a] py-2 px-4 rounded"
+          >
+            <ThemedText className="text-white text-center">
+              + Enter Set
+            </ThemedText>
+          </Pressable>
+        </Animated.View>
+        <Animated.View
+          layout={LinearTransition}
+          className="flex-1 items-center mt-2"
+        >
+          <Pressable
+            onPress={logExercise}
+            className="bg-green-600 dark:bg-green-700 py-3 px-6 rounded-2xl shadow-md active:opacity-80 w-100"
+          >
+            <ThemedText className="text-white text-lg font-semibold text-center">
+              🏋️ Log Exercise
+            </ThemedText>
+          </Pressable>
+        </Animated.View>
+      </ThemedView>
+    </ScrollView>
+  );
+}
