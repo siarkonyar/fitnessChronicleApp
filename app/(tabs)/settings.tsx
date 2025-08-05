@@ -7,12 +7,15 @@ import { Alert, SafeAreaView } from "react-native";
 import { auth } from "../../lib/firebase";
 
 export default function Settings() {
-  const handleSignout = () => {
-    auth.signOut().catch((error) => {
+  const handleSignout = async () => {
+    try {
+      await auth.signOut();
+      // Force navigation to the root index after sign out
+      router.replace("/");
+    } catch (error) {
       console.error("Sign out error:", error);
       Alert.alert("Error", "Failed to sign out. Please try again.");
-    });
-    router.replace("../../"); // Redirect to auth page after sign out
+    }
   };
   const user = auth.currentUser; // Use the Auth context to check authentication status
   return (
