@@ -15,7 +15,7 @@ type Props = {
   onCopy: (id: number) => void;
 };
 
-export const SetCard: React.FC<Props> = ({
+export const AddSetCard: React.FC<Props> = ({
   id,
   index,
   reps,

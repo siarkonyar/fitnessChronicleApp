@@ -2,10 +2,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
+import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import { Pressable, ScrollView, Text } from "react-native";
 import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
-import { SetCard } from "../../../components/exercise/SetCard";
+import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
 export default function Index() {
   const scrollRef = useRef<ScrollView>(null);
@@ -77,7 +78,7 @@ export default function Index() {
       }));
 
       const payload = {
-        date: new Date().toISOString(),
+        date: new Date().toISOString().split("T")[0],
         activity: title.trim(),
         sets: formattedSets,
       };
@@ -85,6 +86,7 @@ export default function Index() {
       await addExerciseLogMutation.mutateAsync(payload);
 
       console.log("Exercise logged successfully!", payload);
+      router.push("/(tabs)"); // Navigate back to home after logging
 
       setTitle("");
       setSets([]);
@@ -126,7 +128,7 @@ export default function Index() {
             layout={LinearTransition}
             entering={FadeInUp.springify().damping(15)}
           >
-            <SetCard
+            <AddSetCard
               id={set.id}
               index={index}
               reps={set.reps}
