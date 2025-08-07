@@ -22,6 +22,9 @@ const dummyRouter = t.router({
         getExerciseLogByDate: t.procedure
         .input(z.object({ date: z.string().date() }))
             .query(() => { /* dummy implementation */ }), // Match server's method (query)
+        getExerciseLogsByMonth : t.procedure
+        .input(z.object({ month: z.string() }))
+        .query(() => { /* dummy implementation */ }),
         editExerciseLog: t.procedure
             .input(z.object({ logId: z.string().min(1), data: ExerciseLogSchema }))
             .mutation(() => { /* dummy implementation */ }), // Match server's method (mutation)
