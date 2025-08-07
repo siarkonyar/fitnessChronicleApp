@@ -1,0 +1,54 @@
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import GetSetCard from "@/components/exercise/GetSetCard";
+import { trpc } from "@/lib/trpc";
+import { ExerciseLogSchema } from "@/types/types";
+import React from "react";
+import { z } from "zod";
+
+export default function ExerciseLogByDate({
+  selectedDate,
+}: {
+  selectedDate: string;
+}) {
+  type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
+
+  const { data: logs, isLoading } = trpc.fitness.getExerciseLogByDate.useQuery({
+    date: selectedDate,
+  }) as {
+    data: ExerciseLog[] | undefined;
+    isLoading: boolean;
+  };
+  if (isLoading) {
+    return <ThemedText className="text-lg text-center">Loading...</ThemedText>;
+  }
+  return (
+    <>
+      <ThemedView className="flex-1 justify-center items-center mt-8">
+        <ThemedText type="subtitle" className="mb-4 text-center">
+          Exercise Log for {selectedDate}
+        </ThemedText>
+        {logs && logs.length > 0 ? (
+          <ThemedView className="w-full p-4">
+            {logs?.map((log, index) => (
+              <GetSetCard key={log.date} exercise={log} index={index} />
+            ))}
+          </ThemedView>
+        ) : (
+          <>
+            <ThemedView className="p-6 rounded-xl max-w-md mx-auto">
+              <ThemedText className="text-xl font-semibold text-center leading-relaxed">
+                Seems like it was a{" "}
+                <ThemedText className="font-bold">rest day</ThemedText>. The
+                perfect time to{" "}
+                <ThemedText className="font-bold">recharge</ThemedText>
+                and get ready for your next workout!{" "}
+                <ThemedText className="text-2xl">🛌💪</ThemedText>
+              </ThemedText>
+            </ThemedView>
+          </>
+        )}
+      </ThemedView>
+    </>
+  );
+}

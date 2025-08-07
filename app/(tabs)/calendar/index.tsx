@@ -1,6 +1,4 @@
-import GetSetCard from "@/components/exercise/GetSetCard";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import ExerciseLogByDate from "@/components/ExerciseLogByDate";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogSchema } from "@/types/types";
@@ -16,14 +14,8 @@ export default function CalendarScreen() {
   const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
   const theme = useColorScheme() ?? "light";
 
-  const { data: logs, isLoading } = trpc.fitness.getExerciseLogByDate.useQuery({
-    date: selectedDate,
-  }) as {
-    data: ExerciseLog[] | undefined;
-    isLoading: boolean;
-  };
-
   type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
+
   const { data } = trpc.fitness.getExerciseLogsByMonth.useQuery({
     month: visibleMonth,
   }) as {
@@ -100,28 +92,8 @@ export default function CalendarScreen() {
               } as any
             }
           />
-          <ThemedView>
-            {logs! ? (
-              <ThemedView className="w-full p-4">
-                <ThemedText type="subtitle" className="mb-4">
-                  Todays Exercise Log
-                </ThemedText>
-                {logs.map((log, index) => (
-                  <GetSetCard key={log.date} exercise={log} index={index} />
-                ))}
-              </ThemedView>
-            ) : (
-              <>
-                <ThemedText className="text-lg text-center">
-                  Seems like it was a rest day. The perfect time to recharge and
-                  get ready for your next workout! 🛌💪
-                </ThemedText>
-              </>
-            )}
-          </ThemedView>
-          <ThemedText className="h-[1000px] flex-1 justify-center items-center">
-            Selected Date: {selectedDate}
-          </ThemedText>
+
+          <ExerciseLogByDate selectedDate={selectedDate} />
         </ScrollView>
       </View>
     </>

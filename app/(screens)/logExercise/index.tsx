@@ -78,7 +78,7 @@ export default function Index() {
       }));
 
       const payload = {
-        date: new Date().toISOString().split("T")[0],
+        date: new Date().toLocaleDateString("en-CA"),
         activity: title.trim(),
         sets: formattedSets,
       };

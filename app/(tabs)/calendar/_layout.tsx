@@ -16,7 +16,7 @@ export default function CalendarStackLayout() {
       </BlurView> */}
 
       <View className="px-4 py-3">
-        <ThemedText type="subtitle">Calendar</ThemedText>
+        <ThemedText type="title">Calendar</ThemedText>
       </View>
 
       <Stack
