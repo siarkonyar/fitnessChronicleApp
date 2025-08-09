@@ -149,9 +149,7 @@ export default function Index() {
             onPress={addSet}
             className="bg-blue-200 dark:bg-[#11203a] py-2 px-4 rounded"
           >
-            <ThemedText className="text-white text-center">
-              + Enter Set
-            </ThemedText>
+            <ThemedText className="text-center">+ Enter Set</ThemedText>
           </Pressable>
         </Animated.View>
         <Animated.View

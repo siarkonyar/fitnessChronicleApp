@@ -74,7 +74,7 @@ export default function CalendarScreen() {
                 textSectionTitleColor: Colors[theme].text,
                 selectedDayBackgroundColor: Colors[theme].tint,
                 selectedDayTextColor: Colors[theme].cardBackground,
-                todayTextColor: Colors[theme].text,
+                todayTextColor: Colors[theme].highlight,
                 dayTextColor: Colors[theme].text,
                 textDisabledColor: Colors[theme].mutedText,
                 arrowColor: Colors[theme].tint,
