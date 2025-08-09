@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "fitnessChronicle",
-    "slug": "fitnessChronicle",
+    "name": "Hercule",
+    "slug": "Hercule",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -18,7 +18,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.siar.konyar.fitnessChronicle"
     },
     "web": {
       "bundler": "metro",
