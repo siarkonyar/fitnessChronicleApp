@@ -1,6 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import GetSetCard from "@/components/exercise/GetSetCard";
+import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogSchema } from "@/types/types";
 import React from "react";
@@ -31,7 +31,7 @@ export default function ExerciseLogByDate({
         {logs && logs.length > 0 ? (
           <ThemedView className="w-full p-4">
             {logs?.map((log, index) => (
-              <GetSetCard key={log.date} exercise={log} index={index} />
+              <GetExerciseCard key={index} exercise={log} index={index} />
             ))}
           </ThemedView>
         ) : (

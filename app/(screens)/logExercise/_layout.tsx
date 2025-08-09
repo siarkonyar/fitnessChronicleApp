@@ -1,12 +1,17 @@
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { Stack, useNavigation } from "expo-router";
 import React from "react";
 
 export default function LogExerciseLayout() {
+  const theme = useColorScheme() ?? "light";
+
   const navigation = useNavigation();
   React.useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: "Log Exercise", // Sayfa başlığı (back yanındaki)
       headerBackTitle: "Back", // Geri butonu yazısı
+      headerTintColor: Colors[theme].highlight,
     });
   }, [navigation]);
   return (

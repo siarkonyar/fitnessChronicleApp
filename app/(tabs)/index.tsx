@@ -1,4 +1,4 @@
-import GetSetCard from "@/components/exercise/GetSetCard";
+import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
@@ -52,7 +52,7 @@ export default function HomeScreen() {
             Todays Exercise Log
           </ThemedText>
           {logs.map((log, index) => (
-            <GetSetCard key={log.date} exercise={log} index={index} />
+            <GetExerciseCard key={index} exercise={log} index={index} />
           ))}
           <Button onPress={handleNavigateToExercise} className="mt-4">
             Log Exercise
