@@ -1,3 +1,4 @@
+import { Button } from "@/components/Button";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
@@ -156,14 +157,7 @@ export default function Index() {
           layout={LinearTransition}
           className="flex-1 items-center mt-2"
         >
-          <Pressable
-            onPress={logExercise}
-            className="bg-green-600 dark:bg-green-700 py-3 px-6 rounded-2xl shadow-md active:opacity-80 w-100"
-          >
-            <ThemedText className="text-white text-lg font-semibold text-center">
-              🏋️ Log Exercise
-            </ThemedText>
-          </Pressable>
+          <Button onPress={logExercise}>🏋️ Log Exercise</Button>
         </Animated.View>
       </ThemedView>
     </ScrollView>
