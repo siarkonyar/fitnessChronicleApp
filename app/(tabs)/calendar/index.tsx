@@ -2,7 +2,7 @@ import ExerciseLogByDate from "@/components/ExerciseLogByDate";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogSchema } from "@/types/types";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, useColorScheme, View } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { MarkingProps } from "react-native-calendars/src/calendar/day/marking";
@@ -13,6 +13,10 @@ export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
   const theme = useColorScheme() ?? "light";
+  // TODO: make this useeffect work
+  useEffect(() => {
+    setSelectedDate(today);
+  }, [today]);
 
   type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
 
