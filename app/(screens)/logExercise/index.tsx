@@ -150,7 +150,7 @@ export default function Index() {
         </Animated.View>
         <Animated.View
           layout={LinearTransition}
-          className="flex-1 items-center mt-2"
+          className="flex-1 items-center mt-2 mb-16"
         >
           <Button type="primary" onPress={logExercise}>
             🏋️ Log Exercise
