@@ -58,7 +58,7 @@ export default function HomeScreen() {
             type="title"
             className="ml-1"
           >
-            ercule
+            Hercule
           </ThemedText>
         </View>
       </View>

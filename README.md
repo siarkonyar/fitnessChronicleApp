@@ -1,50 +1,77 @@
-# Welcome to your Expo app 👋
+## Hercule — Your Fitness Chronicle
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Hercule helps you log workouts fast, review progress at a glance, and build consistency with a clean, delightful experience.
 
-## Get started
+### What you can do
 
-1. Install dependencies
+- **See today at a glance**: The home screen shows your workout for today, with each exercise numbered and summarized by sets (e.g., "1. Bench Press — 60kg x 10-12"). If you haven’t trained yet, you’ll see a friendly prompt to start. One tap takes you to logging.
+- **Log a workout in seconds**:
+  - **Name your exercise**: Big, focused input at the top. Smart validation nudges you if you try to save without a name.
+  - **Add sets quickly**: Tap “+ Enter Set” to add as many sets as you need.
+  - **Pick reps and weight**: Use intuitive pickers for reps (1, 2, 3-4, 5-6, 7-8, …, 20+) and kilograms (0–200). No typing, no fuss.
+  - **Copy a set**: Duplicate any set with one tap (handy for drop sets or repeat sets). The screen gently scrolls to your new set so you can keep momentum.
+  - **Remove mistakes**: Delete any set instantly.
+  - **Smooth, responsive feel**: Subtle animations make adding and organizing sets feel fluid.
+  - **Save and return**: Log your exercise and go right back to the home screen. Today’s date is assigned automatically.
+- **Browse your history on a calendar**:
+  - **Monthly markers**: Dates with activity are highlighted so you can spot streaks at a glance.
+  - **Select a day**: Tap any date to see exactly what you did that day, with the same clean exercise + sets layout.
+  - **Encouraging rest days**: No entry? You’ll see a friendly “rest day” message.
+- **Stay signed in and in control**:
+  - **Personal account**: Sign up and sign in with email + password.
+  - **One-tap sign out**: See which account you’re using and log out from Settings.
+- **Enjoy a thoughtful UI**:
+  - **Dark and light**: Colors adapt to your device theme for comfortable viewing.
+  - **Clear hierarchy**: Big titles, readable lists, and friendly defaults keep you focused.
+  - **Polished tab bar**: Minimal icons for Home, Calendar, and Settings keep navigation simple.
 
-   ```bash
-   npm install
-   ```
+### Screens at a glance
 
-2. Start the app
+- **Home (Today)**
+  - Branded header with the Hercule logo and name.
+  - Shows today’s exercises in a compact list, numbered with set summaries.
+  - Prominent “Log Exercise” button.
 
-   ```bash
-   npx expo start
-   ```
+- **Log Exercise**
+  - Exercise name input with validation feedback.
+  - Set composer with two quick pickers:
+    - Reps ranges: 1, 2, 3-4, 5-6, 7-8, 9-10, 10-12, 12-15, 15-20, 20+
+    - Weight (kg): 0 to 200 in 5 kg steps
+  - Actions on each set: Copy, Remove.
+  - Animated add/copy interactions and a single, clear action to save.
 
-In the output, you'll find options to open the app in a
+- **Calendar**
+  - Monthly view with highlighted days that include workouts.
+  - Select a date to reveal that day’s exercises and sets.
+  - Today is visually distinguished so you’re never lost.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **Settings**
+  - Displays your signed-in email.
+  - One-tap sign out.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### How Hercule organizes your workouts
 
-## Get a fresh project
+- **Workout entries are date-based**: Each exercise you log is attached to a specific day. Today’s date is used automatically when you save from the logging screen.
+- **Exercises include sets**: Each set records reps and a weight in kilograms. This keeps data uniform and fast to enter.
+- **Designed for momentum**: Copying sets and picker-based inputs eliminate typing and reduce friction when you’re in the middle of a session.
 
-When you're ready, run:
+### Quality-of-life details you’ll feel
 
-```bash
-npm run reset-project
-```
+- **Fast, friendly empty states**: Encouraging messages for rest days and when you haven’t started yet.
+- **Graceful loading**: Clear loading states keep you informed without getting in the way.
+- **Crisp visuals in any theme**: Text, cards, and accents adapt for clarity and contrast.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Privacy and data
 
-## Learn more
+- **Personal to your account**: Your workout history is tied to your signed-in user.
+- **You’re in control**: Sign out anytime from Settings.
 
-To learn more about developing your project with Expo, look at the following resources:
+### Why people like using Hercule
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- It’s focused: logging is fast, reviewing is effortless, and the UI stays out of your way.
+- It’s encouraging: you’ll see streaks on the calendar and positive rest-day messaging.
+- It’s consistent: simple inputs mean your data stays clean and comparable over time.
 
-## Join the community
+If you’re looking for a lightweight, reliable workout companion that respects your time and attention, Hercule is built for you.
 
-Join our community of developers creating universal apps.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
