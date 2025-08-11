@@ -1,8 +1,10 @@
+import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, Text } from "react-native";
+import { ThemedText } from "../ThemedText";
 
 type Props = {
   id: number;
@@ -25,6 +27,41 @@ export const AddSetCard: React.FC<Props> = ({
   onRemove,
   onCopy,
 }) => {
+  // Width to make Reps picker equal to Kg inputs + dot combined
+  const KG_INPUT_TOTAL_WIDTH = 168;
+  // Split incoming value into integer and decimal parts
+  const [intPart, setIntPart] = useState(value?.split(".")[0] || "");
+  const [decPart, setDecPart] = useState(value?.split(".")[1] || "");
+
+  const handleIntChange = (text: string) => {
+    const clean = text.replace(/[^0-9]/g, "");
+    setIntPart(clean);
+    if (clean.length > 0) {
+      onValueChange(id, `${clean}${decPart ? "." + decPart : ""}`);
+    } else if (decPart.length > 0) {
+      onValueChange(id, `0.${decPart}`);
+    } else {
+      onValueChange(id, "0");
+    }
+  };
+
+  const handleDecChange = (text: string) => {
+    const clean = text.replace(/[^0-9]/g, "");
+    setDecPart(clean);
+    if (clean.length > 0) {
+      const prefix = intPart.length > 0 ? intPart : "0";
+      onValueChange(id, `${prefix}.${clean}`);
+    } else {
+      onValueChange(id, intPart);
+    }
+  };
+
+  // Keep local parts in sync if parent-provided value changes externally
+  useEffect(() => {
+    const parts = (value || "").split(".");
+    setIntPart(parts[0] || "");
+    setDecPart(parts[1] || "");
+  }, [value]);
   return (
     <ThemedView className="flex-row items-center justify-between w-full shadow-md shadow-gray-900 p-3 rounded-lg mb-3">
       <ThemedView className="flex-row items-center">
@@ -38,7 +75,7 @@ export const AddSetCard: React.FC<Props> = ({
                 onValueChange={(val) => onRepsChange(id, val)}
                 mode="dropdown"
                 style={{
-                  width: 150,
+                  width: KG_INPUT_TOTAL_WIDTH,
                   height: 56,
                   color: "#111",
                   backgroundColor: "transparent",
@@ -67,68 +104,41 @@ export const AddSetCard: React.FC<Props> = ({
           </ThemedView>
           <ThemedView className="flex-row items-center">
             <Text className="text-xl text-gray-500 w-[50px]">Kg:</Text>
-            <ThemedView className="ml-2 justify-center overflow-hidden">
-              <Picker
-                selectedValue={value}
-                onValueChange={(val) => onValueChange(id, val)}
-                mode="dropdown"
-                style={{
-                  width: 150,
-                  height: 56,
-                  color: "#111",
-                  backgroundColor: "transparent",
+            <ThemedView className="ml-2 justify-center flex-row items-center w-[160px]">
+              <ThemedTextInput
+                value={intPart}
+                onChangeText={handleIntChange}
+                keyboardType="number-pad"
+                maxLength={3}
+                onFocus={() => {
+                  setIntPart("");
                 }}
-                itemStyle={{
-                  fontSize: 20,
-                  height: 56,
+                onBlur={() => {
+                  if (intPart.length === 0 && decPart.length === 0) {
+                    onValueChange(id, "0");
+                  } else if (intPart.length === 0 && decPart.length > 0) {
+                    onValueChange(id, `0.${decPart}`);
+                  } else if (intPart.length > 0) {
+                    onValueChange(
+                      id,
+                      `${intPart}${decPart ? `.${decPart}` : ""}`
+                    );
+                  }
                 }}
-              >
-                {[
-                  "0",
-                  "5",
-                  "10",
-                  "15",
-                  "20",
-                  "25",
-                  "30",
-                  "35",
-                  "40",
-                  "45",
-                  "50",
-                  "55",
-                  "60",
-                  "65",
-                  "70",
-                  "75",
-                  "80",
-                  "85",
-                  "90",
-                  "95",
-                  "100",
-                  "105",
-                  "110",
-                  "115",
-                  "120",
-                  "125",
-                  "130",
-                  "135",
-                  "140",
-                  "145",
-                  "150",
-                  "155",
-                  "160",
-                  "165",
-                  "170",
-                  "175",
-                  "180",
-                  "185",
-                  "190",
-                  "195",
-                  "200",
-                ].map((range) => (
-                  <Picker.Item label={range} value={range} key={range} />
-                ))}
-              </Picker>
+                className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-[72px] text-center"
+              />
+              <ThemedText className="text-2xl mx-2">.</ThemedText>
+              <ThemedTextInput
+                value={decPart}
+                onChangeText={handleDecChange}
+                keyboardType="number-pad"
+                maxLength={2}
+                onFocus={() => {
+                  setDecPart("");
+                  onValueChange(id, intPart.length > 0 ? intPart : "0");
+                }}
+                className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-[56px] text-center"
+              />
             </ThemedView>
           </ThemedView>
         </ThemedView>
