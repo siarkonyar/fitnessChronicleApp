@@ -58,7 +58,7 @@ export default function HomeScreen() {
             type="title"
             className="ml-1"
           >
-            Hercule
+            ercule
           </ThemedText>
         </View>
       </View>
@@ -71,7 +71,7 @@ export default function HomeScreen() {
           {logs.map((log, index) => (
             <GetExerciseCard key={index} exercise={log} index={index} />
           ))}
-          <Button onPress={handleNavigateToExercise} className="mt-4">
+          <Button onPress={handleNavigateToExercise} className="mt-4 mb-8">
             Log Exercise
           </Button>
         </ScrollView>
