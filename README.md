@@ -74,4 +74,8 @@ Hercule helps you log workouts fast, review progress at a glance, and build cons
 
 If you’re looking for a lightweight, reliable workout companion that respects your time and attention, Hercule is built for you.
 
+npx expo prebuild --clean
+
+npx expo run:ios --configuration Release --device "My iPhone"
+
 
