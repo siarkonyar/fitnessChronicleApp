@@ -5,7 +5,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
-import { Pressable, ScrollView, Text } from "react-native";
+import { ScrollView, Text } from "react-native";
 import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
@@ -122,7 +122,7 @@ export default function Index() {
         )}
       </ThemedView>
 
-      <ThemedView className="w-full">
+      <ThemedView className="w-full mb-8">
         {sets.map((set, index) => (
           <Animated.View
             key={set.id}
@@ -146,18 +146,15 @@ export default function Index() {
           layout={LinearTransition}
           className="flex-row items-center justify-between mt-2 mb-8"
         >
-          <Pressable
-            onPress={addSet}
-            className="bg-blue-200 dark:bg-[#11203a] py-2 px-4 rounded"
-          >
-            <ThemedText className="text-center">+ Enter Set</ThemedText>
-          </Pressable>
+          <Button onPress={addSet}>+ Enter Set</Button>
         </Animated.View>
         <Animated.View
           layout={LinearTransition}
           className="flex-1 items-center mt-2"
         >
-          <Button onPress={logExercise}>🏋️ Log Exercise</Button>
+          <Button type="primary" onPress={logExercise}>
+            🏋️ Log Exercise
+          </Button>
         </Animated.View>
       </ThemedView>
     </ScrollView>

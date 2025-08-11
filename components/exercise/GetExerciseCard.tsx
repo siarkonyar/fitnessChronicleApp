@@ -19,10 +19,10 @@ export default function GetExerciseCard({
   return (
     <TouchableOpacity>
       <ThemedView className="shadow-md shadow-gray-900 p-3 rounded-lg mb-3">
-        <ThemedView className="flex-row items-center justify-between w-full p-3 rounded-lg mb-3">
-          <ThemedView className="flex-row justify-center items-center">
+        <ThemedView className="flex-row items-center justify-between w-full p-3 rounded-lg">
+          <ThemedView className="flex-row items-center flex-1 pr-4">
             <Text className="text-sm text-gray-500 mr-5">{index! + 1}.</Text>
-            <ThemedText className="text-xl font-bold">
+            <ThemedText className="text-xl font-bold shrink">
               {exercise.activity}
             </ThemedText>
           </ThemedView>

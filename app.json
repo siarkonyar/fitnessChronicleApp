@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.siar.konyar.fitnessChronicle"
+      "bundleIdentifier": "com.siar.konyar.fitnessChronicle",
+      "appleTeamId": "TAMQ259Y2Y"
     },
     "android": {
       "adaptiveIcon": {
