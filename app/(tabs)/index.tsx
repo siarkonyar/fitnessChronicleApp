@@ -1,9 +1,9 @@
+import { Button } from "@/components/Button";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
 import { ExerciseLogSchema } from "@/types/types"; // Adjust the import path as necessary
-import { Button } from "@react-navigation/elements";
 import { router } from "expo-router";
 import React from "react";
 import { ScrollView, View, useColorScheme } from "react-native";
@@ -47,14 +47,18 @@ export default function HomeScreen() {
       </View>
 
       {logs && logs.length > 0 ? (
-        <ScrollView className="w-full px-4">
+        <ScrollView className="w-full px-4 py-6">
           <ThemedText type="subtitle" className="mb-4 text-center">
             Todays Exercise Log
           </ThemedText>
           {logs.map((log, index) => (
             <GetExerciseCard key={index} exercise={log} index={index} />
           ))}
-          <Button onPress={handleNavigateToExercise} className="mt-4">
+          <Button
+            type="primary"
+            onPress={handleNavigateToExercise}
+            className="mt-4"
+          >
             Log Exercise
           </Button>
         </ScrollView>
@@ -64,7 +68,7 @@ export default function HomeScreen() {
             Seems like you haven&apos;t started working out yet. It&apos;s the
             perfect time to start your first exercise! 🏋️
           </ThemedText>
-          <Button onPress={handleNavigateToExercise} className="mt-4">
+          <Button type="primary" onPress={handleNavigateToExercise}>
             Log Exercise
           </Button>
         </View>
