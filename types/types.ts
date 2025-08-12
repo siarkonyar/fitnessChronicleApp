@@ -48,3 +48,19 @@ export const DaySchema = z.object({
 export const ExerciseLogWithIdSchema = ExerciseLogSchema.extend({
     id: z.string(),
 });
+
+export const EmojiSchema = z.object({
+    emoji: z.string().min(1).max(10), // Limit emoji length
+    description: z.string().min(1).max(100), // Add length constraints
+    dates: z.array(z.string().date()).default([]) // Make dates optional with default empty array
+});
+
+// Zod schema for emoji assignments with an ID (when reading from DB)
+export const EmojiWithIdSchema = EmojiSchema.extend({
+    id: z.string(),
+});
+
+// Zod schema for day assignments with an ID (when reading from DB)
+export const DayWithIdSchema = DaySchema.extend({
+    id: z.string(),
+});
