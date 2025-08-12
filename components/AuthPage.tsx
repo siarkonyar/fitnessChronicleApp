@@ -56,17 +56,6 @@ export default function AuthPage() {
     }
   }, [currentUser]);
 
-  // tRPC hooks for fitness logs
-  const {
-    data: fitnessLogs,
-    isLoading,
-    error,
-    refetch,
-  } = trpc.fitness.getLogs.useQuery(
-    undefined, // No input needed for getLogs
-    { enabled: !!currentUser } // Only fetch if user is logged in
-  );
-
   /* const addLogMutation = trpc.fitness.addLog.useMutation({
     onSuccess: () => {
       Alert.alert("Success", "Fitness log added!");

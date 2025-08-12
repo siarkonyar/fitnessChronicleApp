@@ -7,22 +7,21 @@ import { Modal, Pressable, Text, View } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import EmojiPicker from "rn-emoji-keyboard";
 // import { z } from "zod";
+import { EmojiWithIdSchema } from "@/types/types";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
 import { ThemedText } from "../ThemedText";
 import { ThemedTextInput } from "../ThemedTextInput";
-
-type EmojiItem = {
-  id?: string;
-  emoji: string;
-  description: string;
-  dates?: string[];
-};
+import EmojiCard from "../cards/EmojiCard";
 
 export default function UserEmojiList() {
-  const addEmojiMutation = trpc.fitness.addEmoji.useMutation();
-  const { data: emojisRaw, isLoading } = trpc.fitness.getAllEmojis.useQuery();
+  type emojiScheme = z.infer<typeof EmojiWithIdSchema>;
+  const addEmojiMutation = trpc.emoji.addEmoji.useMutation();
+  const { data: emojisRaw, isLoading } = trpc.emoji.getAllEmojis.useQuery();
   const utils = trpc.useUtils();
+  const insets = useSafeAreaInsets();
 
   const [isAddEmojiOpen, setIsAddEmojiOpen] = React.useState(false);
   const [emoji, setEmoji] = React.useState("");
@@ -65,7 +64,7 @@ export default function UserEmojiList() {
         description: description.trim(),
         dates: [] as string[],
       });
-      await utils.fitness.getAllEmojis.invalidate();
+      await utils.emoji.getAllEmojis.invalidate();
       setIsAddEmojiOpen(false);
       setEmoji("");
       setDescription("");
@@ -73,92 +72,120 @@ export default function UserEmojiList() {
       setIsSubmitting(false);
     }
   }
-  const emojis: EmojiItem[] = Array.isArray(emojisRaw)
-    ? (emojisRaw as EmojiItem[])
+  const emojis: emojiScheme[] = Array.isArray(emojisRaw)
+    ? (emojisRaw as emojiScheme[])
     : [];
 
   if (isLoading) {
-    return <ThemedText className="text-lg text-center">Loading...</ThemedText>;
+    return (
+      <View className="flex-1 items-center justify-center py-8">
+        <ThemedText className="text-lg text-center opacity-70">
+          Loading...
+        </ThemedText>
+      </View>
+    );
   }
+
   return (
     <>
       <Card>
+        <ThemedText className="text-xl font-bold mb-4 text-center">
+          Your Emoji Collection
+        </ThemedText>
+
         {emojis.length > 0 ? (
-          <View className="flex-col flex-wrap gap-4 mb-3">
+          <View className="flex-col gap-3 mb-6">
             {emojis.map((item, index) => (
-              <View
-                key={item.id ?? `${item.emoji}-${index}`}
-                className="flex-row items-center"
-              >
-                <Text className="text-3xl leading-9">{item.emoji}</Text>
-                <ThemedText className="text-center">
-                  {item.description}
-                </ThemedText>
-              </View>
+              <EmojiCard emoji={item} key={index} index={index} />
             ))}
           </View>
         ) : (
-          <ThemedText className="opacity-70 mb-3">
-            No emojis yet. Add one below.
-          </ThemedText>
+          <View className="items-center py-8 mb-6">
+            <Text className="text-5xl mb-3">📝</Text>
+            <ThemedText className="text-center opacity-70 mb-2 text-lg">
+              No emojis yet
+            </ThemedText>
+            <ThemedText className="text-sm text-center opacity-50">
+              Add your first emoji below to get started
+            </ThemedText>
+          </View>
         )}
-        <Button onPress={() => setIsAddEmojiOpen(true)}>+ add Emoji</Button>
+        <Button onPress={() => setIsAddEmojiOpen(true)}>+ Add Emoji</Button>
       </Card>
 
       <Modal
         visible={isAddEmojiOpen}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setIsAddEmojiOpen(false)}
       >
-        <View className="flex-1 items-center justify-center bg-black/50">
-          <Card className="w-11/12 max-w-md">
-            <ThemedText className="text-xl font-semibold mb-2">
-              Add Emoji
-            </ThemedText>
-            <View className="items-center mb-3">
-              <Pressable onPress={() => setIsEmojiPickerOpen(true)}>
-                <Text className="text-6xl leading-[72px] mb-2">
-                  {emoji || "😀"}
-                </Text>
-              </Pressable>
-              <ThemedText className="opacity-70 mb-2">
-                Tap emoji to choose
+        <View
+          style={{
+            paddingTop: insets.top,
+          }}
+          className="flex-1 items-center px-4 bg-[#FF4500]/20 backdrop-blur-sm"
+        >
+          <Card className="w-11/12 max-w-md mx-4">
+            <View className="p-6">
+              <ThemedText className="text-2xl font-bold mb-2 text-center">
+                Create New Emoji
               </ThemedText>
-            </View>
+              <ThemedText className="text-sm opacity-70 text-center mb-6">
+                Add a new emoji to your collection
+              </ThemedText>
 
-            <ThemedText className="font-semibold mb-1">Description</ThemedText>
-            <ThemedTextInput
-              value={description}
-              onChangeText={setDescription}
-              placeholder="What does this emoji represent?"
-              maxLength={100}
-              className="w-full border border-gray-400/40 rounded-md px-3 py-2 mb-4"
-            />
-            <View className="flex-row justify-end gap-2">
-              <Button type="default" onPress={() => setIsAddEmojiOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="primary"
-                onPress={handleAddEmoji}
-                disabled={!canSubmit}
-                style={{ opacity: canSubmit ? 1 : 0.5 }}
-              >
-                {isSubmitting ? "Adding..." : "Add Emoji"}
-              </Button>
+              <View className="items-center mb-6">
+                <Pressable
+                  onPress={() => setIsEmojiPickerOpen(true)}
+                  className="rounded-2xl p-6 border border-gray-200/50 dark:border-gray-600/50 active:scale-95 transition-transform"
+                >
+                  <Text className="text-6xl leading-[72px] mb-2">
+                    {emoji || "😀"}
+                  </Text>
+                </Pressable>
+                <ThemedText className="opacity-70 mt-3 text-center">
+                  Tap emoji to choose
+                </ThemedText>
+              </View>
+
+              <ThemedText className="font-semibold mb-2">
+                Description
+              </ThemedText>
+              <ThemedTextInput
+                value={description}
+                onChangeText={setDescription}
+                placeholder=""
+                maxLength={100}
+                className="w-full border border-gray-300/50 dark:border-gray-600/50 rounded-xl px-4 py-3 mb-6 bg-white dark:bg-gray-800"
+              />
+
+              <View className="flex-row justify-end gap-3">
+                <Button type="danger" onPress={() => setIsAddEmojiOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="primary"
+                  onPress={handleAddEmoji}
+                  disabled={!canSubmit}
+                  style={{ opacity: canSubmit ? 1 : 0.5 }}
+                >
+                  {isSubmitting ? "Adding..." : "Add Emoji"}
+                </Button>
+              </View>
+
+              {/* TODO: searchbar is at the bottom. either change the package or find a way to put it on top */}
+              <EmojiPicker
+                open={isEmojiPickerOpen}
+                onClose={() => setIsEmojiPickerOpen(false)}
+                onEmojiSelected={(e) => {
+                  setEmoji(e.emoji);
+                  setIsEmojiPickerOpen(false);
+                }}
+                theme={emojiTheme}
+                //enableSearchBar
+                categoryPosition="top"
+              />
             </View>
-            <EmojiPicker
-              open={isEmojiPickerOpen}
-              onClose={() => setIsEmojiPickerOpen(false)}
-              onEmojiSelected={(e) => {
-                setEmoji(e.emoji);
-                setIsEmojiPickerOpen(false);
-              }}
-              theme={emojiTheme}
-              enableSearchBar
-              categoryPosition="top"
-            />
           </Card>
         </View>
       </Modal>
