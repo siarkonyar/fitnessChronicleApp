@@ -18,12 +18,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setIsAuthenticated(!!user); // Set to true if user exists, false otherwise
-      setAuthLoading(false); // Stop loading once auth state is determined
-    });
+    try {
+      if (!auth) {
+        console.error("Auth not initialized");
+        setAuthLoading(false);
+        return;
+      }
 
-    return unsubscribe; // Cleanup listener on unmount
+      const unsubscribe = auth.onAuthStateChanged(
+        (user) => {
+          setIsAuthenticated(!!user); // Set to true if user exists, false otherwise
+          setAuthLoading(false); // Stop loading once auth state is determined
+        },
+        (error) => {
+          console.error("Auth state change error:", error);
+          setAuthLoading(false);
+        }
+      );
+
+      return unsubscribe; // Cleanup listener on unmount
+    } catch (error) {
+      console.error("Auth initialization error:", error);
+      setAuthLoading(false);
+    }
   }, []);
 
   return (

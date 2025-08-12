@@ -1,11 +1,16 @@
-import ExerciseLogByDate from "@/components/ExerciseLogByDate";
+import ExerciseLogByDate from "@/components/calendar/ExerciseLogByDate";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogSchema } from "@/types/types";
 import React, { useEffect, useState } from "react";
-import { ScrollView, useColorScheme, View } from "react-native";
+import {
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native";
 import { Calendar } from "react-native-calendars";
-import { MarkingProps } from "react-native-calendars/src/calendar/day/marking";
 import { z } from "zod";
 
 export default function CalendarScreen() {
@@ -20,11 +25,17 @@ export default function CalendarScreen() {
 
   type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
 
-  const { data } = trpc.fitness.getExerciseLogsByMonth.useQuery({
+  const { data: logs } = trpc.fitness.getExerciseLogsByMonth.useQuery({
     month: visibleMonth,
   }) as {
     data: { logs: ExerciseLog[]; uniqueDates: string[] };
   };
+  const { data } = trpc.emoji.getAllEmojisFromMonth.useQuery({
+    date: visibleMonth,
+  }) as {
+    data: { date: string; emoji: string }[] | undefined;
+  };
+
   return (
     <>
       <View className="flex-1">
@@ -34,42 +45,96 @@ export default function CalendarScreen() {
             // Initially visible month
             current={today}
             // Handler which gets executed on day press
-            onDayPress={(day) => {
+            /*  onDayPress={(day) => {
               setSelectedDate(day.dateString);
-            }}
+            }} */
             onMonthChange={(month) => {
               const newMonth = `${month.year}-${String(month.month).padStart(2, "0")}`;
               setVisibleMonth(newMonth);
             }}
-            // Mark specific dates
-            markedDates={{
-              ...data?.uniqueDates.reduce(
-                (acc, date) => {
-                  acc[date] = {
-                    selected: true,
-                    selectedColor: Colors[theme].calendarMarker,
-                  };
-                  if (date === today) {
-                    acc[date] = {
-                      selected: true,
-                      selectedColor: Colors[theme].calendarMarker,
-                      marked: true,
-                      dotColor: Colors[theme].cardBackground,
-                    };
-                  }
-                  return acc;
-                },
-                {} as Record<string, MarkingProps>
-              ),
+            dayComponent={({ date, state }) => {
+              if (!date) return null;
+              const emoji = data?.find(
+                (log) => log.date === date.dateString
+              )?.emoji;
+              const isMarked = logs?.uniqueDates.includes(date.dateString);
+              const isToday = date.dateString === today;
 
-              /* [today]: {
-                marked: true,
-                dotColor: Colors[theme].cardBackground,
-              }, */
-
-              /* "2025-08-07": { marked: true },
-            "2025-08-08": { disabled: true }, */
+              return (
+                <TouchableOpacity
+                  onPress={() => setSelectedDate(date.dateString)}
+                  className="items-center justify-center h-10 w-10"
+                  style={{
+                    backgroundColor: isMarked
+                      ? Colors[theme].calendarMarker
+                      : "transparent",
+                    borderRadius: 8,
+                  }}
+                >
+                  <View className="items-center justify-center">
+                    <Text
+                      style={{
+                        color:
+                          state === "disabled"
+                            ? Colors[theme].mutedText
+                            : isMarked
+                              ? Colors[theme].cardBackground
+                              : isToday
+                                ? Colors[theme].highlight
+                                : Colors[theme].text,
+                        fontSize: emoji ? 20 : 16,
+                      }}
+                    >
+                      {emoji || date.day}
+                    </Text>
+                    {isToday && (
+                      <View
+                        style={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: 2,
+                          backgroundColor: isMarked
+                            ? Colors[theme].background
+                            : Colors[theme].calendarMarker,
+                          marginTop: 1,
+                        }}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
             }}
+            // Mark specific dates
+
+            // markedDates={{
+            //   ...logs?.uniqueDates.reduce(
+            //     (acc, date) => {
+            //       acc[date] = {
+            //         selected: true,
+            //         selectedColor: Colors[theme].calendarMarker,
+            //       };
+            //       if (date === today) {
+            //         acc[date] = {
+            //           selected: true,
+            //           selectedColor: Colors[theme].calendarMarker,
+            //           marked: true,
+            //           dotColor: Colors[theme].cardBackground,
+            //         };
+            //       }
+            //       return acc;
+            //     },
+            //     {} as Record<string, MarkingProps>
+            //   ),
+
+            //   /* [today]: {
+            //     marked: true,
+            //     dotColor: Colors[theme].cardBackground,
+            //   }, */
+
+            //   /* "2025-08-07": { marked: true },
+            // "2025-08-08": { disabled: true }, */
+            // }}
+
             // Theme customization
             theme={
               {
