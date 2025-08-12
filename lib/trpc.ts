@@ -9,7 +9,14 @@ import { auth } from './firebase'; // Your Firebase client auth instance
 export const trpc = createTRPCReact<AppRouter>();
 
 // 2. Configure the Query Client (for React Query)
-export const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      retryDelay: 1000,
+    },
+  },
+});
 
 // 3. Create your tRPC client (to be used within the Provider)
 export const trpcClient = trpc.createClient({
@@ -17,12 +24,16 @@ export const trpcClient = trpc.createClient({
     httpBatchLink({
       url: process.env.EXPO_PUBLIC_BACKEND_URL || "", // <--- IMPORTANT: Use your server's actual IP address or domain
       async headers() {
-        const user = auth.currentUser;
-        if (user) {
-          const idToken = await user.getIdToken();
-          return {
-            Authorization: `Bearer ${idToken}`, // Send ID token to server
-          };
+        try {
+          const user = auth?.currentUser;
+          if (user) {
+            const idToken = await user.getIdToken();
+            return {
+              Authorization: `Bearer ${idToken}`, // Send ID token to server
+            };
+          }
+        } catch (error) {
+          console.error('Error getting auth token:', error);
         }
         return {};
       },
