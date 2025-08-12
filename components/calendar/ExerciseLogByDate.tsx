@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { ExerciseLogSchema } from "@/types/types";
 import React from "react";
 import { z } from "zod";
+import DateEmojiAssignment from "./DateEmojiAssignment";
 
 export default function ExerciseLogByDate({
   selectedDate,
@@ -28,6 +29,7 @@ export default function ExerciseLogByDate({
         <ThemedText type="subtitle" className="mb-4 text-center">
           Exercise Log for {selectedDate}
         </ThemedText>
+        <DateEmojiAssignment selectedDate={selectedDate} />
         {logs && logs.length > 0 ? (
           <ThemedView className="w-full p-4">
             {logs?.map((log, index) => (

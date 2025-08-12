@@ -40,8 +40,7 @@ export const ExerciseLogSchema = z.object({
 
 export const DaySchema = z.object({
     date: z.string().date(), // ISO 8601 date string
-    activities: z.array(ExerciseLogSchema), // Array of exercise logs for the day
-    day: z.array(z.string().min(1).max(20)).optional(), // Optional day name (e.g., "Monday")
+    emojiId: z.string().min(1), // Reference to emoji ID instead of full object
 });
 
 // Zod schema for a fitness log entry with an ID (when reading from DB)

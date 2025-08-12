@@ -50,7 +50,34 @@ const dummyRouter = t.router({
             .mutation(() => { /* dummy implementation */ }),
         getEmojiAsignmentByDate: t.procedure
             .input(z.object({ date: z.string().date() })) // Validate input with Zod
+            .query(() => { /* dummy implementation */ }),
+        deleteAssignment: t.procedure
+            .input(z.object({ date: z.string().date() })) // Validate input with Zod
             .mutation(() => { /* dummy implementation */ }),
+    }),
+    emoji: t.router({ // Match the 'fitness' namespace from your server
+        addEmoji: t.procedure
+            .input(EmojiSchema) // Validate input with Zod
+            .mutation(() => { /* dummy implementation */ }),
+        getAllEmojis: t.procedure
+            .query(() => { /* dummy implementation */ }),
+        getAllEmojisFromMonth: t.procedure
+            .input(z.object({
+              date: z.string().regex(/^\d{4}-\d{2}$/, 'Date must be in YYYY-MM format')
+            }))
+            .query(() => { /* dummy implementation */ }),
+        getEmojiById: t.procedure
+            .input(z.object({ id: z.string().min(1) })) // Validate input with Zod
+            .query(() => { /* dummy implementation */ }),
+        deleteEmoji: t.procedure
+            .input(z.object({ id: z.string().min(1) })) // Validate input with Zod
+            .mutation(() => { /* dummy implementation */ }),
+        asignEmojiToDay: t.procedure
+            .input(DaySchema) // Validate input with Zod
+            .mutation(() => { /* dummy implementation */ }),
+        getEmojiAsignmentByDate: t.procedure
+            .input(z.object({ date: z.string().date() })) // Validate input with Zod
+            .query(() => { /* dummy implementation */ }),
         deleteAssignment: t.procedure
             .input(z.object({ date: z.string().date() })) // Validate input with Zod
             .mutation(() => { /* dummy implementation */ }),
