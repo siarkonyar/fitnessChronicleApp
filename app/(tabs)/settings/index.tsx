@@ -1,5 +1,6 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
+import UserEmojiList from "@/components/lists/UserEmojiList";
 import { ThemedText } from "@/components/ThemedText";
 import { router } from "expo-router";
 import React from "react";
@@ -21,12 +22,13 @@ export default function Settings() {
   return (
     <>
       <ScrollView className="px-4 py-6">
-        <Card>
+        <Card className="mb-4">
           <ThemedText>You are currently signed in as {user?.email}</ThemedText>
           <Button type="danger" onPress={handleSignout}>
             Sign Out
           </Button>
         </Card>
+        <UserEmojiList />
       </ScrollView>
     </>
   );
