@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc";
 // import { EmojiSchema } from "@/types/types";
 import React from "react";
@@ -28,26 +29,25 @@ export default function UserEmojiList() {
   const [description, setDescription] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const theme = useColorScheme() ?? "light";
 
   const emojiTheme = {
-    backdrop: isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.5)",
-    knob: isDark ? "#4B5563" : "#D1D5DB",
-    container: isDark ? "#1F2937" : "#FFFFFF",
-    header: isDark ? "#E5E7EB" : "#111827",
-    skinTonesContainer: isDark ? "#111827" : "#F3F4F6",
+    backdrop: "rgba(0,0,0,0.5)",
+    knob: Colors[theme].separator,
+    container: Colors[theme].cardBackground,
+    header: Colors[theme].text,
+    skinTonesContainer: Colors[theme].inputBackground,
     category: {
-      icon: isDark ? "#9CA3AF" : "#6B7280",
-      iconActive: isDark ? "#FFFFFF" : "#111827",
-      container: isDark ? "#111827" : "#F3F4F6",
-      containerActive: isDark ? "#374151" : "#E5E7EB",
+      icon: Colors[theme].text,
+      iconActive: Colors[theme].highlight,
+      container: Colors[theme].inputBackground,
+      containerActive: Colors[theme].separator,
     },
     search: {
-      text: isDark ? "#FFFFFF" : "#111827",
-      placeholder: isDark ? "#9CA3AF" : "#6B7280",
-      icon: isDark ? "#E5E7EB" : "#374151",
-      background: isDark ? "#111827" : "#F3F4F6",
+      text: Colors[theme].text,
+      placeholder: Colors[theme].mutedText,
+      icon: Colors[theme].icon,
+      background: Colors[theme].inputBackground,
     },
   } as const;
 
@@ -90,7 +90,7 @@ export default function UserEmojiList() {
                 key={item.id ?? `${item.emoji}-${index}`}
                 className="flex-row items-center"
               >
-                <Text className="text-3xl">{item.emoji}</Text>
+                <Text className="text-3xl leading-9">{item.emoji}</Text>
                 <ThemedText className="text-center">
                   {item.description}
                 </ThemedText>
@@ -118,7 +118,9 @@ export default function UserEmojiList() {
             </ThemedText>
             <View className="items-center mb-3">
               <Pressable onPress={() => setIsEmojiPickerOpen(true)}>
-                <Text className="text-6xl mb-2">{emoji || "😀"}</Text>
+                <Text className="text-6xl leading-[72px] mb-2">
+                  {emoji || "😀"}
+                </Text>
               </Pressable>
               <ThemedText className="opacity-70 mb-2">
                 Tap emoji to choose
