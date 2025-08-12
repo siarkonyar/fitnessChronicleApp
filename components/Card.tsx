@@ -1,9 +1,22 @@
-import { ThemedView } from "@/components/ThemedView";
+import { ThemedView, type ThemedViewProps } from "@/components/ThemedView";
 import React from "react";
 
-export default function Card({ children }: { children: React.ReactNode }) {
+type CardProps = React.PropsWithChildren<ThemedViewProps> & {
+  className?: string;
+};
+
+export default function Card({
+  children,
+  className,
+  style,
+  ...otherProps
+}: CardProps) {
   return (
-    <ThemedView className="w-full shadow-md shadow-gray-900 p-3 rounded-lg mb-3">
+    <ThemedView
+      className={`w-full shadow-md shadow-gray-900 p-3 rounded-lg mb-3${className ? ` ${className}` : ""}`}
+      style={style}
+      {...otherProps}
+    >
       {children}
     </ThemedView>
   );

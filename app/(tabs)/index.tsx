@@ -25,8 +25,6 @@ export default function HomeScreen() {
     isLoading: boolean;
   };
 
-  console.log(logs, "today", new Date().toISOString().split("T")[0]);
-
   const handleNavigateToExercise = () => {
     router.push("/(screens)/logExercise");
   };
