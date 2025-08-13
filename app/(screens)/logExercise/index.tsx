@@ -2,23 +2,27 @@ import { Button } from "@/components/Button";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
-import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
+import { trpc } from "@/lib/trpc";
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
-import { SafeAreaView, ScrollView, Text } from "react-native";
+import { ScrollView, Text } from "react-native";
 import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
 export default function Index() {
   const scrollRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
   const addExerciseLogMutation = trpc.fitness.addExerciseLog.useMutation();
 
   const [titleError, setTitleError] = useState(false);
-
   const [title, setTitle] = useState("");
   const [sets, setSets] = useState<
     { id: number; reps: string; value: string }[]
   >([]);
+
+  // Track previous length
+  const prevLengthRef = useRef(sets.length);
 
   const addSet = () => {
     const newSet = { id: Date.now(), reps: "10-12", value: "0" };
@@ -46,15 +50,7 @@ export default function Index() {
       const setToCopy = prev.find((s) => s.id === id);
       if (!setToCopy) return prev;
 
-      const newSet = {
-        ...setToCopy,
-        id: Date.now(), // benzersiz id
-      };
-
-      setTimeout(() => {
-        scrollRef.current?.scrollToEnd({ animated: true });
-      }, 100); // çok kısa bir gecikme, animasyon düzgün olur
-
+      const newSet = { ...setToCopy, id: Date.now() };
       return [...prev, newSet];
     });
   };
@@ -73,9 +69,9 @@ export default function Index() {
 
     try {
       const formattedSets = sets.map(({ value, reps }) => ({
-        setType: "kg" as const, // or dynamically set based on UI if you add a unit picker later
-        value: value || "", // now a string, can be empty if optional
-        reps: reps || "", // also a string, optional
+        setType: "kg" as const,
+        value: value || "",
+        reps: reps || "",
       }));
 
       const payload = {
@@ -87,7 +83,7 @@ export default function Index() {
       await addExerciseLogMutation.mutateAsync(payload);
 
       console.log("Exercise logged successfully!", payload);
-      router.push("/(tabs)"); // Navigate back to home after logging
+      router.push("/(tabs)");
 
       setTitle("");
       setSets([]);
@@ -97,8 +93,18 @@ export default function Index() {
   };
 
   return (
-    <SafeAreaView>
-      <ScrollView ref={scrollRef} className="flex-1 p-4">
+    <ThemedView className="flex-1">
+      <ScrollView
+        ref={scrollRef}
+        className="flex-1 p-4"
+        style={{ paddingTop: 2 * insets.top }}
+        onContentSizeChange={() => {
+          if (sets.length > prevLengthRef.current) {
+            scrollRef.current?.scrollToEnd({ animated: true });
+          }
+          prevLengthRef.current = sets.length;
+        }}
+      >
         <ThemedView className="mb-8">
           <ThemedText type="title" className="font-bold mb-4">
             Exercise Name
@@ -159,6 +165,6 @@ export default function Index() {
           </Animated.View>
         </ThemedView>
       </ScrollView>
-    </SafeAreaView>
+    </ThemedView>
   );
 }
