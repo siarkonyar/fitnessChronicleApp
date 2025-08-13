@@ -17,7 +17,7 @@ export default function LogExerciseLayout() {
         <View style={{ flex: 1, backgroundColor: Colors[theme].highlight }} />
       ),
     });
-  }, [navigation]);
+  }, [theme, navigation]);
   return (
     <Stack
       screenOptions={{
