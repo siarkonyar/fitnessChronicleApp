@@ -17,6 +17,8 @@ export const Colors = {
     calendarMarker: '#FF4500',
 
     // Additions
+    // Matches React Navigation DefaultTheme card color
+    tabBackGround: '#FFFFFF',
     cardBackground: '#FFFFFF',
     inputBackground: '#EDEFF2',
     separator: '#D0D5DD',
@@ -36,6 +38,8 @@ export const Colors = {
     calendarMarker: '#FF4500',
 
     // Additions
+    // Matches React Navigation DarkTheme card color
+    tabBackGround: '#121212',
     cardBackground: '#1A1A1A',
     inputBackground: '#2C2C2E',
     separator: '#3A3A3C',

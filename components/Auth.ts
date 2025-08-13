@@ -1,11 +1,11 @@
 // src/components/Auth.ts (in your Expo app)
-import { auth } from '../lib/firebase';
 import {
   createUserWithEmailAndPassword, // For signing up new users
-  signInWithEmailAndPassword,     // For signing in existing users
-  signOut,                        // Sign out remains the same
-  User,                           // Import User type
+  signInWithEmailAndPassword, // For signing in existing users
+  signOut, // Sign out remains the same
+  User, // Import User type
 } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
 /**
  * Signs up a new user with email and password.

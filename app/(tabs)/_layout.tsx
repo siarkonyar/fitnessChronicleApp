@@ -2,7 +2,6 @@ import { Tabs } from "expo-router";
 import React from "react";
 
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import BlurTabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
@@ -14,8 +13,11 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
         headerShown: false,
-        // TODO implement blury tab properly
-        tabBarBackground: BlurTabBarBackground,
+        // Use a solid background to match app theme; remove blur which appeared gray
+        tabBarStyle: {
+          backgroundColor: Colors[colorScheme].tabBackGround,
+          borderTopColor: "transparent",
+        },
       }}
     >
       <Tabs.Screen

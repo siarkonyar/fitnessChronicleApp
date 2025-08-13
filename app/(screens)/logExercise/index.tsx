@@ -5,7 +5,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
-import { ScrollView, Text } from "react-native";
+import { SafeAreaView, ScrollView, Text } from "react-native";
 import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
@@ -97,66 +97,68 @@ export default function Index() {
   };
 
   return (
-    <ScrollView ref={scrollRef} className="flex-1 p-4">
-      <ThemedView className="mb-8">
-        <ThemedText type="title" className="font-bold mb-4">
-          Exercise Name
-        </ThemedText>
-        {titleError ? (
-          <>
-            <Text className="text-red-500 mb-2">
-              Please enter an exercise name
-            </Text>
+    <SafeAreaView>
+      <ScrollView ref={scrollRef} className="flex-1 p-4">
+        <ThemedView className="mb-8">
+          <ThemedText type="title" className="font-bold mb-4">
+            Exercise Name
+          </ThemedText>
+          {titleError ? (
+            <>
+              <Text className="text-red-500 mb-2">
+                Please enter an exercise name
+              </Text>
+              <ThemedTextInput
+                value={title}
+                onChangeText={setTitle}
+                className="bg-gray-200 dark:bg-gray-900 border border-red-500 p-3 rounded-lg w-full mb-4 text-3xl"
+              />
+            </>
+          ) : (
             <ThemedTextInput
               value={title}
               onChangeText={setTitle}
-              className="bg-gray-200 dark:bg-gray-900 border border-red-500 p-3 rounded-lg w-full mb-4 text-3xl"
+              className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg w-full mb-4 text-3xl"
             />
-          </>
-        ) : (
-          <ThemedTextInput
-            value={title}
-            onChangeText={setTitle}
-            className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg w-full mb-4 text-3xl"
-          />
-        )}
-      </ThemedView>
+          )}
+        </ThemedView>
 
-      <ThemedView className="w-full mb-8">
-        {sets.map((set, index) => (
+        <ThemedView className="w-full mb-8">
+          {sets.map((set, index) => (
+            <Animated.View
+              key={set.id}
+              layout={LinearTransition}
+              entering={FadeInUp.springify().damping(15)}
+            >
+              <AddSetCard
+                id={set.id}
+                index={index}
+                reps={set.reps}
+                value={set.value}
+                onRepsChange={updateReps}
+                onValueChange={updateValue}
+                onRemove={removeSet}
+                onCopy={copySet}
+              />
+            </Animated.View>
+          ))}
+
           <Animated.View
-            key={set.id}
             layout={LinearTransition}
-            entering={FadeInUp.springify().damping(15)}
+            className="flex-row items-center justify-between mt-2 mb-8"
           >
-            <AddSetCard
-              id={set.id}
-              index={index}
-              reps={set.reps}
-              value={set.value}
-              onRepsChange={updateReps}
-              onValueChange={updateValue}
-              onRemove={removeSet}
-              onCopy={copySet}
-            />
+            <Button onPress={addSet}>+ Enter Set</Button>
           </Animated.View>
-        ))}
-
-        <Animated.View
-          layout={LinearTransition}
-          className="flex-row items-center justify-between mt-2 mb-8"
-        >
-          <Button onPress={addSet}>+ Enter Set</Button>
-        </Animated.View>
-        <Animated.View
-          layout={LinearTransition}
-          className="flex-1 items-center mt-2 mb-16"
-        >
-          <Button type="primary" onPress={logExercise}>
-            🏋️ Log Exercise
-          </Button>
-        </Animated.View>
-      </ThemedView>
-    </ScrollView>
+          <Animated.View
+            layout={LinearTransition}
+            className="flex-1 items-center mt-2 mb-16"
+          >
+            <Button type="primary" onPress={logExercise}>
+              🏋️ Log Exercise
+            </Button>
+          </Animated.View>
+        </ThemedView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
