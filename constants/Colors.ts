@@ -18,6 +18,7 @@ export const Colors = {
 
     // Additions
     // Matches React Navigation DefaultTheme card color
+    secondary: '#FF8C00',
     tabBackGround: '#FFFFFF',
     cardBackground: '#FFFFFF',
     inputBackground: '#EDEFF2',
@@ -39,6 +40,7 @@ export const Colors = {
 
     // Additions
     // Matches React Navigation DarkTheme card color
+    secondary: '#FF8C00',
     tabBackGround: '#121212',
     cardBackground: '#1A1A1A',
     inputBackground: '#2C2C2E',

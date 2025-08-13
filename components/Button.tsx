@@ -64,12 +64,12 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   defaultButton: {
-    backgroundColor: "#FF450040", // light green background
+    backgroundColor: "#FF8C0040", // light green background
   },
   default: {
     fontSize: 16,
     lineHeight: 24,
-    color: "#FF4500", // fully opaque green text
+    color: "#FF8C00", // fully opaque green text
     fontWeight: "600",
   },
   primaryButton: {
