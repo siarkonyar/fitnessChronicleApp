@@ -1,17 +1,17 @@
 // App.tsx (or your main component) - UPDATED FOR EMAIL/PASSWORD
-import * as AuthSession from "expo-auth-session";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Button,
-  ScrollView,
+  useColorScheme,
   View,
 } from "react-native";
 
+import { Colors } from "@/constants/Colors";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { User, onAuthStateChanged } from "firebase/auth"; // Firebase Auth types
+import { onAuthStateChanged, User } from "firebase/auth"; // Firebase Auth types
 import { auth } from "../lib/firebase"; // Your Firebase client setup
 import { queryClient, trpc, trpcClient } from "../lib/trpc"; // Your tRPC setup
 import { signInWithEmail, signUpWithEmail } from "./Auth"; // Your NEW Auth functions
@@ -19,6 +19,7 @@ import { ThemedTextInput } from "./ThemedTextInput"; // Your themed input compon
 import { ThemedView } from "./ThemedView";
 
 export default function AuthPage() {
+  const theme = useColorScheme() ?? "light";
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -76,6 +77,7 @@ export default function AuthPage() {
     setAuthLoading(true);
     try {
       await signUpWithEmail(email, password);
+      router.replace("/(tabs)");
       // User will be set by onAuthStateChanged
     } catch (err: any) {
       Alert.alert("Sign Up Error", err.message);
@@ -111,44 +113,46 @@ export default function AuthPage() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <ScrollView>
-          <ThemedView className="flex-1 items-center justify-center h-screen p-4">
-            <ThemedView className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
-              <ThemedTextInput
-                placeholder="Email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-                className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
-              />
-              <ThemedTextInput
-                placeholder="Password"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
-              />
-              {authLoading ? (
-                <ActivityIndicator size="small" color="#007bff" />
-              ) : (
-                <View className="space-y-3">
-                  <Button
-                    title="Sign Up"
-                    onPress={handleSignUp}
-                    color="#007bff"
-                  />
-                  <Button
-                    title="Sign In"
-                    onPress={handleSignIn}
-                    color="#28a745"
-                  />
-                </View>
-              )}
-            </ThemedView>
+        <ThemedView
+          style={{ backgroundColor: Colors[theme].highlight }}
+          className="flex-1 items-center justify-center h-screen p-4"
+        >
+          <ThemedView className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <ThemedTextInput
+              placeholder="Email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+              className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
+            />
+            <ThemedTextInput
+              placeholder="Password"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
+            />
+            {authLoading ? (
+              <ActivityIndicator size="small" color="#007bff" />
+            ) : (
+              <View className="space-y-3">
+                <Button
+                  title="Sign Up"
+                  onPress={handleSignUp}
+                  color="#007bff"
+                />
+                <Button
+                  title="Sign In"
+                  onPress={handleSignIn}
+                  color="#28a745"
+                />
+              </View>
+            )}
           </ThemedView>
+        </ThemedView>
 
-          {/* {currentUser && (
+        {/* {currentUser && (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Add New Fitness Log</Text>
                   <TextInput
@@ -185,7 +189,7 @@ export default function AuthPage() {
                   />
                 </View>
               )} */}
-          {/*
+        {/*
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Your Fitness Logs</Text>
                 {isLoading && <Text>Loading logs...</Text>}
@@ -220,7 +224,6 @@ export default function AuthPage() {
                   </View>
                 )}
               </View> */}
-        </ScrollView>
       </QueryClientProvider>
     </trpc.Provider>
   );

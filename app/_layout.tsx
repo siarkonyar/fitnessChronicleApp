@@ -5,59 +5,73 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { QueryClientProvider } from "@tanstack/react-query";
+import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import React from "react";
 import "react-native-reanimated";
-import { AuthProvider, useAuth } from "../context/AuthContext"; // Import AuthProvider
+import { AuthProvider, useAuth } from "../context/AuthContext";
 import "../global.css";
 import { queryClient, trpc, trpcClient } from "../lib/trpc";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
   if (!loaded) {
-    // Show a loading screen while fonts are loading
     return null;
   }
 
   return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            <AppStack />
-            <StatusBar style="auto" />
-          </QueryClientProvider>
-        </trpc.Provider>
-      </ThemeProvider>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <AppSetup />
+        </QueryClientProvider>
+      </trpc.Provider>
     </AuthProvider>
   );
 }
 
-function AppStack() {
+function AppSetup() {
   const { isAuthenticated, authLoading } = useAuth();
+  const colorScheme = useColorScheme();
 
   if (authLoading) {
-    // Show a loading screen while auth state is loading
     return null;
   }
 
   return (
-    <Stack>
-      {isAuthenticated ? (
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      ) : (
-        <Stack.Screen
-          name="index"
-          options={{ headerShown: false, title: "Home" }}
-        />
-      )}
-      <Stack.Screen name="+not-found" />
-    </Stack>
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <Stack screenOptions={SCREEN_OPTIONS}>
+        <Stack.Screen name="index" options={INDEX_OPTIONS} />
+        <Stack.Screen name="signin" options={SIGNIN_OPTIONS} />
+        <Stack.Protected guard={isAuthenticated}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack.Protected>
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </ThemeProvider>
   );
 }
+
+const SCREEN_OPTIONS = {
+  animation: "none",
+  headerTransparent: true,
+  headerStyle: { backgroundColor: "transparent" },
+  contentStyle: { backgroundColor: "transparent" },
+} as const;
+
+const INDEX_OPTIONS = {
+  title: "",
+  headerLargeTitle: false,
+  HeaderTitle: false,
+  headerBackButtonDisplayMode: "generic",
+} as const;
+const SIGNIN_OPTIONS = {
+  title: "",
+  headerLargeTitle: false,
+  HeaderTitle: false,
+  headerBackButtonDisplayMode: "generic",
+} as const;

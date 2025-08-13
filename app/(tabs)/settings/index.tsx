@@ -2,7 +2,6 @@ import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import UserEmojiList from "@/components/lists/UserEmojiList";
 import { ThemedText } from "@/components/ThemedText";
-import { router } from "expo-router";
 import React from "react";
 import { Alert, ScrollView } from "react-native";
 import { auth } from "../../../lib/firebase";
@@ -11,8 +10,6 @@ export default function Settings() {
   const handleSignout = async () => {
     try {
       await auth.signOut();
-      // TODO: THIS STILL DOES NOT WORK
-      router.replace("/");
     } catch (error) {
       console.error("Sign out error:", error);
       Alert.alert("Error", "Failed to sign out. Please try again.");
