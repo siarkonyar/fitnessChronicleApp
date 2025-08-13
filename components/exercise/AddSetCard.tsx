@@ -5,6 +5,7 @@ import { Picker } from "@react-native-picker/picker";
 import React, { useEffect, useState } from "react";
 import { Pressable, Text } from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
+import Card from "../Card";
 import { ThemedText } from "../ThemedText";
 
 type Props = {
@@ -65,101 +66,103 @@ export const AddSetCard: React.FC<Props> = ({
   }, [value]);
   return (
     <Animated.View exiting={SlideOutRight.duration(200)}>
-      <ThemedView className="flex-row items-center justify-between w-full shadow-md shadow-gray-900 p-3 rounded-lg mb-3">
-        <ThemedView className="flex-row items-center">
-          <Text className="text-sm text-gray-500 mr-5">{index + 1}.</Text>
-          <ThemedView>
-            <ThemedView className="flex-row items-center">
-              <Text className="text-xl text-gray-500 w-[50px]">Reps:</Text>
-              <ThemedView className="ml-2 justify-center overflow-hidden">
-                <Picker
-                  selectedValue={reps}
-                  onValueChange={(val) => onRepsChange(id, val)}
-                  mode="dropdown"
-                  style={{
-                    width: KG_INPUT_TOTAL_WIDTH,
-                    height: 56,
-                    color: "#111",
-                    backgroundColor: "transparent",
-                  }}
-                  itemStyle={{
-                    fontSize: 20,
-                    height: 56,
-                  }}
-                >
-                  {[
-                    "1",
-                    "2",
-                    "3-4",
-                    "5-6",
-                    "7-8",
-                    "9-10",
-                    "10-12",
-                    "12-15",
-                    "15-20",
-                    "20+",
-                  ].map((range) => (
-                    <Picker.Item label={range} value={range} key={range} />
-                  ))}
-                </Picker>
+      <Card>
+        <ThemedView className="flex-row items-center justify-between w-full rounded-lg mb-3">
+          <ThemedView className="flex-row items-center">
+            <Text className="text-sm text-gray-500 mr-5">{index + 1}.</Text>
+            <ThemedView>
+              <ThemedView className="flex-row items-center">
+                <Text className="text-xl text-gray-500 w-[50px]">Reps:</Text>
+                <ThemedView className="ml-2 justify-center overflow-hidden">
+                  <Picker
+                    selectedValue={reps}
+                    onValueChange={(val) => onRepsChange(id, val)}
+                    mode="dropdown"
+                    style={{
+                      width: KG_INPUT_TOTAL_WIDTH,
+                      height: 56,
+                      color: "#111",
+                      backgroundColor: "transparent",
+                    }}
+                    itemStyle={{
+                      fontSize: 20,
+                      height: 56,
+                    }}
+                  >
+                    {[
+                      "1",
+                      "2",
+                      "3-4",
+                      "5-6",
+                      "7-8",
+                      "9-10",
+                      "10-12",
+                      "12-15",
+                      "15-20",
+                      "20+",
+                    ].map((range) => (
+                      <Picker.Item label={range} value={range} key={range} />
+                    ))}
+                  </Picker>
+                </ThemedView>
               </ThemedView>
-            </ThemedView>
-            <ThemedView className="flex-row items-center">
-              <Text className="text-xl text-gray-500 w-[50px]">Kg:</Text>
-              <ThemedView className="ml-2 justify-center flex-row items-center w-[160px]">
-                <ThemedTextInput
-                  value={intPart}
-                  onChangeText={handleIntChange}
-                  keyboardType="number-pad"
-                  maxLength={3}
-                  onFocus={() => {
-                    setIntPart("");
-                  }}
-                  onBlur={() => {
-                    if (intPart.length === 0 && decPart.length === 0) {
-                      onValueChange(id, "0");
-                    } else if (intPart.length === 0 && decPart.length > 0) {
-                      onValueChange(id, `0.${decPart}`);
-                    } else if (intPart.length > 0) {
-                      onValueChange(
-                        id,
-                        `${intPart}${decPart ? `.${decPart}` : ""}`
-                      );
-                    }
-                  }}
-                  className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-[72px] text-center"
-                />
-                <ThemedText className="text-2xl mx-2">.</ThemedText>
-                <ThemedTextInput
-                  value={decPart}
-                  onChangeText={handleDecChange}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  onFocus={() => {
-                    setDecPart("");
-                    onValueChange(id, intPart.length > 0 ? intPart : "0");
-                  }}
-                  className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-[56px] text-center"
-                />
+              <ThemedView className="flex-row items-center">
+                <Text className="text-xl text-gray-500 w-[50px]">Kg:</Text>
+                <ThemedView className="ml-2 justify-center flex-row items-center w-[160px]">
+                  <ThemedTextInput
+                    value={intPart}
+                    onChangeText={handleIntChange}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                    onFocus={() => {
+                      setIntPart("");
+                    }}
+                    onBlur={() => {
+                      if (intPart.length === 0 && decPart.length === 0) {
+                        onValueChange(id, "0");
+                      } else if (intPart.length === 0 && decPart.length > 0) {
+                        onValueChange(id, `0.${decPart}`);
+                      } else if (intPart.length > 0) {
+                        onValueChange(
+                          id,
+                          `${intPart}${decPart ? `.${decPart}` : ""}`
+                        );
+                      }
+                    }}
+                    className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-[72px] text-center"
+                  />
+                  <ThemedText className="text-2xl mx-2">.</ThemedText>
+                  <ThemedTextInput
+                    value={decPart}
+                    onChangeText={handleDecChange}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    onFocus={() => {
+                      setDecPart("");
+                      onValueChange(id, intPart.length > 0 ? intPart : "0");
+                    }}
+                    className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-[56px] text-center"
+                  />
+                </ThemedView>
               </ThemedView>
             </ThemedView>
           </ThemedView>
+          <ThemedView className="flex-row items-center">
+            <Pressable
+              onPress={() => onCopy(id)}
+              className="bg-blue-600/70 p-2 rounded-full ml-2 active:opacity-100"
+            >
+              <Feather name="copy" size={20} color="#F2F2F7" />
+            </Pressable>
+            <Pressable
+              onPress={() => onRemove(id)}
+              className="bg-red-500/90 p-2 rounded-full ml-2 active:opacity-100"
+            >
+              <Ionicons name="close" size={20} color="#F2F2F7" />
+            </Pressable>
+          </ThemedView>
         </ThemedView>
-        <ThemedView className="flex-row items-center">
-          <Pressable
-            onPress={() => onCopy(id)}
-            className="bg-blue-600/70 p-2 rounded-full ml-2 active:opacity-100"
-          >
-            <Feather name="copy" size={20} color="#F2F2F7" />
-          </Pressable>
-          <Pressable
-            onPress={() => onRemove(id)}
-            className="bg-red-500/90 p-2 rounded-full ml-2 active:opacity-100"
-          >
-            <Ionicons name="close" size={20} color="#F2F2F7" />
-          </Pressable>
-        </ThemedView>
-      </ThemedView>
+      </Card>
     </Animated.View>
   );
 };

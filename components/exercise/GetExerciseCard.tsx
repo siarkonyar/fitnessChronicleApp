@@ -2,6 +2,7 @@ import { ExerciseLogSchema } from "@/types/types"; // path doğruysa sıkıntı 
 import React from "react";
 import { Text, TouchableOpacity } from "react-native";
 import { z } from "zod";
+import Card from "../Card";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 
@@ -18,7 +19,7 @@ export default function GetExerciseCard({
 }: GetExerciseCardProps) {
   return (
     <TouchableOpacity>
-      <ThemedView className="shadow-md shadow-gray-900 p-3 rounded-lg mb-3">
+      <Card className="shadow-md shadow-gray-900 p-3 rounded-lg mb-3">
         <ThemedView className="flex-row items-center justify-between w-full p-3 rounded-lg">
           <ThemedView className="flex-row items-center flex-1 pr-4">
             <Text className="text-sm text-gray-500 mr-5">{index! + 1}.</Text>
@@ -39,7 +40,7 @@ export default function GetExerciseCard({
         {exercise.notes && exercise.notes.trim() ? (
           <ThemedText>{exercise.notes}</ThemedText>
         ) : null}
-      </ThemedView>
+      </Card>
     </TouchableOpacity>
   );
 }

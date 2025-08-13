@@ -2,7 +2,13 @@ import { ThemedText } from "@/components/ThemedText";
 import { trpc } from "@/lib/trpc";
 import { EmojiSchema, EmojiWithIdSchema } from "@/types/types";
 import React from "react";
-import { Modal, Text, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Text,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
@@ -22,6 +28,8 @@ export default function DateEmojiAssignment({
 }: {
   selectedDate: string;
 }) {
+  const theme = useColorScheme() ?? "light";
+
   type Emoji = z.infer<typeof EmojiSchema>;
   type EmojiWithID = z.infer<typeof EmojiWithIdSchema>;
 
@@ -32,21 +40,25 @@ export default function DateEmojiAssignment({
     isLoading: boolean;
   };
   const emojiId = data?.emojiId;
-  const { data: emoji } = trpc.emoji.getEmojiById.useQuery(
-    { id: emojiId ?? "" },
-    { enabled: !!emojiId }
-  ) as {
-    data: Emoji | undefined;
-  };
+  const { data: emoji, isLoading: emojisLoading } =
+    trpc.emoji.getEmojiById.useQuery(
+      { id: emojiId ?? "" },
+      { enabled: !!emojiId }
+    ) as {
+      data: Emoji | undefined;
+      isLoading: boolean;
+    };
 
   const asignEmojiToDayMutation = trpc.emoji.asignEmojiToDay.useMutation();
   const deleteAssignedEmojiMutation = trpc.emoji.deleteAssignment.useMutation();
   const utils = trpc.useUtils();
   const { data: emojisRaw } = trpc.emoji.getAllEmojis.useQuery();
   const [isEmojiSelectionOpen, setIsEmojiSelectionOpen] = React.useState(false);
+  const [isAssigningEmoji, setIsAssigningEmoji] = React.useState(false);
 
   async function handleAsignEmojiToDay(emojiId: string) {
     try {
+      setIsAssigningEmoji(true);
       await asignEmojiToDayMutation.mutateAsync({
         date: selectedDate,
         emojiId: emojiId,
@@ -59,6 +71,7 @@ export default function DateEmojiAssignment({
       await utils.emoji.getAllEmojisFromMonth.invalidate({
         date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
       });
+      setIsAssigningEmoji(false);
       setIsEmojiSelectionOpen(false);
     } catch (error) {
       console.error("Failed to assign emoji to day:", error);
@@ -69,7 +82,7 @@ export default function DateEmojiAssignment({
     ? (emojisRaw as EmojiWithID[])
     : [];
 
-  if (isLoading) {
+  if (isLoading || emojisLoading) {
     return (
       <View className="flex-1 items-center justify-center py-8">
         <ThemedText className="text-lg text-center opacity-70">
