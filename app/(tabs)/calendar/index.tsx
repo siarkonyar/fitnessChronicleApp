@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { ExerciseLogSchema } from "@/types/types";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -11,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
 export default function CalendarScreen() {
@@ -25,16 +27,36 @@ export default function CalendarScreen() {
 
   type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
 
-  const { data: logs } = trpc.fitness.getExerciseLogsByMonth.useQuery({
-    month: visibleMonth,
-  }) as {
-    data: { logs: ExerciseLog[]; uniqueDates: string[] };
-  };
-  const { data } = trpc.emoji.getAllEmojisFromMonth.useQuery({
-    date: visibleMonth,
-  }) as {
-    data: { date: string; emoji: string }[] | undefined;
-  };
+  const { data: logs, isLoading: logsLoading } =
+    trpc.fitness.getExerciseLogsByMonth.useQuery({
+      month: visibleMonth,
+    }) as {
+      data: { logs: ExerciseLog[]; uniqueDates: string[] };
+      isLoading: boolean;
+    };
+
+  const { data: emojis, isLoading: emojisLoading } =
+    trpc.emoji.getAllEmojisFromMonth.useQuery({
+      date: visibleMonth,
+    }) as {
+      data: { date: string; emoji: string }[] | undefined;
+      isLoading: boolean;
+    };
+
+  if (logsLoading || emojisLoading) {
+    return (
+      <SafeAreaView
+        edges={["top"]}
+        className="flex-1 items-center justify-center"
+      >
+        <ActivityIndicator
+          size="large"
+          color={Colors[theme].highlight}
+          className="mb-4"
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <>
@@ -43,7 +65,7 @@ export default function CalendarScreen() {
           <Calendar
             key={theme}
             // Initially visible month
-            current={today}
+            current={visibleMonth}
             // Handler which gets executed on day press
             /*  onDayPress={(day) => {
               setSelectedDate(day.dateString);
@@ -54,7 +76,7 @@ export default function CalendarScreen() {
             }}
             dayComponent={({ date, state }) => {
               if (!date) return null;
-              const emoji = data?.find(
+              const emoji = emojis?.find(
                 (log) => log.date === date.dateString
               )?.emoji;
               const isMarked = logs?.uniqueDates.includes(date.dateString);

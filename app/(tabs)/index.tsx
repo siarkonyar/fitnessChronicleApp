@@ -7,7 +7,12 @@ import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
 import { ExerciseLogSchema } from "@/types/types"; // Adjust the import path as necessary
 import { router } from "expo-router";
 import React from "react";
-import { ScrollView, View, useColorScheme } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  View,
+  useColorScheme,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -35,7 +40,11 @@ export default function HomeScreen() {
         edges={["top"]}
         className="flex-1 items-center justify-center"
       >
-        <ThemedText className="text-lg">Loading...</ThemedText>
+        <ActivityIndicator
+          size="large"
+          color={Colors[theme].highlight}
+          className="mb-4"
+        />
       </SafeAreaView>
     );
   }
@@ -74,12 +83,20 @@ export default function HomeScreen() {
           </Button>
         </ScrollView>
       ) : (
-        <View className="flex-1 items-center justify-center px-4">
-          <ThemedText className="text-lg text-center">
-            Seems like you haven&apos;t started working out yet. It&apos;s the
-            perfect time to start your first exercise! 🏋️
-          </ThemedText>
-          <Button onPress={handleNavigateToExercise}>Log Exercise</Button>
+        <View className="flex-1 justify-center px-6">
+          <View className="items-center mb-6">
+            <ThemedText className="text-xl font-semibold text-center mb-2">
+              🏋️ Ready to Get Moving?
+            </ThemedText>
+            <ThemedText className="text-base text-center text-gray-600 leading-relaxed">
+              Seems like you haven&apos;t started working out yet. It&apos;s the
+              perfect time to start your first exercise!
+            </ThemedText>
+          </View>
+
+          <View className="items-center">
+            <Button onPress={handleNavigateToExercise}>Log Exercise</Button>
+          </View>
         </View>
       )}
     </>

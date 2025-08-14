@@ -49,6 +49,10 @@ function AppSetup() {
         <Stack.Screen name="signin" options={SIGNIN_OPTIONS} />
         <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="(screens)/logExercise"
+            options={{ headerShown: false }}
+          />
         </Stack.Protected>
         <Stack.Screen name="+not-found" />
       </Stack>
