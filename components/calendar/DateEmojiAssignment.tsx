@@ -75,9 +75,6 @@ export default function DateEmojiAssignment({
         date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
       });
 
-      // Add a small delay to ensure queries have time to refetch
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
       setIsAssigningEmoji(false);
       setIsEmojiSelectionOpen(false);
     } catch (error) {
@@ -99,9 +96,6 @@ export default function DateEmojiAssignment({
       await utils.emoji.getAllEmojisFromMonth.invalidate({
         date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
       });
-
-      // Add a small delay to ensure queries have time to refetch
-      await new Promise((resolve) => setTimeout(resolve, 300));
 
       setIsAssigningEmoji(false);
       setIsEmojiSelectionOpen(false);
