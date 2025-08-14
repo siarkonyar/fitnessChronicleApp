@@ -123,7 +123,7 @@ export default function UserEmojiList() {
           style={{
             paddingTop: insets.top,
           }}
-          className="flex-1 items-center px-4 bg-[#FF4500]/20 backdrop-blur-sm"
+          className="flex-1 items-center px-4 bg-black/90 backdrop-blur-sm"
         >
           <Card className="w-11/12 max-w-md mx-4">
             <View className="p-6">

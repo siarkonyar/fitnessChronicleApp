@@ -1,8 +1,10 @@
 import { ThemedText } from "@/components/ThemedText";
+import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc";
 import { EmojiSchema, EmojiWithIdSchema } from "@/types/types";
 import React from "react";
 import {
+  ActivityIndicator,
   Modal,
   Text,
   TouchableOpacity,
@@ -56,6 +58,7 @@ export default function DateEmojiAssignment({
   const [isEmojiSelectionOpen, setIsEmojiSelectionOpen] = React.useState(false);
   const [isAssigningEmoji, setIsAssigningEmoji] = React.useState(false);
 
+  //TODO: after clicking on an emoji it shows the loading screen but right after that for a split second it shows the card again. it happens so fast but it is still annoying to see
   async function handleAsignEmojiToDay(emojiId: string) {
     try {
       setIsAssigningEmoji(true);
@@ -71,10 +74,40 @@ export default function DateEmojiAssignment({
       await utils.emoji.getAllEmojisFromMonth.invalidate({
         date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
       });
+
+      // Add a small delay to ensure queries have time to refetch
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       setIsAssigningEmoji(false);
       setIsEmojiSelectionOpen(false);
     } catch (error) {
       console.error("Failed to assign emoji to day:", error);
+      setIsAssigningEmoji(false);
+    }
+  }
+  async function handleDeleteAssignedEmoji(date: string) {
+    try {
+      setIsAssigningEmoji(true);
+      await deleteAssignedEmojiMutation.mutateAsync({
+        date: selectedDate,
+      });
+      // Invalidate relevant queries to refresh the data
+      await utils.emoji.getEmojiAsignmentByDate.invalidate({
+        date: selectedDate,
+      });
+      // Also invalidate the calendar query to refresh emoji display
+      await utils.emoji.getAllEmojisFromMonth.invalidate({
+        date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
+      });
+
+      // Add a small delay to ensure queries have time to refetch
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      setIsAssigningEmoji(false);
+      setIsEmojiSelectionOpen(false);
+    } catch (error) {
+      console.error("Failed to delete emoji assignment:", error);
+      setIsAssigningEmoji(false);
     }
   }
 
@@ -123,72 +156,62 @@ export default function DateEmojiAssignment({
         animationType="fade"
         onRequestClose={() => setIsEmojiSelectionOpen(false)}
       >
-        <View className="flex-1 items-center justify-center px-4 bg-[#FF4500]/20 backdrop-blur-sm">
-          <Card className="w-11/12 max-w-md mx-4">
-            <View className="p-6">
-              <ThemedText className="text-2xl font-bold mb-2 text-center">
-                Choose What You Hit!
-              </ThemedText>
-              <ThemedText className="text-sm opacity-70 text-center mb-6">
-                {selectedDate}
-              </ThemedText>
+        <View className="flex-1 items-center justify-center px-4 bg-black/90 backdrop-blur-sm">
+          {isAssigningEmoji ? (
+            <ActivityIndicator
+              size="large"
+              color={Colors[theme].highlight}
+              className="mb-4"
+            />
+          ) : (
+            <Card className="w-11/12 max-w-md mx-4">
+              <View className="p-6">
+                <ThemedText className="text-2xl font-bold mb-2 text-center">
+                  Choose What You Hit!
+                </ThemedText>
+                <ThemedText className="text-sm opacity-70 text-center mb-6">
+                  {selectedDate}
+                </ThemedText>
 
-              {emojis.length > 0 ? (
-                <View className="flex-col gap-3 mb-6">
-                  {emojis.map((item, index) => (
-                    <EmojiCard
-                      emoji={item}
-                      index={index}
-                      key={index}
-                      onPress={handleAsignEmojiToDay}
-                    />
-                  ))}
-                  {data && (
-                    <Button
-                      type="danger"
-                      onPress={async () => {
-                        try {
-                          await deleteAssignedEmojiMutation.mutateAsync({
-                            date: selectedDate,
-                          });
-                          // Invalidate relevant queries to refresh the data
-                          await utils.emoji.getEmojiAsignmentByDate.invalidate({
-                            date: selectedDate,
-                          });
-                          // Also invalidate the calendar query to refresh emoji display
-                          await utils.emoji.getAllEmojisFromMonth.invalidate({
-                            date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
-                          });
-                          setIsEmojiSelectionOpen(false);
-                        } catch (error) {
-                          console.error(
-                            "Failed to delete emoji assignment:",
-                            error
-                          );
-                        }
-                      }}
-                    >
-                      Remove Emoji Assignment
-                    </Button>
-                  )}
-                </View>
-              ) : (
-                <View className="items-center py-8">
-                  <Text className="text-4xl mb-3">😔</Text>
-                  <ThemedText className="text-center opacity-70 mb-2">
-                    No emojis available
-                  </ThemedText>
-                  <ThemedText className="text-sm text-center opacity-50">
-                    Please add some emojis first
-                  </ThemedText>
-                </View>
-              )}
+                {emojis.length > 0 ? (
+                  <View className="flex-col gap-3 mb-6">
+                    {emojis.map((item, index) => (
+                      <EmojiCard
+                        emoji={item}
+                        index={index}
+                        key={index}
+                        onPress={handleAsignEmojiToDay}
+                      />
+                    ))}
+                    {data && (
+                      <Button
+                        type="danger"
+                        onPress={async () => {
+                          handleDeleteAssignedEmoji(selectedDate);
+                        }}
+                      >
+                        Remove Emoji Assignment
+                      </Button>
+                    )}
+                  </View>
+                ) : (
+                  <View className="items-center py-8">
+                    <Text className="text-4xl mb-3">😔</Text>
+                    <ThemedText className="text-center opacity-70 mb-2">
+                      No emojis available
+                    </ThemedText>
+                    <ThemedText className="text-sm text-center opacity-50">
+                      Please add some emojis first
+                    </ThemedText>
+                  </View>
+                )}
 
-              <Button onPress={() => setIsEmojiSelectionOpen(false)}>
-                Cancel
-              </Button>
-            </View>
-          </Card>
+                <Button onPress={() => setIsEmojiSelectionOpen(false)}>
+                  Cancel
+                </Button>
+              </View>
+            </Card>
+          )}
         </View>
       </Modal>
     </>

@@ -76,6 +76,6 @@ If you’re looking for a lightweight, reliable workout companion that respects 
 
 npx expo prebuild --clean
 
-npx expo run:ios --configuration Release --device "My iPhone"
+npx expo run:ios --configuration Release --device
 
 
