@@ -108,9 +108,27 @@ export default function ExerciseLogByDate({
         </ThemedText>
         {logs && logs.length > 0 ? (
           <ThemedView className="w-full p-4">
-            {logs?.map((log, index) => (
-              <GetExerciseCard key={index} exercise={log} index={index} />
-            ))}
+            {[...logs]
+              .sort((a, b) => {
+                // Access the createdAt object (you might still need 'as any' here if your frontend types don't match)
+                const createdAtA = (a as any).createdAt;
+                const createdAtB = (b as any).createdAt;
+
+                // Convert each Firestore Timestamp object into a single comparable millisecond value
+                // (seconds * 1000 for milliseconds + nanoseconds / 1,000,000 for milliseconds)
+                const timeValueA =
+                  createdAtA._seconds * 1000 +
+                  createdAtA._nanoseconds / 1_000_000;
+                const timeValueB =
+                  createdAtB._seconds * 1000 +
+                  createdAtB._nanoseconds / 1_000_000;
+
+                // Subtracting the values directly sorts them from oldest to newest
+                return timeValueA - timeValueB;
+              })
+              .map((log, index) => (
+                <GetExerciseCard key={index} exercise={log} index={index} />
+              ))}
           </ThemedView>
         ) : (
           <>{emptyDay}</>

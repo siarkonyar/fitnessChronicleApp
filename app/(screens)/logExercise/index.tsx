@@ -25,7 +25,7 @@ export default function Index() {
   const prevLengthRef = useRef(sets.length);
 
   const addSet = () => {
-    const newSet = { id: Date.now(), reps: "10-12", value: "0" };
+    const newSet = { id: Date.now(), reps: "1-2", value: "0" };
     setSets((prev) => [...prev, newSet]);
   };
 

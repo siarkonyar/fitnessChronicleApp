@@ -4,7 +4,7 @@ import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
-import { ExerciseLogSchema } from "@/types/types"; // Adjust the import path as necessary
+import { ExerciseLogWithIdSchema } from "@/types/types"; // Adjust the import path as necessary
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -22,7 +22,7 @@ import { z } from "zod";
 export default function HomeScreen() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
-  type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
+  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
   const { data: logs, isLoading } = trpc.fitness.getExerciseLogByDate.useQuery({
     date: new Date().toLocaleDateString("en-CA"),
   }) as {
@@ -75,9 +75,31 @@ export default function HomeScreen() {
           <ThemedText type="subtitle" className="mb-4 text-center">
             Todays Exercise Log
           </ThemedText>
-          {logs.map((log, index) => (
-            <GetExerciseCard key={index} exercise={log} index={index} />
-          ))}
+          {[...logs]
+            .sort((a, b) => {
+              // Access the createdAt object (you might still need 'as any' here if your frontend types don't match)
+              const createdAtA = (a as any).createdAt;
+              const createdAtB = (b as any).createdAt;
+
+              // Convert each Firestore Timestamp object into a single comparable millisecond value
+              // (seconds * 1000 for milliseconds + nanoseconds / 1,000,000 for milliseconds)
+              const timeValueA =
+                createdAtA._seconds * 1000 +
+                createdAtA._nanoseconds / 1_000_000;
+              const timeValueB =
+                createdAtB._seconds * 1000 +
+                createdAtB._nanoseconds / 1_000_000;
+
+              // Subtracting the values directly sorts them from oldest to newest
+              return timeValueA - timeValueB;
+            })
+            .map(
+              (log, index) => (
+                console.log(log.createdAt),
+                (<GetExerciseCard key={index} exercise={log} index={index} />)
+              )
+            )}
+
           <Button onPress={handleNavigateToExercise} className="mt-4 mb-8">
             Log Exercise
           </Button>
