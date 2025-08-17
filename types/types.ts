@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Replicate Zod schema for FitnessLog from your server's src/trpc/routers/fitness.ts
 export const SetSchema = z.discriminatedUnion("setType", [
   z.object({
     setType: z.literal("kg"),
@@ -36,22 +35,20 @@ export const ExerciseLogSchema = z.object({
     caloriesBurned: z.number().int().optional(),
     notes: z.string().max(500).optional(),
     sets: z.array(SetSchema), // Array of exercise sets
-});
-
-export const DaySchema = z.object({
-    date: z.string().date(), // ISO 8601 date string
-    emojiId: z.string().min(1), // Reference to emoji ID instead of full object
-});
-
-// Zod schema for a fitness log entry with an ID (when reading from DB)
-export const ExerciseLogWithIdSchema = ExerciseLogSchema.extend({
-    id: z.string(),
+    createdAt: z.date().optional(),
 });
 
 export const EmojiSchema = z.object({
     emoji: z.string().min(1).max(10), // Limit emoji length
     description: z.string().min(1).max(100), // Add length constraints
-    dates: z.array(z.string().date()).default([]) // Make dates optional with default empty array
+    dates: z.array(z.string().date()).default([]), // Make dates optional with default empty array
+    createdAt: z.date().optional(),
+});
+
+export const DaySchema = z.object({
+    date: z.string().date(), // ISO 8601 date string
+    emojiId: z.string().min(1), // Reference to emoji ID instead of full object
+    createdAt: z.date().optional(),
 });
 
 // Zod schema for emoji assignments with an ID (when reading from DB)
@@ -61,5 +58,10 @@ export const EmojiWithIdSchema = EmojiSchema.extend({
 
 // Zod schema for day assignments with an ID (when reading from DB)
 export const DayWithIdSchema = DaySchema.extend({
+    id: z.string(),
+});
+
+// Zod schema for a fitness log entry with an ID (when reading from DB)
+export const ExerciseLogWithIdSchema = ExerciseLogSchema.extend({
     id: z.string(),
 });
