@@ -54,6 +54,14 @@ const dummyRouter = t.router({
         deleteAssignment: t.procedure
             .input(z.object({ date: z.string().date() })) // Validate input with Zod
             .mutation(() => { /* dummy implementation */ }),
+        getAllExerciseNames: t.procedure
+            .query(() => { /* dummy implementation */ }),
+        getLatestExerciseByName: t.procedure
+            .input(z.object({ name: z.string().min(1) }))
+            .query(() => { /* dummy implementation */ }),
+        deleteExerciseName: t.procedure
+            .input(z.object({ name: z.string().min(1) }))
+            .mutation(() => { /* dummy implementation */ }),
     }),
     emoji: t.router({ // Match the 'fitness' namespace from your server
         addEmoji: t.procedure
