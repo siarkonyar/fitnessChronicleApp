@@ -1,13 +1,16 @@
 import { Button } from "@/components/Button";
+import ExerciseNameInput from "@/components/exercise/ExerciseNameInput";
+import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { trpc } from "@/lib/trpc";
+import { ExerciseLogWithIdSchema } from "@/types/types";
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import { ScrollView, Text } from "react-native";
 import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
 export default function Index() {
@@ -76,7 +79,7 @@ export default function Index() {
 
       const payload = {
         date: new Date().toLocaleDateString("en-CA"),
-        activity: title.trim(),
+        activity: title.trim().toLowerCase(),
         sets: formattedSets,
       };
 
@@ -92,12 +95,46 @@ export default function Index() {
     }
   };
 
+  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
+  const {
+    data: previousExercise,
+    isLoading,
+    error,
+  } = trpc.fitness.getLatestExerciseByName.useQuery(
+    {
+      name: title.trim().toLowerCase(),
+    },
+    {
+      enabled: title.trim().length > 0,
+      retry: false,
+    }
+  ) as {
+    data: ExerciseLog | undefined;
+    isLoading: boolean;
+    error: any;
+  };
+
+  console.log("previousExercise:", previousExercise);
+  console.log("isLoading:", isLoading);
+  console.log("error:", error);
+
   return (
-    <ThemedView className="flex-1">
+    <ThemedView className="flex-1" style={{ paddingTop: 2 * insets.top }}>
+      <ThemedView className="p-4">
+        {titleError ? (
+          <>
+            <Text className="text-red-500 mb-2">
+              Please enter an exercise name
+            </Text>
+            <ExerciseNameInput title={title} setTitle={setTitle} />
+          </>
+        ) : (
+          <ExerciseNameInput title={title} setTitle={setTitle} />
+        )}
+      </ThemedView>
       <ScrollView
         ref={scrollRef}
         className="flex-1 p-4"
-        style={{ paddingTop: 2 * insets.top }}
         onContentSizeChange={() => {
           if (sets.length > prevLengthRef.current) {
             scrollRef.current?.scrollToEnd({ animated: true });
@@ -105,30 +142,6 @@ export default function Index() {
           prevLengthRef.current = sets.length;
         }}
       >
-        <ThemedView className="mb-8">
-          <ThemedText type="title" className="font-bold mb-4">
-            Exercise Name
-          </ThemedText>
-          {titleError ? (
-            <>
-              <Text className="text-red-500 mb-2">
-                Please enter an exercise name
-              </Text>
-              <ThemedTextInput
-                value={title}
-                onChangeText={setTitle}
-                className="bg-gray-200 dark:bg-gray-900 border border-red-500 p-3 rounded-lg w-full mb-4 text-3xl"
-              />
-            </>
-          ) : (
-            <ThemedTextInput
-              value={title}
-              onChangeText={setTitle}
-              className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg w-full mb-4 text-3xl"
-            />
-          )}
-        </ThemedView>
-
         <ThemedView className="w-full mb-8">
           {sets.map((set, index) => (
             <Animated.View
@@ -151,18 +164,43 @@ export default function Index() {
 
           <Animated.View
             layout={LinearTransition}
-            className="flex-row items-center justify-between mt-2 mb-8"
+            className="flex-row items-start justify-between mt-2"
           >
-            <Button onPress={addSet}>+ Enter Set</Button>
+            <Button onPress={addSet} className="mb-16">
+              + Enter Set
+            </Button>
           </Animated.View>
           <Animated.View
             layout={LinearTransition}
-            className="flex-1 items-center mt-2 mb-96"
+            className="items-center justify-between mt-2 mb-16"
           >
             <Button type="primary" onPress={logExercise}>
               🏋️ Log Exercise
             </Button>
           </Animated.View>
+          {title.trim().length > 0 && (
+            <Animated.View
+              layout={LinearTransition}
+              className="items-center justify-between mt-2 mb-16"
+            >
+              <ThemedText type="title" className="font-bold mb-8">
+                Previous Performance
+              </ThemedText>
+              {isLoading ? (
+                <ThemedText className="text-gray-500">Loading...</ThemedText>
+              ) : error ? (
+                <ThemedText className="text-gray-500">
+                  No previous exercise found
+                </ThemedText>
+              ) : previousExercise ? (
+                <GetExerciseCard exercise={previousExercise} index={0} />
+              ) : (
+                <ThemedText className="text-gray-500">
+                  No previous exercise found
+                </ThemedText>
+              )}
+            </Animated.View>
+          )}
         </ThemedView>
       </ScrollView>
     </ThemedView>
