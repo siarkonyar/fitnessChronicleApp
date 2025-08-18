@@ -93,12 +93,9 @@ export default function HomeScreen() {
               // Subtracting the values directly sorts them from oldest to newest
               return timeValueA - timeValueB;
             })
-            .map(
-              (log, index) => (
-                console.log(log.createdAt),
-                (<GetExerciseCard key={index} exercise={log} index={index} />)
-              )
-            )}
+            .map((log, index) => (
+              <GetExerciseCard key={index} exercise={log} index={index} />
+            ))}
 
           <Button onPress={handleNavigateToExercise} className="mt-4 mb-8">
             Log Exercise
