@@ -81,19 +81,29 @@ export default function CalendarScreen() {
               )?.emoji;
               const isMarked = logs?.uniqueDates.includes(date.dateString);
               const isToday = date.dateString === today;
+              const isSelectedDay = date.dateString === selectedDate;
 
               return (
                 <TouchableOpacity
                   onPress={() => setSelectedDate(date.dateString)}
-                  className="items-center justify-center h-10 w-10"
+                  className="items-center justify-center h-11 w-11"
                   style={{
-                    backgroundColor: isMarked
-                      ? Colors[theme].calendarMarker
-                      : "transparent",
                     borderRadius: 8,
+                    borderWidth: isSelectedDay ? 4 : 0,
+                    borderColor: isSelectedDay
+                      ? Colors[theme].separator
+                      : "transparent",
                   }}
                 >
-                  <View className="items-center justify-center">
+                  <View
+                    className="items-center justify-center h-9 w-9"
+                    style={{
+                      backgroundColor: isMarked
+                        ? Colors[theme].calendarMarker
+                        : "transparent",
+                      borderRadius: 6,
+                    }}
+                  >
                     <Text
                       style={{
                         color:
@@ -174,12 +184,6 @@ export default function CalendarScreen() {
                 textDayFontFamily: "monospace",
                 textMonthFontFamily: "monospace",
                 textDayHeaderFontFamily: "monospace",
-                "stylesheet.day.basic": {
-                  selected: {
-                    backgroundColor: "green",
-                    borderRadius: 8, // less than half = rounded square
-                  },
-                },
               } as any
             }
           />

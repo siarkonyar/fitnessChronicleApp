@@ -11,6 +11,30 @@ import { z } from "zod";
 import { Button } from "../Button";
 import DateEmojiAssignment from "./DateEmojiAssignment";
 
+// Helper function to format date as "20th of August"
+const formatDateAsString = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+
+  // Add ordinal suffix to day
+  const getOrdinalSuffix = (day: number): string => {
+    if (day > 3 && day < 21) return "th";
+    switch (day % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
+  };
+
+  return `${day}${getOrdinalSuffix(day)} of ${month}`;
+};
+
 export default function ExerciseLogByDate({
   selectedDate,
 }: {
@@ -29,7 +53,8 @@ export default function ExerciseLogByDate({
   let emptyDay = (
     <ThemedView className="flex-1 justify-center items-center pt-8">
       <ThemedText className="text-xl font-semibold text-center leading-relaxed">
-        No exercise logs found for {selectedDate}.{" "}
+        No exercise logs found for {"\n"}
+        {formatDateAsString(selectedDate)}.{" "}
       </ThemedText>
     </ThemedView>
   );
@@ -65,9 +90,9 @@ export default function ExerciseLogByDate({
         <ThemedView className="px-6 rounded-xl max-w-md mx-auto">
           <ThemedText className="text-xl font-semibold text-center leading-relaxed">
             Seems like it was a
-            <ThemedText className="font-bold">rest day</ThemedText>. {"\n"} The
+            <ThemedText className="font-bold"> rest day</ThemedText>. {"\n"} The
             perfect time to{" "}
-            <ThemedText className="font-bold">recharge</ThemedText>
+            <ThemedText className="font-bold">recharge </ThemedText>
             and get ready for your next workout!{" "}
             <ThemedText className="text-2xl">🛌💪</ThemedText>
           </ThemedText>
@@ -104,7 +129,8 @@ export default function ExerciseLogByDate({
       <ThemedView className="flex-1 justify-center items-center my-8">
         <DateEmojiAssignment selectedDate={selectedDate} />
         <ThemedText type="subtitle" className="my-8 text-center">
-          Exercise Log for {selectedDate}
+          Exercise Log for {"\n"}
+          {formatDateAsString(selectedDate)}
         </ThemedText>
         {logs && logs.length > 0 ? (
           <ThemedView className="w-full p-4">

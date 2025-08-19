@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 // These are utility types that make working with tRPC types easier
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'; // Needed for type inference
-import { DaySchema, EmojiSchema, ExerciseLogSchema } from './types';
+import { DaySchema, EmojiSchema, EmojiWithIdSchema, ExerciseLogSchema } from './types';
 
 export type ExerciseLog = z.infer<typeof ExerciseLogSchema>; // Useful client-side type
 
@@ -69,6 +69,9 @@ const dummyRouter = t.router({
             .mutation(() => { /* dummy implementation */ }),
         getAllEmojis: t.procedure
             .query(() => { /* dummy implementation */ }),
+        editEmoji: t.procedure
+            .input(EmojiWithIdSchema)
+            .mutation(() => { /* dummy implementation */ }),
         getAllEmojisFromMonth: t.procedure
             .input(z.object({
               date: z.string().regex(/^\d{4}-\d{2}$/, 'Date must be in YYYY-MM format')
