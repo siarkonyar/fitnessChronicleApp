@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { ExerciseNameListSchema } from "@/types/types";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import React, { useEffect, useState } from "react";
 import {
   Keyboard,
@@ -70,7 +71,7 @@ export default function ExerciseNameInput({
   }, [title, data]);
 
   const handleSuggestionPress = (suggestion: string) => {
-    setTitle(suggestion);
+    setTitle(suggestion.toUpperCase());
     setShowSuggestions(false);
     Keyboard.dismiss();
   };
@@ -123,6 +124,8 @@ export default function ExerciseNameInput({
         onBlur={handleInputBlur}
         className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg w-full mb-4 text-3xl"
         placeholder="Enter exercise name..."
+        autoCapitalize="characters"
+        style={{ textTransform: "uppercase" }} // 🔑 immediate uppercase display
       />
 
       {showSuggestions &&
@@ -152,11 +155,15 @@ export default function ExerciseNameInput({
                       }}
                       activeOpacity={0.7}
                     >
-                      <ThemedText className="text-lg">{suggestion}</ThemedText>
+                      <ThemedText className="text-lg">
+                        {suggestion.toUpperCase()}
+                      </ThemedText>
                       <TouchableOpacity
-                        onPress={() => handleSuggestionDeletion(suggestion)}
+                        onPress={() =>
+                          handleSuggestionDeletion(suggestion.toUpperCase())
+                        }
                       >
-                        <ThemedText>x</ThemedText>
+                        <MaterialIcons name="close" size={20} color="#666" />
                       </TouchableOpacity>
                     </TouchableOpacity>
                   ))}

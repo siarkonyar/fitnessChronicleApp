@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import React from "react";
 
+import MyIcon from "@/components/LogoIcon";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -24,9 +25,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <MyIcon size={32} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -43,7 +42,7 @@ export default function TabLayout() {
         options={{
           title: "",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="gear" color={color} />
+            <IconSymbol size={28} name="person.fill" color={color} />
           ),
         }}
       />
