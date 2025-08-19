@@ -22,7 +22,7 @@ export const Colors = {
     tabBackGround: '#FFFFFF',
     cardBackground: '#FFFFFF',
     inputBackground: '#EDEFF2',
-    separator: '#D0D5DD',
+    separator: '#FFC099',
     mutedText: '#7C8289',
     highlight: '#FF4500',
     success: '#22C55E',    // Tailwind green-500
@@ -44,7 +44,7 @@ export const Colors = {
     tabBackGround: '#121212',
     cardBackground: '#1A1A1A',
     inputBackground: '#2C2C2E',
-    separator: '#3A3A3C',
+    separator: '#6B2A10',
     mutedText: '#9BA1A6',
     highlight: '#FF4500',
     success: '#22C55E',
