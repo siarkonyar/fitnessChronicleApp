@@ -114,10 +114,6 @@ export default function Index() {
     error: any;
   };
 
-  console.log("previousExercise:", previousExercise);
-  console.log("isLoading:", isLoading);
-  console.log("error:", error);
-
   return (
     <ThemedView className="flex-1" style={{ paddingTop: 2 * insets.top }}>
       <ThemedView className="p-4">

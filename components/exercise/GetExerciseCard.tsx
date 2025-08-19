@@ -24,7 +24,7 @@ export default function GetExerciseCard({
           <ThemedView className="flex-row items-center flex-1 pr-4">
             <Text className="text-sm text-gray-500 mr-5">{index! + 1}.</Text>
             <ThemedText className="text-xl font-bold shrink">
-              {exercise.activity}
+              {exercise.activity.toUpperCase()}
             </ThemedText>
           </ThemedView>
 
