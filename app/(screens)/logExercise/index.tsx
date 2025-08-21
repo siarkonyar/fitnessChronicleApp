@@ -24,6 +24,8 @@ export default function Index() {
     { id: number; reps: string; value: string }[]
   >([]);
 
+  const [isLogging, setIsLogging] = useState(false);
+
   // Track previous length
   const prevLengthRef = useRef(sets.length);
 
@@ -71,6 +73,7 @@ export default function Index() {
     }
 
     try {
+      setIsLogging(true);
       const formattedSets = sets.map(({ value, reps }) => ({
         setType: "kg" as const,
         value: value || "",
@@ -90,6 +93,7 @@ export default function Index() {
 
       setTitle("");
       setSets([]);
+      setIsLogging(false);
     } catch (error) {
       console.error("Failed to log exercise:", error);
     }
@@ -170,8 +174,8 @@ export default function Index() {
             layout={LinearTransition}
             className="items-center justify-between mt-2 mb-16"
           >
-            <Button type="primary" onPress={logExercise}>
-              🏋️ Log Exercise
+            <Button type="primary" onPress={logExercise} disabled={isLogging}>
+              {isLogging ? "Logging Exercise..." : "🏋️ Log Exercise"}
             </Button>
           </Animated.View>
           {title.trim().length > 0 && (
