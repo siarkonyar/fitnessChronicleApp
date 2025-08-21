@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Modal,
   Text,
-  TouchableOpacity,
   useColorScheme,
   View,
 } from "react-native";
@@ -16,6 +15,7 @@ import { Button } from "../Button";
 import Card from "../Card";
 import { ThemedView } from "../ThemedView";
 import EmojiCard from "../cards/EmojiCard";
+import MutedCard from "../cards/MuteCard";
 
 // Represents an emoji assignment joined with its emoji data
 export type DateEmojiAssignmentWithEmoji = {
@@ -123,20 +123,19 @@ export default function DateEmojiAssignment({
     <>
       <ThemedView>
         {data && emoji ? (
-          <TouchableOpacity
-            className="rounded-2xl p-6 mb-2 shadow-sm border border-gray-200/50 dark:border-gray-700/50 active:scale-95 transition-transform"
-            onPress={() => setIsEmojiSelectionOpen(true)}
-          >
-            <View className="flex-col items-center justify-center space-x-3">
-              <Text className="text-4xl leading-11">{emoji.emoji}</Text>
-              <ThemedText className="text-lg font-medium text-center text-gray-700 dark:text-gray-200">
-                {emoji.description}
+          <MutedCard onPress={() => setIsEmojiSelectionOpen(true)}>
+            <View className="flex-col">
+              <View className="flex-col items-center justify-center space-x-3">
+                <Text className="text-4xl leading-11">{emoji.emoji}</Text>
+                <ThemedText className="text-lg font-medium text-center text-gray-700 dark:text-gray-200">
+                  {emoji.description}
+                </ThemedText>
+              </View>
+              <ThemedText className="text-xs text-center mt-2 opacity-60">
+                Tap to change
               </ThemedText>
             </View>
-            <ThemedText className="text-xs text-center mt-2 opacity-60">
-              Tap to change
-            </ThemedText>
-          </TouchableOpacity>
+          </MutedCard>
         ) : (
           <Button onPress={() => setIsEmojiSelectionOpen(true)}>
             Assign an Emoji to This Day

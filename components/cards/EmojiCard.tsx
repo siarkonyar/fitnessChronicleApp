@@ -11,6 +11,7 @@ import { Button } from "../Button";
 import Card from "../Card";
 import { ThemedText } from "../ThemedText";
 import { ThemedTextInput } from "../ThemedTextInput";
+import MutedCard from "./MuteCard";
 
 interface EmojiCardProps {
   index: number;
@@ -87,7 +88,7 @@ export default function EmojiCard({
 
   return (
     <>
-      <Pressable
+      <MutedCard
         key={emoji.id ?? `${emoji.emoji}-${index}`}
         onPress={() => {
           if (onPress && emoji.id) {
@@ -96,7 +97,6 @@ export default function EmojiCard({
             openEditor();
           }
         }}
-        className="flex-row items-center p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-xl active:scale-95 transition-transform shadow-sm"
       >
         <View className="bg-white dark:bg-gray-800 rounded-full p-2 mr-4 shadow-sm">
           <Text className="text-2xl leading-7">{emoji.emoji}</Text>
@@ -104,7 +104,7 @@ export default function EmojiCard({
         <ThemedText className="flex-1 text-base font-medium">
           {emoji.description}
         </ThemedText>
-      </Pressable>
+      </MutedCard>
 
       <Modal
         visible={isEditOpen}
