@@ -127,11 +127,15 @@ export default function ExerciseLogByDate({
   return (
     <>
       <ThemedView className="flex-1 justify-center items-center my-8">
+        <ThemedText type="title" className="mb-8 text-center">
+          {selectedDate === today ? "Today" : formatDateAsString(selectedDate)}
+        </ThemedText>
+
         <DateEmojiAssignment selectedDate={selectedDate} />
         <ThemedText type="subtitle" className="my-8 text-center">
-          Exercise Log for {"\n"}
-          {formatDateAsString(selectedDate)}
+          Exercise Log
         </ThemedText>
+
         {logs && logs.length > 0 ? (
           <ThemedView className="w-full p-4">
             {[...logs]
