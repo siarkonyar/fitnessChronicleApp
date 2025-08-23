@@ -9,24 +9,19 @@ import MutedCard from "./MuteCard";
 interface LabelCardProps {
   index: number;
   label: z.infer<typeof LabelWithIdSchema>;
-  /* editable?: boolean;
-  onPress?: (labelId: string) => void; */
+  onPress?: (labelId: string) => void;
 }
 
-export default function LabelCard({
-  index,
-  label,
-  /* editable,
-  onPress, */
-}: LabelCardProps) {
+export default function LabelCard({ index, label, onPress }: LabelCardProps) {
   function handlePress() {
-    /* if (onPress && label.id) {
+    if (onPress && label.id) {
       onPress(label.id);
-    } */
-    router.push({
-      pathname: "/(screens)/editLabel" as any,
-      params: { id: label.id },
-    });
+    } else {
+      router.push({
+        pathname: "/(screens)/editLabel" as any,
+        params: { id: label.id },
+      });
+    }
   }
 
   return (
