@@ -1,6 +1,6 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
-import UserEmojiList from "@/components/lists/UserEmojiList";
+import UserLabelList from "@/components/lists/UserLabelList";
 import { ThemedText } from "@/components/ThemedText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React from "react";
@@ -27,7 +27,7 @@ export default function Settings() {
             Sign Out
           </Button>
         </Card>
-        <UserEmojiList />
+        <UserLabelList />
       </ScrollView>
     </>
   );
