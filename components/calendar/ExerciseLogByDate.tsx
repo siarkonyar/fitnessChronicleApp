@@ -3,13 +3,13 @@ import { ThemedView } from "@/components/ThemedView";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc";
-import { ExerciseLogSchema } from "@/types/types";
+import { ExerciseLogWithIdSchema } from "@/types/types";
 import { router } from "expo-router";
 import React from "react";
 import { ActivityIndicator, useColorScheme } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
-import DateEmojiAssignment from "./DateEmojiAssignment";
+import DateLabelAssignment from "./DateLabelAssignment";
 
 // Helper function to format date as "20th of August"
 const formatDateAsString = (dateString: string): string => {
@@ -40,7 +40,7 @@ export default function ExerciseLogByDate({
 }: {
   selectedDate: string;
 }) {
-  type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
+  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
   const theme = useColorScheme() ?? "light";
 
   const { data: logs, isLoading } = trpc.fitness.getExerciseLogByDate.useQuery({
@@ -131,7 +131,7 @@ export default function ExerciseLogByDate({
           {selectedDate === today ? "Today" : formatDateAsString(selectedDate)}
         </ThemedText>
 
-        <DateEmojiAssignment selectedDate={selectedDate} />
+        <DateLabelAssignment selectedDate={selectedDate} />
         <ThemedText type="subtitle" className="my-8 text-center">
           Exercise Log
         </ThemedText>

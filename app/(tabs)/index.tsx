@@ -94,7 +94,12 @@ export default function HomeScreen() {
               return timeValueA - timeValueB;
             })
             .map((log, index) => (
-              <GetExerciseCard key={index} exercise={log} index={index} />
+              <GetExerciseCard
+                key={index}
+                exercise={log}
+                index={index}
+                deletable
+              />
             ))}
 
           <Button onPress={handleNavigateToExercise} className="mt-4 mb-8">

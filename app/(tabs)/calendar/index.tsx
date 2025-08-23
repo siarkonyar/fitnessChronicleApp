@@ -35,15 +35,15 @@ export default function CalendarScreen() {
       isLoading: boolean;
     };
 
-  const { data: emojis, isLoading: emojisLoading } =
-    trpc.emoji.getAllEmojisFromMonth.useQuery({
+  const { data: labels, isLoading: labelsLoading } =
+    trpc.label.getAllLabelsFromMonth.useQuery({
       date: visibleMonth,
     }) as {
-      data: { date: string; emoji: string }[] | undefined;
+      data: { date: string; label: string }[] | undefined;
       isLoading: boolean;
     };
 
-  if (logsLoading || emojisLoading) {
+  if (logsLoading || labelsLoading) {
     return (
       <SafeAreaView
         edges={["top"]}
@@ -76,9 +76,9 @@ export default function CalendarScreen() {
             }}
             dayComponent={({ date, state }) => {
               if (!date) return null;
-              const emoji = emojis?.find(
+              const label = labels?.find(
                 (log) => log.date === date.dateString
-              )?.emoji;
+              )?.label;
               const isMarked = logs?.uniqueDates.includes(date.dateString);
               const isToday = date.dateString === today;
               const isSelectedDay = date.dateString === selectedDate;
@@ -114,10 +114,10 @@ export default function CalendarScreen() {
                               : isToday
                                 ? Colors[theme].highlight
                                 : Colors[theme].text,
-                        fontSize: emoji ? 20 : 16,
+                        fontSize: label ? 20 : 16,
                       }}
                     >
-                      {emoji || date.day}
+                      {label || date.day}
                     </Text>
                     {isToday && (
                       <View

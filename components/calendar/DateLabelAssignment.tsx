@@ -1,7 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/lib/trpc";
-import { EmojiSchema, EmojiWithIdSchema } from "@/types/types";
+import { LabelSchema, LabelWithIdSchema } from "@/types/types";
 import React from "react";
 import {
   ActivityIndicator,
@@ -14,102 +14,102 @@ import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
 import { ThemedView } from "../ThemedView";
-import EmojiCard from "../cards/EmojiCard";
+import LabelCard from "../cards/LabelCard";
 import MutedCard from "../cards/MuteCard";
 
-// Represents an emoji assignment joined with its emoji data
-export type DateEmojiAssignmentWithEmoji = {
+// Represents an label assignment joined with its label data
+export type DateLabelAssignmentWithLabel = {
   id: string;
   date: string; // ISO string (e.g., 2025-08-12)
-  emojiId: string;
-  emoji: typeof EmojiSchema;
+  labelId: string;
+  label: typeof LabelSchema;
 };
 
-export default function DateEmojiAssignment({
+export default function DateLabelAssignment({
   selectedDate,
 }: {
   selectedDate: string;
 }) {
   const theme = useColorScheme() ?? "light";
 
-  type Emoji = z.infer<typeof EmojiSchema>;
-  type EmojiWithID = z.infer<typeof EmojiWithIdSchema>;
+  type Label = z.infer<typeof LabelSchema>;
+  type LabelWithID = z.infer<typeof LabelWithIdSchema>;
 
-  const { data, isLoading } = trpc.emoji.getEmojiAsignmentByDate.useQuery({
+  const { data, isLoading } = trpc.label.getLabelAsignmentByDate.useQuery({
     date: selectedDate,
   }) as {
-    data: DateEmojiAssignmentWithEmoji | undefined;
+    data: DateLabelAssignmentWithLabel | undefined;
     isLoading: boolean;
   };
-  const emojiId = data?.emojiId;
-  const { data: emoji, isLoading: emojisLoading } =
-    trpc.emoji.getEmojiById.useQuery(
-      { id: emojiId ?? "" },
-      { enabled: !!emojiId }
+  const labelId = data?.labelId;
+  const { data: label, isLoading: labelsLoading } =
+    trpc.label.getLabelById.useQuery(
+      { id: labelId ?? "" },
+      { enabled: !!labelId }
     ) as {
-      data: Emoji | undefined;
+      data: Label | undefined;
       isLoading: boolean;
     };
 
-  const asignEmojiToDayMutation = trpc.emoji.asignEmojiToDay.useMutation();
-  const deleteAssignedEmojiMutation = trpc.emoji.deleteAssignment.useMutation();
+  const asignLabelToDayMutation = trpc.label.asignLabelToDay.useMutation();
+  const deleteAssignedLabelMutation = trpc.label.deleteAssignment.useMutation();
   const utils = trpc.useUtils();
-  const { data: emojisRaw } = trpc.emoji.getAllEmojis.useQuery();
-  const [isEmojiSelectionOpen, setIsEmojiSelectionOpen] = React.useState(false);
-  const [isAssigningEmoji, setIsAssigningEmoji] = React.useState(false);
+  const { data: labelsRaw } = trpc.label.getAllLabels.useQuery();
+  const [isLabelSelectionOpen, setIsLabelSelectionOpen] = React.useState(false);
+  const [isAssigningLabel, setIsAssigningLabel] = React.useState(false);
 
-  //TODO: after clicking on an emoji it shows the loading screen but right after that for a split second it shows the card again. it happens so fast but it is still annoying to see
-  async function handleAsignEmojiToDay(emojiId: string) {
+  //TODO: after clicking on an label it shows the loading screen but right after that for a split second it shows the card again. it happens so fast but it is still annoying to see
+  async function handleAsignLabelToDay(labelId: string) {
     try {
-      setIsAssigningEmoji(true);
-      await asignEmojiToDayMutation.mutateAsync({
+      setIsAssigningLabel(true);
+      await asignLabelToDayMutation.mutateAsync({
         date: selectedDate,
-        emojiId: emojiId,
+        labelId: labelId,
       });
       // Invalidate relevant queries to refresh the data
-      await utils.emoji.getEmojiAsignmentByDate.invalidate({
+      await utils.label.getLabelAsignmentByDate.invalidate({
         date: selectedDate,
       });
-      // Also invalidate the calendar query to refresh emoji display
-      await utils.emoji.getAllEmojisFromMonth.invalidate({
+      // Also invalidate the calendar query to refresh label display
+      await utils.label.getAllLabelsFromMonth.invalidate({
         date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
       });
 
-      setIsAssigningEmoji(false);
-      setIsEmojiSelectionOpen(false);
+      setIsAssigningLabel(false);
+      setIsLabelSelectionOpen(false);
     } catch (error) {
-      console.error("Failed to assign emoji to day:", error);
-      setIsAssigningEmoji(false);
+      console.error("Failed to assign label to day:", error);
+      setIsAssigningLabel(false);
     }
   }
-  async function handleDeleteAssignedEmoji(date: string) {
+  async function handleDeleteAssignedLabel(date: string) {
     try {
-      setIsAssigningEmoji(true);
-      await deleteAssignedEmojiMutation.mutateAsync({
+      setIsAssigningLabel(true);
+      await deleteAssignedLabelMutation.mutateAsync({
         date: selectedDate,
       });
       // Invalidate relevant queries to refresh the data
-      await utils.emoji.getEmojiAsignmentByDate.invalidate({
+      await utils.label.getLabelAsignmentByDate.invalidate({
         date: selectedDate,
       });
-      // Also invalidate the calendar query to refresh emoji display
-      await utils.emoji.getAllEmojisFromMonth.invalidate({
+      // Also invalidate the calendar query to refresh label display
+      await utils.label.getAllLabelsFromMonth.invalidate({
         date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
       });
 
-      setIsAssigningEmoji(false);
-      setIsEmojiSelectionOpen(false);
+      setIsAssigningLabel(false);
+      setIsLabelSelectionOpen(false);
     } catch (error) {
-      console.error("Failed to delete emoji assignment:", error);
-      setIsAssigningEmoji(false);
+      console.error("Failed to delete label assignment:", error);
+      setIsAssigningLabel(false);
     }
   }
 
-  const emojis: EmojiWithID[] = Array.isArray(emojisRaw)
-    ? (emojisRaw as EmojiWithID[])
+  const labels: LabelWithID[] = Array.isArray(labelsRaw)
+    ? (labelsRaw as LabelWithID[])
     : [];
 
-  if (isLoading || emojisLoading) {
+  if (isLoading || labelsLoading) {
     return (
       <View className="flex-1 items-center justify-center py-8">
         <ThemedText className="text-lg text-center opacity-70">
@@ -122,13 +122,13 @@ export default function DateEmojiAssignment({
   return (
     <>
       <ThemedView>
-        {data && emoji ? (
-          <MutedCard onPress={() => setIsEmojiSelectionOpen(true)}>
+        {data && label ? (
+          <MutedCard onPress={() => setIsLabelSelectionOpen(true)}>
             <View className="flex-col">
               <View className="flex-col items-center justify-center space-x-3">
-                <Text className="text-4xl leading-11">{emoji.emoji}</Text>
+                <Text className="text-4xl leading-11">{label.label}</Text>
                 <ThemedText className="text-lg font-medium text-center text-gray-700 dark:text-gray-200">
-                  {emoji.description}
+                  {label.description}
                 </ThemedText>
               </View>
               <ThemedText className="text-xs text-center mt-2 opacity-60">
@@ -137,20 +137,20 @@ export default function DateEmojiAssignment({
             </View>
           </MutedCard>
         ) : (
-          <Button onPress={() => setIsEmojiSelectionOpen(true)}>
-            Assign an Emoji to This Day
+          <Button onPress={() => setIsLabelSelectionOpen(true)}>
+            Assign an Label to This Day
           </Button>
         )}
       </ThemedView>
 
       <Modal
-        visible={isEmojiSelectionOpen}
+        visible={isLabelSelectionOpen}
         transparent
         animationType="fade"
-        onRequestClose={() => setIsEmojiSelectionOpen(false)}
+        onRequestClose={() => setIsLabelSelectionOpen(false)}
       >
         <View className="flex-1 items-center justify-center px-4 bg-black/90 backdrop-blur-sm">
-          {isAssigningEmoji ? (
+          {isAssigningLabel ? (
             <ActivityIndicator
               size="large"
               color={Colors[theme].highlight}
@@ -166,24 +166,24 @@ export default function DateEmojiAssignment({
                   {selectedDate}
                 </ThemedText>
 
-                {emojis.length > 0 ? (
+                {labels.length > 0 ? (
                   <View className="flex-col gap-3 mb-6">
-                    {emojis.map((item, index) => (
-                      <EmojiCard
-                        emoji={item}
+                    {labels.map((item, index) => (
+                      <LabelCard
+                        label={item}
                         index={index}
                         key={index}
-                        onPress={handleAsignEmojiToDay}
+                        onPress={handleAsignLabelToDay}
                       />
                     ))}
                     {data && (
                       <Button
                         type="danger"
                         onPress={async () => {
-                          handleDeleteAssignedEmoji(selectedDate);
+                          handleDeleteAssignedLabel(selectedDate);
                         }}
                       >
-                        Remove Emoji Assignment
+                        Remove Label Assignment
                       </Button>
                     )}
                   </View>
@@ -191,15 +191,15 @@ export default function DateEmojiAssignment({
                   <View className="items-center py-8">
                     <Text className="text-4xl mb-3">😔</Text>
                     <ThemedText className="text-center opacity-70 mb-2">
-                      No emojis available
+                      No labels available
                     </ThemedText>
                     <ThemedText className="text-sm text-center opacity-50">
-                      Please add some emojis first
+                      Please add some labels first
                     </ThemedText>
                   </View>
                 )}
 
-                <Button onPress={() => setIsEmojiSelectionOpen(false)}>
+                <Button onPress={() => setIsLabelSelectionOpen(false)}>
                   Cancel
                 </Button>
               </View>

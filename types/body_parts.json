@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "bodyPart": "Chest",
+    "image": "/images/bodyparts/chest.png"
+  },
+  {
+    "id": 2,
+    "bodyPart": "Back",
+    "image": "/images/bodyparts/back.png"
+  },
+  {
+    "id": 3,
+    "bodyPart": "Shoulders",
+    "image": "/images/bodyparts/shoulders.png"
+  },
+  {
+    "id": 4,
+    "bodyPart": "Arms",
+    "image": "/images/bodyparts/arms.png"
+  },
+  {
+    "id": 5,
+    "bodyPart": "Core",
+    "image": "/images/bodyparts/core.png"
+  },
+  {
+    "id": 6,
+    "bodyPart": "Legs",
+    "image": "/images/bodyparts/legs.png"
+  },
+  {
+    "id": 7,
+    "bodyPart": "Neck",
+    "image": "/images/bodyparts/neck.png"
+  }
+]

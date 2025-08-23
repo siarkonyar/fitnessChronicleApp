@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 // These are utility types that make working with tRPC types easier
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'; // Needed for type inference
-import { DaySchema, EmojiSchema, EmojiWithIdSchema, ExerciseLogSchema } from './types';
+import { DaySchema, ExerciseLogSchema, LabelSchema, LabelWithIdSchema } from './types';
 
 export type ExerciseLog = z.infer<typeof ExerciseLogSchema>; // Useful client-side type
 
@@ -34,26 +34,6 @@ const dummyRouter = t.router({
         editExerciseLog: t.procedure
             .input(z.object({ logId: z.string().min(1), data: ExerciseLogSchema }))
             .mutation(() => { /* dummy implementation */ }), // Match server's method (mutation)
-        addEmoji: t.procedure
-            .input(EmojiSchema) // Validate input with Zod
-            .mutation(() => { /* dummy implementation */ }),
-        getAllEmojis: t.procedure
-            .query(() => { /* dummy implementation */ }),
-        getEmojiById: t.procedure
-            .input(z.object({ id: z.string().min(1) })) // Validate input with Zod
-            .query(() => { /* dummy implementation */ }),
-        deleteEmoji: t.procedure
-            .input(z.object({ id: z.string().min(1) })) // Validate input with Zod
-            .mutation(() => { /* dummy implementation */ }),
-        asignEmojiToDay: t.procedure
-            .input(DaySchema) // Validate input with Zod
-            .mutation(() => { /* dummy implementation */ }),
-        getEmojiAsignmentByDate: t.procedure
-            .input(z.object({ date: z.string().date() })) // Validate input with Zod
-            .query(() => { /* dummy implementation */ }),
-        deleteAssignment: t.procedure
-            .input(z.object({ date: z.string().date() })) // Validate input with Zod
-            .mutation(() => { /* dummy implementation */ }),
         getAllExerciseNames: t.procedure
             .query(() => { /* dummy implementation */ }),
         getLatestExerciseByName: t.procedure
@@ -63,30 +43,30 @@ const dummyRouter = t.router({
             .input(z.object({ name: z.string().min(1) }))
             .mutation(() => { /* dummy implementation */ }),
     }),
-    emoji: t.router({ // Match the 'fitness' namespace from your server
-        addEmoji: t.procedure
-            .input(EmojiSchema) // Validate input with Zod
+    label: t.router({ // Match the 'fitness' namespace from your server
+        addLabel: t.procedure
+            .input(LabelSchema) // Validate input with Zod
             .mutation(() => { /* dummy implementation */ }),
-        getAllEmojis: t.procedure
+        getAllLabels: t.procedure
             .query(() => { /* dummy implementation */ }),
-        editEmoji: t.procedure
-            .input(EmojiWithIdSchema)
+        editLabel: t.procedure
+            .input(LabelWithIdSchema)
             .mutation(() => { /* dummy implementation */ }),
-        getAllEmojisFromMonth: t.procedure
+        getAllLabelsFromMonth: t.procedure
             .input(z.object({
               date: z.string().regex(/^\d{4}-\d{2}$/, 'Date must be in YYYY-MM format')
             }))
             .query(() => { /* dummy implementation */ }),
-        getEmojiById: t.procedure
+        getLabelById: t.procedure
             .input(z.object({ id: z.string().min(1) })) // Validate input with Zod
             .query(() => { /* dummy implementation */ }),
-        deleteEmoji: t.procedure
+        deleteLabel: t.procedure
             .input(z.object({ id: z.string().min(1) })) // Validate input with Zod
             .mutation(() => { /* dummy implementation */ }),
-        asignEmojiToDay: t.procedure
+        asignLabelToDay: t.procedure
             .input(DaySchema) // Validate input with Zod
             .mutation(() => { /* dummy implementation */ }),
-        getEmojiAsignmentByDate: t.procedure
+        getLabelAsignmentByDate: t.procedure
             .input(z.object({ date: z.string().date() })) // Validate input with Zod
             .query(() => { /* dummy implementation */ }),
         deleteAssignment: t.procedure
