@@ -159,9 +159,7 @@ export default function ExerciseNameInput({
                         {suggestion.toUpperCase()}
                       </ThemedText>
                       <TouchableOpacity
-                        onPress={() =>
-                          handleSuggestionDeletion(suggestion.toUpperCase())
-                        }
+                        onPress={() => handleSuggestionDeletion(suggestion)}
                       >
                         <MaterialIcons name="close" size={20} color="#666" />
                       </TouchableOpacity>

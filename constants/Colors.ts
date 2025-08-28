@@ -25,9 +25,10 @@ export const Colors = {
     separator: '#FFC099',
     mutedText: '#7C8289',
     highlight: '#FF4500',
+    accentBlue: '#0D6EFD',
     success: '#22C55E',    // Tailwind green-500
     warning: '#FACC15',    // Tailwind yellow-400
-    error: '#EF4444',      // Tailwind red-500
+    danger: '#EF4444',      // Tailwind red-500
   },
   dark: {
     text: '#ECEDEE',
@@ -47,8 +48,9 @@ export const Colors = {
     separator: '#6B2A10',
     mutedText: '#9BA1A6',
     highlight: '#FF4500',
+    accentBlue: '#0D6EFD',
     success: '#22C55E',
     warning: '#FACC15',
-    error: '#EF4444',
+    danger: '#EF4444',
   },
 };
