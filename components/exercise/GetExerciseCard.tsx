@@ -69,12 +69,32 @@ export default function GetExerciseCard({
           </ThemedView>
 
           <ThemedView className="flex-col">
-            {exercise.sets.map((set, index) => (
-              <ThemedText key={index} className="text-sm">
-                {index + 1}. {set.value ?? "?"}
-                {set.setType} x {set.reps ?? "?"}
-              </ThemedText>
-            ))}
+            {exercise.sets.map((set, index) => {
+              // Calculate display index - only count normal sets
+              const displayIndex =
+                exercise.sets
+                  .slice(0, index + 1)
+                  .filter((s) => s.setType === "normal").length - 1;
+
+              // Display logic based on set type
+              const setDisplay =
+                set.setType === "normal"
+                  ? `${displayIndex + 1}.`
+                  : set.setType === "warmup"
+                    ? "W"
+                    : set.setType === "failure"
+                      ? "F"
+                      : set.setType === "drop"
+                        ? "D"
+                        : `${index + 1}.`;
+
+              return (
+                <ThemedText key={index} className="text-sm">
+                  {setDisplay} {set.value ?? "?"}
+                  {set.measure} x {set.reps ?? "?"}
+                </ThemedText>
+              );
+            })}
           </ThemedView>
         </ThemedView>
         {exercise.notes && exercise.notes.trim() ? (

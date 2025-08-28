@@ -5,9 +5,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogWithIdSchema } from "@/types/types";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import { ScrollView, Text } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
@@ -21,7 +23,12 @@ export default function Index() {
   const [titleError, setTitleError] = useState(false);
   const [title, setTitle] = useState("");
   const [sets, setSets] = useState<
-    { id: number; reps: string; value: string }[]
+    {
+      id: number;
+      reps: string;
+      value: string;
+      setType: "warmup" | "normal" | "failure" | "drop";
+    }[]
   >([]);
 
   const [isLogging, setIsLogging] = useState(false);
@@ -30,7 +37,12 @@ export default function Index() {
   const prevLengthRef = useRef(sets.length);
 
   const addSet = () => {
-    const newSet = { id: Date.now(), reps: "1-2", value: "0" };
+    const newSet = {
+      id: Date.now(),
+      reps: "1-2",
+      value: "0",
+      setType: "normal" as const,
+    };
     setSets((prev) => [...prev, newSet]);
   };
 
@@ -47,6 +59,15 @@ export default function Index() {
   const updateValue = (id: number, newValue: string) => {
     setSets((prev) =>
       prev.map((s) => (s.id === id ? { ...s, value: newValue } : s))
+    );
+  };
+
+  const updateSetType = (
+    id: number,
+    newSetType: "warmup" | "normal" | "failure" | "drop"
+  ) => {
+    setSets((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, setType: newSetType } : s))
     );
   };
 
@@ -74,8 +95,9 @@ export default function Index() {
 
     try {
       setIsLogging(true);
-      const formattedSets = sets.map(({ value, reps }) => ({
-        setType: "kg" as const,
+      const formattedSets = sets.map(({ value, reps, setType }) => ({
+        setType: setType,
+        measure: "kg" as const,
         value: value || "",
         reps: reps || "",
       }));
@@ -119,90 +141,109 @@ export default function Index() {
   };
 
   return (
-    <ThemedView className="flex-1" style={{ paddingTop: 2 * insets.top }}>
-      <ThemedView className="p-4">
-        {titleError ? (
-          <>
-            <Text className="text-red-500 mb-2">
-              Please enter an exercise name
-            </Text>
-            <ExerciseNameInput title={title} setTitle={setTitle} />
-          </>
-        ) : (
-          <ExerciseNameInput title={title} setTitle={setTitle} />
-        )}
-      </ThemedView>
-      <ScrollView
-        ref={scrollRef}
-        className="flex-1 p-4"
-        onContentSizeChange={() => {
-          if (sets.length > prevLengthRef.current) {
-            scrollRef.current?.scrollToEnd({ animated: true });
-          }
-          prevLengthRef.current = sets.length;
-        }}
-      >
-        <ThemedView className="w-full mb-8">
-          {sets.map((set, index) => (
-            <Animated.View
-              key={set.id}
-              layout={LinearTransition}
-              entering={FadeInUp.springify().damping(15)}
-            >
-              <AddSetCard
-                id={set.id}
-                index={index}
-                reps={set.reps}
-                value={set.value}
-                onRepsChange={updateReps}
-                onValueChange={updateValue}
-                onRemove={removeSet}
-                onCopy={copySet}
-              />
-            </Animated.View>
-          ))}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <ThemedView className="flex-1" style={{ paddingTop: 2 * insets.top }}>
+          <ThemedView className="p-4">
+            {titleError ? (
+              <>
+                <Text className="text-red-500 mb-2">
+                  Please enter an exercise name
+                </Text>
+                <ExerciseNameInput title={title} setTitle={setTitle} />
+              </>
+            ) : (
+              <ExerciseNameInput title={title} setTitle={setTitle} />
+            )}
+          </ThemedView>
+          <ScrollView
+            ref={scrollRef}
+            className="flex-1 p-4"
+            onContentSizeChange={() => {
+              if (sets.length > prevLengthRef.current) {
+                scrollRef.current?.scrollToEnd({ animated: true });
+              }
+              prevLengthRef.current = sets.length;
+            }}
+          >
+            <ThemedView className="w-full mb-8">
+              {sets.map((set, index) => {
+                // Calculate display index - only count normal sets
+                const displayIndex =
+                  sets.slice(0, index + 1).filter((s) => s.setType === "normal")
+                    .length - 1;
 
-          <Animated.View
-            layout={LinearTransition}
-            className="flex-row items-start justify-between mt-2"
-          >
-            <Button onPress={addSet} className="mb-16">
-              + Enter Set
-            </Button>
-          </Animated.View>
-          <Animated.View
-            layout={LinearTransition}
-            className="items-center justify-between mt-2 mb-16"
-          >
-            <Button type="primary" onPress={logExercise} disabled={isLogging}>
-              {isLogging ? "Logging Exercise..." : "🏋️ Log Exercise"}
-            </Button>
-          </Animated.View>
-          {title.trim().length > 0 && (
-            <Animated.View
-              layout={LinearTransition}
-              className="items-center justify-between mt-2 mb-16"
-            >
-              <ThemedText type="title" className="font-bold mb-8">
-                Previous Performance
-              </ThemedText>
-              {isLoading ? (
-                <ThemedText className="text-gray-500">Loading...</ThemedText>
-              ) : error ? (
-                <ThemedText className="text-gray-500">
-                  No previous exercise found
-                </ThemedText>
-              ) : previousExercise ? (
-                <GetExerciseCard exercise={previousExercise} index={0} />
-              ) : (
-                <ThemedText className="text-gray-500">
-                  No previous exercise found
-                </ThemedText>
+                return (
+                  <Animated.View
+                    key={set.id}
+                    layout={LinearTransition}
+                    entering={FadeInUp.springify().damping(15)}
+                  >
+                    <AddSetCard
+                      id={set.id}
+                      index={displayIndex}
+                      reps={set.reps}
+                      value={set.value}
+                      setType={set.setType}
+                      onRepsChange={updateReps}
+                      onValueChange={updateValue}
+                      onSetTypeChange={updateSetType}
+                      onRemove={removeSet}
+                      onCopy={copySet}
+                    />
+                  </Animated.View>
+                );
+              })}
+
+              <Animated.View
+                layout={LinearTransition}
+                className="flex-row items-start justify-between mt-2"
+              >
+                <Button onPress={addSet} className="mb-16">
+                  + Enter Set
+                </Button>
+              </Animated.View>
+              <Animated.View
+                layout={LinearTransition}
+                className="items-center justify-between mt-2 mb-16"
+              >
+                <Button
+                  type="primary"
+                  onPress={logExercise}
+                  disabled={isLogging}
+                >
+                  {isLogging ? "Logging Exercise..." : "🏋️ Log Exercise"}
+                </Button>
+              </Animated.View>
+              {title.trim().length > 0 && (
+                <Animated.View
+                  layout={LinearTransition}
+                  className="items-center justify-between mt-2 mb-16"
+                >
+                  <ThemedText type="title" className="font-bold mb-8">
+                    Previous Performance
+                  </ThemedText>
+                  {isLoading ? (
+                    <ThemedText className="text-gray-500">
+                      Loading...
+                    </ThemedText>
+                  ) : error ? (
+                    <ThemedText className="text-gray-500">
+                      No previous exercise found
+                    </ThemedText>
+                  ) : previousExercise ? (
+                    <GetExerciseCard exercise={previousExercise} index={0} />
+                  ) : (
+                    <ThemedText className="text-gray-500">
+                      No previous exercise found
+                    </ThemedText>
+                  )}
+                </Animated.View>
               )}
-            </Animated.View>
-          )}
+            </ThemedView>
+          </ScrollView>
         </ThemedView>
-      </ScrollView>
-    </ThemedView>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
 }
