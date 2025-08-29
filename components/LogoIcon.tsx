@@ -8,7 +8,7 @@ type LogoIconProps = {
 
 export default function LogoIcon({
   size = 128,
-  color = "#e94d26",
+  color = "#FF4500",
 }: LogoIconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 1080 1080">

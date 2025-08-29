@@ -141,7 +141,7 @@ export const AddSetCard: React.FC<Props> = ({
       <Animated.View exiting={SlideOutRight.duration(200)}>
         <Card>
           <ThemedView className="flex-row items-center justify-between w-full rounded-lg">
-            <ThemedView>
+            <ThemedView className="px-3">
               <TouchableOpacity onPress={openDropdown}>
                 {setTypeDisplay(setType)}
               </TouchableOpacity>

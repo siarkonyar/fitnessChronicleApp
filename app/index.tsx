@@ -3,6 +3,7 @@ import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
+import { trpc } from "@/lib/trpc";
 import { router } from "expo-router";
 import React, { useCallback, useEffect } from "react";
 import { useColorScheme, View } from "react-native";
@@ -17,6 +18,7 @@ import Animated, {
 export default function App() {
   const theme = useColorScheme() ?? "light";
   const { isAuthenticated, authLoading } = useAuth();
+  const utils = trpc.useUtils();
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.96);
@@ -36,6 +38,25 @@ export default function App() {
       easing: Easing.out(Easing.quad),
     });
   }, [opacity, scale]);
+
+  // Warm critical queries during splash
+  useEffect(() => {
+    if (authLoading) return;
+
+    const today = new Date().toLocaleDateString("en-CA");
+    const visibleMonth = today.slice(0, 7);
+
+    if (isAuthenticated) {
+      Promise.all([
+        utils.fitness.getExerciseLogsByMonth.prefetch({ month: visibleMonth }),
+        utils.label.getAllLabelsFromMonth.prefetch({ date: visibleMonth }),
+        utils.fitness.getExerciseLogByDate.prefetch({ date: today }),
+        utils.label.getAllLabels.prefetch(),
+      ]).catch(() => {
+        // Ignore prefetch errors; do not block splash/navigation
+      });
+    }
+  }, [authLoading, isAuthenticated, utils]);
 
   const navigateAfterFade = useCallback(() => {
     if (isAuthenticated) {
