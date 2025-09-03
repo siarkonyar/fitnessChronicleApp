@@ -43,9 +43,18 @@ export default function ExerciseLogByDate({
   type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
   const theme = useColorScheme() ?? "light";
 
-  const { data: logs, isLoading } = trpc.fitness.getExerciseLogByDate.useQuery({
-    date: selectedDate,
-  }) as {
+  const { data: logs, isLoading } = trpc.fitness.getExerciseLogByDate.useQuery(
+    {
+      date: selectedDate,
+    },
+    {
+      // Add better caching to reduce refetches
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 15 * 60 * 1000, // 15 minutes
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    }
+  ) as {
     data: ExerciseLog[] | undefined;
     isLoading: boolean;
   };

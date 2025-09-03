@@ -1,5 +1,6 @@
+import { deleteOfflineExerciseLog } from "@/lib/localStorage";
 import { trpc } from "@/lib/trpc";
-import { ExerciseLogWithIdSchema } from "@/types/types"; // path doğruysa sıkıntı yok
+import { ExerciseLogWithIdSchema } from "@/types/types";
 import React from "react";
 import { Alert, Text, TouchableOpacity } from "react-native";
 import { z } from "zod";
@@ -11,14 +12,16 @@ type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
 
 type GetExerciseCardProps = {
   exercise: ExerciseLog;
-  index?: number; // Optional index for styling or display purposes
+  index?: number;
   deletable?: boolean;
+  isOffline?: boolean; // Flag to indicate if this is offline data
 };
 
 export default function GetExerciseCard({
   exercise,
   index,
   deletable,
+  isOffline = false,
 }: GetExerciseCardProps) {
   const deleteExerciseNameMutation =
     trpc.fitness.deleteExerciseLog.useMutation();
@@ -37,13 +40,19 @@ export default function GetExerciseCard({
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            await deleteExerciseNameMutation.mutateAsync({ id: exercise.id });
-            await utils.fitness.getExerciseLogByDate.invalidate({
-              date: exercise.date,
-            });
-            await utils.fitness.getExerciseLogsByMonth.invalidate({
-              month: exercise.date.slice(0, 7),
-            });
+            if (isOffline) {
+              // Delete from local storage for offline data
+              await deleteOfflineExerciseLog(exercise.id);
+            } else {
+              // Delete from server for online data
+              await deleteExerciseNameMutation.mutateAsync({ id: exercise.id });
+              await utils.fitness.getExerciseLogByDate.invalidate({
+                date: exercise.date,
+              });
+              await utils.fitness.getExerciseLogsByMonth.invalidate({
+                month: exercise.date.slice(0, 7),
+              });
+            }
           },
         },
       ]

@@ -47,13 +47,15 @@ export default function App() {
     const visibleMonth = today.slice(0, 7);
 
     if (isAuthenticated) {
+      // Only prefetch essential data, reduce Firestore load
       Promise.all([
         utils.fitness.getExerciseLogsByMonth.prefetch({ month: visibleMonth }),
         utils.label.getAllLabelsFromMonth.prefetch({ date: visibleMonth }),
         utils.fitness.getExerciseLogByDate.prefetch({ date: today }),
         utils.label.getAllLabels.prefetch(),
-      ]).catch(() => {
-        // Ignore prefetch errors; do not block splash/navigation
+      ]).catch((error) => {
+        // Log but don't block navigation
+        console.log("Prefetch completed with some errors:", error);
       });
     }
   }, [authLoading, isAuthenticated, utils]);

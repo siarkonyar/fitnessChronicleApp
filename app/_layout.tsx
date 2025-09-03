@@ -11,6 +11,7 @@ import { Stack } from "expo-router";
 import React from "react";
 import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
+import { ConnectivityProvider } from "../context/ConnectivityContext";
 import "../global.css";
 import { queryClient, trpc, trpcClient } from "../lib/trpc";
 
@@ -25,11 +26,13 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          <AppSetup />
-        </QueryClientProvider>
-      </trpc.Provider>
+      <ConnectivityProvider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <AppSetup />
+          </QueryClientProvider>
+        </trpc.Provider>
+      </ConnectivityProvider>
     </AuthProvider>
   );
 }
@@ -51,6 +54,7 @@ function AppSetup() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="(screens)" />
         </Stack.Protected>
+        <Stack.Screen name="offline" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>

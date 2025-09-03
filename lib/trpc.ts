@@ -14,8 +14,15 @@ export const queryClient = new QueryClient({
     queries: {
       retry: 1,
       retryDelay: 1000,
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
+      staleTime: 60_000, // 1 minute - increased from 30 seconds
+      gcTime: 10 * 60_000, // 10 minutes - increased from 5 minutes
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+    },
+    mutations: {
+      retry: 1,
+      retryDelay: 1000,
     },
   },
 });

@@ -1,30 +1,19 @@
 import { Button } from "@/components/Button";
 import ExerciseNameInput from "@/components/exercise/ExerciseNameInput";
-import GetExerciseCard from "@/components/exercise/GetExerciseCard";
-import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { trpc } from "@/lib/trpc";
-import { ExerciseLogWithIdSchema } from "@/types/types";
+import { saveOfflineExerciseLog } from "@/lib/localStorage";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
-import { ScrollView, Text } from "react-native";
+import React, { useRef, useState } from "react";
+import { Alert, ScrollView, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
 export default function Index() {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
-  const { handleQueryError, handleMutationError } = useServerErrorHandler();
-  const addExerciseLogMutation = trpc.fitness.addExerciseLog.useMutation({
-    onError: (error) => {
-      handleMutationError(error);
-    },
-  });
 
   const [titleError, setTitleError] = useState(false);
   const [title, setTitle] = useState("");
@@ -114,44 +103,32 @@ export default function Index() {
         sets: formattedSets,
       };
 
-      await addExerciseLogMutation.mutateAsync(payload);
+      // Save to local storage instead of server
+      await saveOfflineExerciseLog(payload);
 
-      console.log("Exercise logged successfully!", payload);
-      router.push("/(tabs)");
+      console.log("Exercise logged successfully to local storage!", payload);
 
-      setTitle("");
-      setSets([]);
-      setIsLogging(false);
+      Alert.alert(
+        "Exercise Logged Offline",
+        "Your exercise has been saved locally. It will be synced to the server when you're back online.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              router.push("/offline");
+              setTitle("");
+              setSets([]);
+              setIsLogging(false);
+            },
+          },
+        ]
+      );
     } catch (error) {
-      console.error("Failed to log exercise:", error);
+      console.error("Failed to log exercise to local storage:", error);
+      Alert.alert("Error", "Failed to save exercise. Please try again.");
+      setIsLogging(false);
     }
   };
-
-  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
-  const {
-    data: previousExercise,
-    isLoading,
-    error,
-  } = trpc.fitness.getLatestExerciseByName.useQuery(
-    {
-      name: title.trim().toLowerCase(),
-    },
-    {
-      enabled: title.trim().length > 0,
-      retry: false,
-    }
-  ) as {
-    data: ExerciseLog | undefined;
-    isLoading: boolean;
-    error: any;
-  };
-
-  // Handle query errors
-  useEffect(() => {
-    if (error) {
-      handleQueryError(error);
-    }
-  }, [error, handleQueryError]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -225,34 +202,11 @@ export default function Index() {
                   onPress={logExercise}
                   disabled={isLogging}
                 >
-                  {isLogging ? "Logging Exercise..." : "🏋️ Log Exercise"}
+                  {isLogging
+                    ? "Saving Exercise..."
+                    : "🏋️ Log Exercise (Offline)"}
                 </Button>
               </Animated.View>
-              {title.trim().length > 0 && (
-                <Animated.View
-                  layout={LinearTransition}
-                  className="items-center justify-between mt-2 mb-16"
-                >
-                  <ThemedText type="title" className="font-bold mb-8">
-                    Previous Performance
-                  </ThemedText>
-                  {isLoading ? (
-                    <ThemedText className="text-gray-500">
-                      Loading...
-                    </ThemedText>
-                  ) : error ? (
-                    <ThemedText className="text-gray-500">
-                      No previous exercise found
-                    </ThemedText>
-                  ) : previousExercise ? (
-                    <GetExerciseCard exercise={previousExercise} index={0} />
-                  ) : (
-                    <ThemedText className="text-gray-500">
-                      No previous exercise found
-                    </ThemedText>
-                  )}
-                </Animated.View>
-              )}
             </ThemedView>
           </ScrollView>
         </ThemedView>
