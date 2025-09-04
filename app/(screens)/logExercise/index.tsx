@@ -19,6 +19,7 @@ export default function Index() {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const addExerciseLogMutation = trpc.fitness.addExerciseLog.useMutation();
+  const utils = trpc.useUtils();
 
   const [titleError, setTitleError] = useState(false);
   const [title, setTitle] = useState("");
@@ -109,6 +110,13 @@ export default function Index() {
       };
 
       await addExerciseLogMutation.mutateAsync(payload);
+
+      await utils.fitness.getExerciseLogByDate.invalidate({
+        date: payload.date,
+      });
+      await utils.fitness.getExerciseLogsByMonth.invalidate({
+        month: payload.date.slice(0, 7),
+      });
 
       console.log("Exercise logged successfully!", payload);
       router.push("/(tabs)");
