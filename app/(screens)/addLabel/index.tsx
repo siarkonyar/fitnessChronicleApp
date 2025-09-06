@@ -4,6 +4,7 @@ import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -14,7 +15,12 @@ import EmojiPicker from "rn-emoji-keyboard";
 
 export default function Index() {
   const insets = useSafeAreaInsets();
-  const addLabelMutation = trpc.label.addLabel.useMutation();
+  const { handleMutationError } = useServerErrorHandler();
+  const addLabelMutation = trpc.label.addLabel.useMutation({
+    onError: (error) => {
+      handleMutationError(error);
+    },
+  });
   const utils = trpc.useUtils();
   const theme = useColorScheme() ?? "light";
 
@@ -59,10 +65,9 @@ export default function Index() {
       setLabel("");
       setDescription("");
       router.push("/(tabs)/settings");
-    } catch(error){
-      console.log(error)
-    }
-    finally {
+    } catch (error) {
+      console.log(error);
+    } finally {
       setIsSubmitting(false);
     }
   }

@@ -4,7 +4,7 @@ import { Stack, useNavigation } from "expo-router";
 import React from "react";
 import { View } from "react-native";
 
-export default function LogExerciseLayout() {
+export default function AddLabelLayout() {
   const theme = useColorScheme() ?? "light";
 
   const navigation = useNavigation();

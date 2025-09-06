@@ -1,5 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { LabelSchema, LabelWithIdSchema } from "@/types/types";
 import React from "react";
@@ -31,32 +32,66 @@ export default function DateLabelAssignment({
   selectedDate: string;
 }) {
   const theme = useColorScheme() ?? "light";
+  const { handleMutationError, handleQueryError } = useServerErrorHandler();
 
   type Label = z.infer<typeof LabelSchema>;
   type LabelWithID = z.infer<typeof LabelWithIdSchema>;
 
-  const { data, isLoading } = trpc.label.getLabelAsignmentByDate.useQuery({
-    date: selectedDate,
-  }) as {
-    data: DateLabelAssignmentWithLabel | undefined;
-    isLoading: boolean;
-  };
-  const labelId = data?.labelId;
-  const { data: label, isLoading: labelsLoading } =
-    trpc.label.getLabelById.useQuery(
-      { id: labelId ?? "" },
-      { enabled: !!labelId }
-    ) as {
-      data: Label | undefined;
+  const { data, isLoading, error } =
+    trpc.label.getLabelAsignmentByDate.useQuery({
+      date: selectedDate,
+    }) as {
+      data: DateLabelAssignmentWithLabel | undefined;
       isLoading: boolean;
+      error: any;
     };
+  const labelId = data?.labelId;
+  const {
+    data: label,
+    isLoading: labelsLoading,
+    error: labelError,
+  } = trpc.label.getLabelById.useQuery(
+    { id: labelId ?? "" },
+    { enabled: !!labelId }
+  ) as {
+    data: Label | undefined;
+    isLoading: boolean;
+    error: any;
+  };
 
-  const asignLabelToDayMutation = trpc.label.asignLabelToDay.useMutation();
-  const deleteAssignedLabelMutation = trpc.label.deleteAssignment.useMutation();
+  const asignLabelToDayMutation = trpc.label.asignLabelToDay.useMutation({
+    onError: (error) => {
+      handleMutationError(error);
+    },
+  });
+  const deleteAssignedLabelMutation = trpc.label.deleteAssignment.useMutation({
+    onError: (error) => {
+      handleMutationError(error);
+    },
+  });
   const utils = trpc.useUtils();
-  const { data: labelsRaw } = trpc.label.getAllLabels.useQuery();
+  const { data: labelsRaw, error: labelsRawError } =
+    trpc.label.getAllLabels.useQuery();
   const [isLabelSelectionOpen, setIsLabelSelectionOpen] = React.useState(false);
   const [isAssigningLabel, setIsAssigningLabel] = React.useState(false);
+
+  React.useEffect(() => {
+    if (error) {
+      handleQueryError(error);
+    }
+  }, [error, handleQueryError]);
+
+  React.useEffect(() => {
+    if (labelError) {
+      handleQueryError(labelError);
+    }
+  }, [labelError, handleQueryError]);
+
+  React.useEffect(() => {
+    if (labelsRawError) {
+      handleQueryError(labelsRawError);
+    }
+  }, [labelsRawError, handleQueryError]);
 
   //TODO: after clicking on an label it shows the loading screen but right after that for a split second it shows the card again. it happens so fast but it is still annoying to see
   async function handleAsignLabelToDay(labelId: string) {
