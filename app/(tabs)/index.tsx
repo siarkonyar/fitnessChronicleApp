@@ -3,10 +3,13 @@ import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
+import { clearAllOfflineExercises, offlineData } from "@/lib/offlineStorage";
 import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
 import { ExerciseLogWithIdSchema } from "@/types/types"; // Adjust the import path as necessary
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
+
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
   ActivityIndicator,
   ScrollView,
@@ -22,13 +25,68 @@ import { z } from "zod";
 export default function HomeScreen() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
+  const { handleQueryError, handleMutationError } = useServerErrorHandler();
+  const syncMutation = trpc.fitness.syncOfflineExercises.useMutation({
+    onError: (error) => {
+      handleMutationError(error);
+    },
+  });
   type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
-  const { data: logs, isLoading } = trpc.fitness.getExerciseLogByDate.useQuery({
+  const {
+    data: logs,
+    isLoading,
+    error,
+  } = trpc.fitness.getExerciseLogByDate.useQuery({
     date: new Date().toLocaleDateString("en-CA"),
   }) as {
     data: ExerciseLog[] | undefined;
     isLoading: boolean;
+    error: any;
   };
+
+  useEffect(() => {
+    if (error) {
+      handleQueryError(error);
+    }
+  }, [error, handleQueryError]);
+
+  useEffect(() => {
+    const syncOfflineExercises = async () => {
+      try {
+        const offlineDataString = await offlineData();
+        if (offlineDataString && offlineDataString !== "[]") {
+          const offlineExercises = JSON.parse(offlineDataString);
+
+          // Transform offline exercises to match ExerciseLogSchema
+          const exercises = offlineExercises.map((offlineExercise: any) => {
+            const exercise: any = {
+              date: offlineExercise.date,
+              activity: offlineExercise.activity,
+              sets: offlineExercise.sets,
+            };
+
+            // Only add optional fields if they exist
+            if (offlineExercise.caloriesBurned !== undefined) {
+              exercise.caloriesBurned = offlineExercise.caloriesBurned;
+            }
+            if (offlineExercise.notes !== undefined) {
+              exercise.notes = offlineExercise.notes;
+            }
+
+            return exercise;
+          });
+
+          // Use tRPC to sync offline exercises to server
+          await syncMutation.mutateAsync(exercises);
+          await clearAllOfflineExercises();
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    syncOfflineExercises();
+  }, [syncMutation]);
 
   const handleNavigateToExercise = () => {
     router.push("/(screens)/logExercise");

@@ -1,7 +1,8 @@
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { LabelWithIdSchema } from "@/types/types";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { Text, View } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
@@ -11,10 +12,21 @@ import LabelCard from "../cards/LabelCard";
 
 export default function UserLabelList() {
   type labelScheme = z.infer<typeof LabelWithIdSchema>;
-  const { data: labelsRaw, isLoading } = trpc.label.getAllLabels.useQuery();
+  const { handleQueryError } = useServerErrorHandler();
+  const {
+    data: labelsRaw,
+    isLoading,
+    error,
+  } = trpc.label.getAllLabels.useQuery();
   const labels: labelScheme[] = Array.isArray(labelsRaw)
     ? (labelsRaw as labelScheme[])
     : [];
+
+  useEffect(() => {
+    if (error) {
+      handleQueryError(error);
+    }
+  }, [error, handleQueryError]);
 
   if (isLoading) {
     return (

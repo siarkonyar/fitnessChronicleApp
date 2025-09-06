@@ -2,10 +2,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { Colors } from "@/constants/Colors";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { ActivityIndicator, useColorScheme } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
@@ -42,13 +43,25 @@ export default function ExerciseLogByDate({
 }) {
   type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
   const theme = useColorScheme() ?? "light";
+  const { handleQueryError } = useServerErrorHandler();
 
-  const { data: logs, isLoading } = trpc.fitness.getExerciseLogByDate.useQuery({
+  const {
+    data: logs,
+    isLoading,
+    error,
+  } = trpc.fitness.getExerciseLogByDate.useQuery({
     date: selectedDate,
   }) as {
     data: ExerciseLog[] | undefined;
     isLoading: boolean;
+    error: any;
   };
+
+  useEffect(() => {
+    if (error) {
+      handleQueryError(error);
+    }
+  }, [error, handleQueryError]);
 
   let emptyDay = (
     <ThemedView className="flex-1 justify-center items-center pt-8">
