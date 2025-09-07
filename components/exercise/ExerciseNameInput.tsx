@@ -1,3 +1,4 @@
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { ExerciseNameListSchema } from "@/types/types";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -32,12 +33,18 @@ export default function ExerciseNameInput({
   type ExerciseNameList = z.infer<typeof ExerciseNameListSchema>;
   const { data } = trpc.fitness.getAllExerciseNames.useQuery() as {
     data: { names: ExerciseNameList[] } | undefined;
+    error: any;
   };
 
   const utils = trpc.useUtils();
+  const { handleMutationError } = useServerErrorHandler();
 
   const deleteExerciseNameMutation =
-    trpc.fitness.deleteExerciseName.useMutation();
+    trpc.fitness.deleteExerciseName.useMutation({
+      onError: (error) => {
+        handleMutationError(error);
+      },
+    });
 
   useEffect(() => {
     if (title.trim().length > 0) {

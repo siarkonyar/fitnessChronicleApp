@@ -4,13 +4,13 @@ import { Stack, useNavigation } from "expo-router";
 import React from "react";
 import { View } from "react-native";
 
-export default function EditLabelLayout() {
+export default function LogExerciseLayout() {
   const theme = useColorScheme() ?? "light";
 
   const navigation = useNavigation();
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: "Add Label", // Sayfa başlığı (back yanındaki)
+      headerTitle: "Log Exercise", // Sayfa başlığı (back yanındaki)
       headerBackTitle: "Back", // Geri butonu yazısı
       headerTintColor: Colors[theme].background,
       headerBackground: () => (

@@ -4,6 +4,7 @@ import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { LabelWithIdSchema } from "@/types/types";
 import { router, useLocalSearchParams } from "expo-router";
@@ -20,17 +21,27 @@ export default function Index() {
   const labelId = params.id as string;
   type labelScheme = z.infer<typeof LabelWithIdSchema>;
 
-  const editLabelMutation = trpc.label.editLabel.useMutation();
+  const { handleMutationError, handleQueryError } = useServerErrorHandler();
+  const editLabelMutation = trpc.label.editLabel.useMutation({
+    onError: (error) => {
+      handleMutationError(error);
+    },
+  });
   const utils = trpc.useUtils();
   const theme = useColorScheme() ?? "light";
 
   // Get the label data
-  const { data: labelData, isLoading } = trpc.label.getLabelById.useQuery(
+  const {
+    data: labelData,
+    isLoading,
+    error,
+  } = trpc.label.getLabelById.useQuery(
     { id: labelId },
     { enabled: !!labelId }
   ) as {
     data: labelScheme | undefined;
     isLoading: boolean;
+    error: any;
   };
 
   const [label, setLabel] = useState("");
@@ -45,6 +56,12 @@ export default function Index() {
       setDescription(labelData.description);
     }
   }, [labelData]);
+
+  useEffect(() => {
+    if (error) {
+      handleQueryError(error);
+    }
+  }, [error, handleQueryError]);
 
   const emojiTheme = {
     backdrop: "rgba(0,0,0,0.5)",

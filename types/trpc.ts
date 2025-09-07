@@ -42,6 +42,9 @@ const dummyRouter = t.router({
         deleteExerciseName: t.procedure
             .input(z.object({ name: z.string().min(1) }))
             .mutation(() => { /* dummy implementation */ }),
+        syncOfflineExercises: t.procedure
+            .input(z.array(ExerciseLogSchema))
+            .mutation(() => { /* dummy implementation */ }),
     }),
     label: t.router({ // Match the 'fitness' namespace from your server
         addLabel: t.procedure
