@@ -1,5 +1,6 @@
 import ExerciseLogByDate from "@/components/calendar/ExerciseLogByDate";
 import { Colors } from "@/constants/Colors";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogSchema } from "@/types/types";
 import React, { useEffect, useState } from "react";
@@ -20,6 +21,8 @@ export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
   const theme = useColorScheme() ?? "light";
+  const { handleQueryError } = useServerErrorHandler();
+
   // TODO: make this useeffect work
   useEffect(() => {
     setSelectedDate(today);
@@ -27,21 +30,37 @@ export default function CalendarScreen() {
 
   type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
 
-  const { data: logs, isLoading: logsLoading } =
-    trpc.fitness.getExerciseLogsByMonth.useQuery({
-      month: visibleMonth,
-    }) as {
-      data: { logs: ExerciseLog[]; uniqueDates: string[] };
-      isLoading: boolean;
-    };
+  const {
+    data: logs,
+    isLoading: logsLoading,
+    error: logsError,
+  } = trpc.fitness.getExerciseLogsByMonth.useQuery({
+    month: visibleMonth,
+  }) as {
+    data: { logs: ExerciseLog[]; uniqueDates: string[] };
+    isLoading: boolean;
+    error: any;
+  };
 
-  const { data: labels, isLoading: labelsLoading } =
-    trpc.label.getAllLabelsFromMonth.useQuery({
-      date: visibleMonth,
-    }) as {
-      data: { date: string; label: string }[] | undefined;
-      isLoading: boolean;
-    };
+  const {
+    data: labels,
+    isLoading: labelsLoading,
+    error: labelsError,
+  } = trpc.label.getAllLabelsFromMonth.useQuery({
+    date: visibleMonth,
+  }) as {
+    data: { date: string; label: string }[] | undefined;
+    isLoading: boolean;
+    error: any;
+  };
+
+  useEffect(() => {
+    if (logsError) {
+      handleQueryError(logsError);
+    } else if (labelsError) {
+      handleQueryError(labelsError);
+    }
+  }, [logsError, labelsError, handleQueryError]);
 
   if (logsLoading || labelsLoading) {
     return (

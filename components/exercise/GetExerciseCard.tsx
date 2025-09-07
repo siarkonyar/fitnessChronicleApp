@@ -1,3 +1,5 @@
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { deleteOfflineExercise } from "@/lib/offlineStorage";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogWithIdSchema } from "@/types/types"; // path doğruysa sıkıntı yok
 import React from "react";
@@ -13,15 +15,23 @@ type GetExerciseCardProps = {
   exercise: ExerciseLog;
   index?: number; // Optional index for styling or display purposes
   deletable?: boolean;
+  offline?: () => void;
 };
 
 export default function GetExerciseCard({
   exercise,
   index,
   deletable,
+  offline,
 }: GetExerciseCardProps) {
-  const deleteExerciseNameMutation =
-    trpc.fitness.deleteExerciseLog.useMutation();
+  const { handleMutationError } = useServerErrorHandler();
+  const deleteExerciseNameMutation = trpc.fitness.deleteExerciseLog.useMutation(
+    {
+      onError: (error) => {
+        handleMutationError(error);
+      },
+    }
+  );
   const utils = trpc.useUtils();
 
   const handleDeletion = async () => {
@@ -37,6 +47,11 @@ export default function GetExerciseCard({
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            if (offline) {
+              await deleteOfflineExercise(exercise.id);
+              offline?.(); // Notify parent component to refresh
+              return;
+            }
             await deleteExerciseNameMutation.mutateAsync({ id: exercise.id });
             await utils.fitness.getExerciseLogByDate.invalidate({
               date: exercise.date,

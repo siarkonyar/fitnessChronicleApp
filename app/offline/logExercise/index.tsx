@@ -1,31 +1,19 @@
 import { Button } from "@/components/Button";
 import ExerciseNameInput from "@/components/exercise/ExerciseNameInput";
-import GetExerciseCard from "@/components/exercise/GetExerciseCard";
-import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { trpc } from "@/lib/trpc";
-import { ExerciseLogWithIdSchema } from "@/types/types";
+import { saveExerciseToStorage } from "@/lib/offlineStorage";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { ScrollView, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
-import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 
 export default function Index() {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
-  const { handleQueryError, handleMutationError } = useServerErrorHandler();
-  const addExerciseLogMutation = trpc.fitness.addExerciseLog.useMutation({
-    onError: (error) => {
-      handleMutationError(error);
-    },
-  });
-  const utils = trpc.useUtils();
 
   const [titleError, setTitleError] = useState(false);
   const [title, setTitle] = useState("");
@@ -115,18 +103,14 @@ export default function Index() {
         sets: formattedSets,
       };
 
-      await addExerciseLogMutation.mutateAsync(payload);
+      // Save to localStorage with unique ID
+      const savedId = await saveExerciseToStorage(payload);
+      console.log("Exercise saved to localStorage with ID:", savedId);
 
-      await utils.fitness.getExerciseLogByDate.invalidate({
-        date: payload.date,
-      });
-      await utils.fitness.getExerciseLogsByMonth.invalidate({
-        month: payload.date.slice(0, 7),
-      });
+      // Navigate using dismiss to close the modal/screen cleanly
+      router.dismiss();
 
-      console.log("Exercise logged successfully!", payload);
-      router.push("/(tabs)");
-
+      // Reset form state after navigation (won't be visible)
       setTitle("");
       setSets([]);
       setIsLogging(false);
@@ -134,31 +118,6 @@ export default function Index() {
       console.error("Failed to log exercise:", error);
     }
   };
-
-  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
-  const {
-    data: previousExercise,
-    isLoading,
-    error,
-  } = trpc.fitness.getLatestExerciseByName.useQuery(
-    {
-      name: title.trim().toLowerCase(),
-    },
-    {
-      enabled: title.trim().length > 0,
-      retry: false,
-    }
-  ) as {
-    data: ExerciseLog | undefined;
-    isLoading: boolean;
-    error: any;
-  };
-
-  useEffect(() => {
-    if (error) {
-      handleQueryError(error);
-    }
-  }, [error, handleQueryError]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -235,31 +194,6 @@ export default function Index() {
                   {isLogging ? "Logging Exercise..." : "🏋️ Log Exercise"}
                 </Button>
               </Animated.View>
-              {title.trim().length > 0 && (
-                <Animated.View
-                  layout={LinearTransition}
-                  className="items-center justify-between mt-2 mb-16"
-                >
-                  <ThemedText type="title" className="font-bold mb-8">
-                    Previous Performance
-                  </ThemedText>
-                  {isLoading ? (
-                    <ThemedText className="text-gray-500">
-                      Loading...
-                    </ThemedText>
-                  ) : error ? (
-                    <ThemedText className="text-gray-500">
-                      No previous exercise found
-                    </ThemedText>
-                  ) : previousExercise ? (
-                    <GetExerciseCard exercise={previousExercise} index={0} />
-                  ) : (
-                    <ThemedText className="text-gray-500">
-                      No previous exercise found
-                    </ThemedText>
-                  )}
-                </Animated.View>
-              )}
             </ThemedView>
           </ScrollView>
         </ThemedView>

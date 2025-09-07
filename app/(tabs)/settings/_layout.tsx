@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { View, useColorScheme } from "react-native";
 
-export default function CalendarStackLayout() {
+export default function SettingsStackLayout() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
   return (
