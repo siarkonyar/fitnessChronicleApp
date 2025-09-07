@@ -6,8 +6,8 @@ import { Colors } from "@/constants/Colors";
 import { clearAllOfflineExercises, offlineData } from "@/lib/offlineStorage";
 import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
 import { ExerciseLogWithIdSchema } from "@/types/types"; // Adjust the import path as necessary
-import { router } from "expo-router";
-import React, { useEffect } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
@@ -26,9 +26,23 @@ export default function HomeScreen() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const hasAttemptedSync = useRef(false);
+  const lastSyncAttempt = useRef<number>(0);
+
+  // Function to reset sync state (can be called when user manually retries)
+  const resetSyncState = () => {
+    hasAttemptedSync.current = false;
+    setIsSyncing(false);
+    lastSyncAttempt.current = 0;
+  };
+
   const syncMutation = trpc.fitness.syncOfflineExercises.useMutation({
     onError: (error) => {
-      handleMutationError(error);
+      setIsSyncing(false);
+    },
+    onSuccess: () => {
+      setIsSyncing(false);
     },
   });
   type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
@@ -52,9 +66,22 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const syncOfflineExercises = async () => {
+      // Prevent multiple sync attempts within a short time window (5 seconds)
+      const now = Date.now();
+      if (
+        isSyncing ||
+        (hasAttemptedSync.current && now - lastSyncAttempt.current < 5000)
+      ) {
+        return;
+      }
+
       try {
         const offlineDataString = await offlineData();
         if (offlineDataString && offlineDataString !== "[]") {
+          hasAttemptedSync.current = true;
+          lastSyncAttempt.current = now;
+          setIsSyncing(true);
+
           const offlineExercises = JSON.parse(offlineDataString);
 
           // Transform offline exercises to match ExerciseLogSchema
@@ -82,11 +109,23 @@ export default function HomeScreen() {
         }
       } catch (error) {
         console.log(error);
+        setIsSyncing(false);
       }
     };
 
     syncOfflineExercises();
-  }, [syncMutation]);
+  }, [syncMutation, isSyncing]);
+
+  // Reset sync state when user navigates back to this screen (e.g., after retry)
+  useFocusEffect(
+    useCallback(() => {
+      // Only reset sync state if we haven't attempted sync recently (within 10 seconds)
+      const now = Date.now();
+      if (!isSyncing && now - lastSyncAttempt.current > 10000) {
+        resetSyncState();
+      }
+    }, [isSyncing])
+  );
 
   const handleNavigateToExercise = () => {
     router.push("/(screens)/logExercise");
@@ -133,6 +172,18 @@ export default function HomeScreen() {
           <ThemedText type="subtitle" className="mb-4 text-center">
             Todays Exercise Log
           </ThemedText>
+          {isSyncing && (
+            <View className="mb-4 flex-row items-center justify-center">
+              <ActivityIndicator
+                size="small"
+                color={Colors[theme].highlight}
+                className="mr-2"
+              />
+              <ThemedText className="text-sm text-gray-600">
+                Syncing offline exercises...
+              </ThemedText>
+            </View>
+          )}
           {[...logs]
             .sort((a, b) => {
               // Access the createdAt object (you might still need 'as any' here if your frontend types don't match)

@@ -57,14 +57,10 @@ export default function CalendarScreen() {
   useEffect(() => {
     if (logsError) {
       handleQueryError(logsError);
-    }
-  }, [logsError, handleQueryError]);
-
-  useEffect(() => {
-    if (labelsError) {
+    } else if (labelsError) {
       handleQueryError(labelsError);
     }
-  }, [labelsError, handleQueryError]);
+  }, [logsError, labelsError, handleQueryError]);
 
   if (logsLoading || labelsLoading) {
     return (

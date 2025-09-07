@@ -31,13 +31,13 @@ export default function ExerciseNameInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   type ExerciseNameList = z.infer<typeof ExerciseNameListSchema>;
-  const { data, error } = trpc.fitness.getAllExerciseNames.useQuery() as {
+  const { data } = trpc.fitness.getAllExerciseNames.useQuery() as {
     data: { names: ExerciseNameList[] } | undefined;
     error: any;
   };
 
   const utils = trpc.useUtils();
-  const { handleMutationError, handleQueryError } = useServerErrorHandler();
+  const { handleMutationError } = useServerErrorHandler();
 
   const deleteExerciseNameMutation =
     trpc.fitness.deleteExerciseName.useMutation({
@@ -45,12 +45,6 @@ export default function ExerciseNameInput({
         handleMutationError(error);
       },
     });
-
-  useEffect(() => {
-    if (error) {
-      handleQueryError(error);
-    }
-  }, [error, handleQueryError]);
 
   useEffect(() => {
     if (title.trim().length > 0) {
