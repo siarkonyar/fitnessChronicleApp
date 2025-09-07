@@ -2,6 +2,7 @@ import { Button } from "@/components/Button";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useConnectivity } from "@/context/ConnectivityContext";
 import { getOfflineExercises, OfflineExercise } from "@/lib/offlineStorage";
@@ -95,13 +96,6 @@ export default function OfflineScreen() {
   useEffect(() => {
     loadOfflineExercises();
   }, []);
-
-  // Auto-navigate to index when connectivity is restored
-  useEffect(() => {
-    if (isOnline && !retrying) {
-      router.replace("/");
-    }
-  }, [isOnline, retrying]);
 
   const loadOfflineExercises = async () => {
     try {
@@ -206,7 +200,7 @@ export default function OfflineScreen() {
           </ThemedText>
         </View>
 
-        <View className="items-center">
+        <View className="items-center justify-center flex-row gap-2">
           <Button
             onPress={() => {
               router.push("/offline/logExercise");
@@ -267,9 +261,11 @@ export default function OfflineScreen() {
           })()}
         </ScrollView>
       ) : (
-        <ThemedText type="subtitle" className="mb-4 text-center">
-          No offline exercise logs found
-        </ThemedText>
+        <ThemedView className="flex-1 justify-center px-6 h-full">
+          <ThemedText type="subtitle" className="mb-4 text-center">
+            No offline exercise logs found.
+          </ThemedText>
+        </ThemedView>
       )}
     </>
   );

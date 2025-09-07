@@ -60,7 +60,7 @@ export default function App() {
 
   const navigateAfterFade = useCallback(() => {
     if (isAuthenticated) {
-      router.replace("/offline");
+      router.replace("/(tabs)");
     } else {
       router.replace("/signin");
     }

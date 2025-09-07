@@ -3,7 +3,7 @@ import { Colors } from "@/constants/Colors";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { LabelSchema, LabelWithIdSchema } from "@/types/types";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -75,23 +75,15 @@ export default function DateLabelAssignment({
   const [isLabelSelectionOpen, setIsLabelSelectionOpen] = React.useState(false);
   const [isAssigningLabel, setIsAssigningLabel] = React.useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (error) {
       handleQueryError(error);
-    }
-  }, [error, handleQueryError]);
-
-  React.useEffect(() => {
-    if (labelError) {
+    } else if (labelError) {
       handleQueryError(labelError);
-    }
-  }, [labelError, handleQueryError]);
-
-  React.useEffect(() => {
-    if (labelsRawError) {
+    } else if (labelsRawError) {
       handleQueryError(labelsRawError);
     }
-  }, [labelsRawError, handleQueryError]);
+  }, [error, labelError, labelsRawError, handleQueryError]);
 
   //TODO: after clicking on an label it shows the loading screen but right after that for a split second it shows the card again. it happens so fast but it is still annoying to see
   async function handleAsignLabelToDay(labelId: string) {
@@ -173,7 +165,7 @@ export default function DateLabelAssignment({
           </MutedCard>
         ) : (
           <Button onPress={() => setIsLabelSelectionOpen(true)}>
-            Assign an Label to This Day
+            Assign a Label to This Day
           </Button>
         )}
       </ThemedView>

@@ -76,28 +76,11 @@ export function useServerErrorHandler() {
         return true; // Error was handled
       }
 
-      // If it's a network error but we think we're online, show connection alert
+      // If it's a network error but we think we're online, just log it silently
+      // The queries will retry automatically when connection is restored
       if (isNetworkError && isOnline) {
-        Alert.alert(
-          "Connection Issue",
-          `Unable to complete this ${operation}. Please check your internet connection and try again.`,
-          [
-            {
-              text: "Retry",
-              onPress: () => {
-                router.reload();
-                // The user can retry manually
-              },
-            },
-            {
-              text: "Go Offline",
-              onPress: () => {
-                router.replace("/offline");
-              },
-            },
-          ]
-        );
-        return true; // Error was handled
+        console.log(`Network error detected while online for ${operation}:`, error);
+        return true; // Error was handled silently
       }
 
       return false; // Error was not handled
