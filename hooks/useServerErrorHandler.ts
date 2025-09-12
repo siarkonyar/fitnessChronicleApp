@@ -59,7 +59,7 @@ export function useServerErrorHandler() {
         // Default offline behavior
         Alert.alert(
           "You're Offline",
-          `This ${operation} cannot be completed while offline. You'll be redirected to the offline page where you can continue using the app.`,
+          "You're not connected to the internet — but don't worry! 🙂 On the offline page you can still log exercises. 💪",
           [
             {
               text: "Go to Offline Page",
@@ -68,8 +68,11 @@ export function useServerErrorHandler() {
               },
             },
             {
-              text: "Cancel",
-              style: "cancel",
+              text: "Retry",
+              /* style: "cancel", */
+              onPress: () => {
+                router.push("/");
+              },
             },
           ]
         );

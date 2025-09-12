@@ -149,7 +149,7 @@ export default function ExerciseNameInput({
                   className="max-h-48"
                   keyboardShouldPersistTaps="always"
                   nestedScrollEnabled={true}
-                  showsVerticalScrollIndicator={false}
+                  showsVerticalScrollIndicator={true}
                 >
                   {suggestionsFromPrevios.map((suggestion, index) => (
                     <TouchableOpacity

@@ -6,6 +6,7 @@ import { ExerciseLogSchema } from "@/types/types";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -20,6 +21,7 @@ export default function CalendarScreen() {
   const today = new Date().toLocaleDateString("en-CA");
   const [selectedDate, setSelectedDate] = useState(today);
   const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
+  const [refreshing, setRefreshing] = useState(false);
   const theme = useColorScheme() ?? "light";
   const { handleQueryError } = useServerErrorHandler();
 
@@ -62,6 +64,11 @@ export default function CalendarScreen() {
     }
   }, [logsError, labelsError, handleQueryError]);
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1500);
+  };
+
   if (logsLoading || labelsLoading) {
     return (
       <SafeAreaView
@@ -80,7 +87,16 @@ export default function CalendarScreen() {
   return (
     <>
       <View className="flex-1">
-        <ScrollView>
+        <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#ff5733"]} // Android
+              tintColor="#ff5733" // iOS
+            />
+          }
+        >
           <Calendar
             key={theme}
             // Initially visible month

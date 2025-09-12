@@ -12,6 +12,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   View,
   useColorScheme,
@@ -25,7 +26,8 @@ import { z } from "zod";
 export default function HomeScreen() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
-  const { handleQueryError, handleMutationError } = useServerErrorHandler();
+  const { handleQueryError } = useServerErrorHandler();
+  const [refreshing, setRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const hasAttemptedSync = useRef(false);
   const lastSyncAttempt = useRef<number>(0);
@@ -127,6 +129,11 @@ export default function HomeScreen() {
     }, [isSyncing])
   );
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1500);
+  };
+
   const handleNavigateToExercise = () => {
     router.push("/(screens)/logExercise");
   };
@@ -168,7 +175,17 @@ export default function HomeScreen() {
       </View>
 
       {logs && logs.length > 0 ? (
-        <ScrollView className="w-full px-4 py-6">
+        <ScrollView
+          className="w-full px-4 py-6"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#ff5733"]} // Android
+              tintColor="#ff5733" // iOS
+            />
+          }
+        >
           <ThemedText type="subtitle" className="mb-4 text-center">
             Todays Exercise Log
           </ThemedText>
