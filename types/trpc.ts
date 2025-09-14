@@ -36,7 +36,7 @@ const dummyRouter = t.router({
             .mutation(() => { /* dummy implementation */ }), // Match server's method (mutation)
         getAllExerciseNames: t.procedure
             .query(() => { /* dummy implementation */ }),
-        getLatestExerciseByName: t.procedure
+        getLatestExercisesByName: t.procedure
             .input(z.object({ name: z.string().min(1) }))
             .query(() => { /* dummy implementation */ }),
         deleteExerciseName: t.procedure

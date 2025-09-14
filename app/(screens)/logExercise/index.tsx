@@ -3,6 +3,7 @@ import ExerciseNameInput from "@/components/exercise/ExerciseNameInput";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -14,7 +15,6 @@ import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
-import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 
 export default function Index() {
   const scrollRef = useRef<ScrollView>(null);
@@ -137,10 +137,10 @@ export default function Index() {
 
   type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
   const {
-    data: previousExercise,
+    data: previousExercises,
     isLoading,
     error,
-  } = trpc.fitness.getLatestExerciseByName.useQuery(
+  } = trpc.fitness.getLatestExercisesByName.useQuery(
     {
       name: title.trim().toLowerCase(),
     },
@@ -149,10 +149,15 @@ export default function Index() {
       retry: false,
     }
   ) as {
-    data: ExerciseLog | undefined;
+    data: ExerciseLog[] | undefined;
     isLoading: boolean;
     error: any;
   };
+
+  const sortedPreviousExercises = React.useMemo(() => {
+    if (!previousExercises) return [] as ExerciseLog[];
+    return [...previousExercises].sort((a, b) => b.date.localeCompare(a.date));
+  }, [previousExercises]);
 
   useEffect(() => {
     if (error) {
@@ -251,8 +256,16 @@ export default function Index() {
                     <ThemedText className="text-gray-500">
                       No previous exercise found
                     </ThemedText>
-                  ) : previousExercise ? (
-                    <GetExerciseCard exercise={previousExercise} index={0} />
+                  ) : sortedPreviousExercises.length > 0 ? (
+                    sortedPreviousExercises
+                      .slice(0, 4)
+                      .map((exercise, idx) => (
+                        <GetExerciseCard
+                          key={exercise.id}
+                          exercise={exercise}
+                          index={idx}
+                        />
+                      ))
                   ) : (
                     <ThemedText className="text-gray-500">
                       No previous exercise found

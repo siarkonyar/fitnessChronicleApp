@@ -92,8 +92,8 @@ export default function CalendarScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={["#ff5733"]} // Android
-              tintColor="#ff5733" // iOS
+              colors={[Colors[theme].highlight]} // Android
+              tintColor={Colors[theme].highlight} // iOS
             />
           }
         >
