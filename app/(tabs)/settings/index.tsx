@@ -2,13 +2,20 @@ import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import UserLabelList from "@/components/lists/UserLabelList";
 import { ThemedText } from "@/components/ThemedText";
+import { Colors } from "@/constants/Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useState } from "react";
-import { Alert, RefreshControl, ScrollView } from "react-native";
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  useColorScheme,
+} from "react-native";
 import { auth } from "../../../lib/firebase";
 
 export default function Settings() {
   const [refreshing, setRefreshing] = useState(false);
+  const theme = useColorScheme() ?? "light";
 
   const handleSignout = async () => {
     try {
@@ -34,8 +41,8 @@ export default function Settings() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#ff5733"]} // Android
-            tintColor="#ff5733" // iOS
+            colors={[Colors[theme].highlight]} // Android
+            tintColor={Colors[theme].highlight} // iOS
           />
         }
       >
