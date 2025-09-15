@@ -3,6 +3,7 @@ import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { router } from "expo-router";
 import React, { useCallback, useEffect } from "react";
@@ -18,6 +19,7 @@ import Animated, {
 export default function App() {
   const theme = useColorScheme() ?? "light";
   const { isAuthenticated, authLoading } = useAuth();
+  const { handleQueryError } = useServerErrorHandler();
   const utils = trpc.useUtils();
 
   const opacity = useSharedValue(0);
@@ -52,11 +54,12 @@ export default function App() {
         utils.label.getAllLabelsFromMonth.prefetch({ date: visibleMonth }),
         utils.fitness.getExerciseLogByDate.prefetch({ date: today }),
         utils.label.getAllLabels.prefetch(),
-      ]).catch(() => {
-        // Ignore prefetch errors; do not block splash/navigation
+      ]).catch((error) => {
+        // Handle prefetch errors with offline redirection
+        handleQueryError(error);
       });
     }
-  }, [authLoading, isAuthenticated, utils]);
+  }, [authLoading, isAuthenticated, utils, handleQueryError]);
 
   const navigateAfterFade = useCallback(() => {
     if (isAuthenticated) {

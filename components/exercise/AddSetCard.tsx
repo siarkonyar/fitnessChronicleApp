@@ -117,11 +117,19 @@ export const AddSetCard: React.FC<Props> = ({
   };
 
   const openDropdown = useCallback(() => {
-    bottomSheetModalRef.current?.present();
-    // Force it to open at full height immediately
-    requestAnimationFrame(() => {
-      bottomSheetModalRef.current?.snapToIndex(0);
-    });
+    try {
+      bottomSheetModalRef.current?.present();
+      // Force it to open at full height immediately
+      requestAnimationFrame(() => {
+        try {
+          bottomSheetModalRef.current?.snapToIndex(0);
+        } catch (error) {
+          console.error("Error snapping to index:", error);
+        }
+      });
+    } catch (error) {
+      console.error("Error opening dropdown:", error);
+    }
   }, []);
 
   const renderBackdrop = useCallback(
