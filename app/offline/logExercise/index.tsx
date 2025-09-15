@@ -7,7 +7,11 @@ import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import { ScrollView, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  FadeInUp,
+  LinearTransition,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
@@ -156,7 +160,7 @@ export default function Index() {
                   <Animated.View
                     key={set.id}
                     layout={LinearTransition}
-                    entering={FadeInUp.springify().damping(15)}
+                    entering={FadeInUp.easing(Easing.out(Easing.cubic))}
                   >
                     <AddSetCard
                       id={set.id}

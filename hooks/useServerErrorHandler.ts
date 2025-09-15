@@ -1,10 +1,15 @@
 import { useConnectivity } from "@/context/ConnectivityContext";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
+import * as Updates from "expo-updates";
 import { useCallback } from "react";
 import { Alert } from "react-native";
 
+// Global state to track if offline alert is showing
+let isOfflineAlertShowing = false;
+
 export function useServerErrorHandler() {
   const { isOnline } = useConnectivity();
+  const pathname = usePathname();
 
   const handleError = useCallback(
     (error: any, operation: "query" | "mutation", customHandlers?: {
@@ -50,11 +55,26 @@ export function useServerErrorHandler() {
 
       // If it's a network error and we're offline, show offline alert
       if (isNetworkError && !isOnline) {
+        // Don't show offline alert if we're already on the offline page or offline log exercise page
+        if (pathname === "/offline" || pathname === "/offline/logExercise") {
+          console.log("Network error on offline page - not showing alert");
+          return true; // Error was handled silently
+        }
+
+        // Don't show alert if one is already showing
+        if (isOfflineAlertShowing) {
+          console.log("Offline alert already showing - skipping");
+          return true; // Error was handled silently
+        }
+
         // Use custom offline handler if provided
         if (customHandlers?.onOfflineError) {
           const wasHandled = customHandlers.onOfflineError(error);
           if (wasHandled) return true;
         }
+
+        // Set flag to prevent multiple alerts
+        isOfflineAlertShowing = true;
 
         // Default offline behavior
         Alert.alert(
@@ -64,17 +84,28 @@ export function useServerErrorHandler() {
             {
               text: "Go to Offline Page",
               onPress: () => {
+                isOfflineAlertShowing = false; // Reset flag when user interacts
                 router.push("/offline");
               },
             },
             {
               text: "Retry",
               /* style: "cancel", */
-              onPress: () => {
-                router.push("/");
+              onPress: async () => {
+                isOfflineAlertShowing = false; // Reset flag when user interacts
+                try {
+                  await Updates.reloadAsync(); // This reloads the app like a fresh start
+                } catch (e) {
+                  console.error("Error reloading app:", e);
+                }
               },
             },
-          ]
+          ],
+          {
+            onDismiss: () => {
+              isOfflineAlertShowing = false; // Reset flag when alert is dismissed
+            },
+          }
         );
         return true; // Error was handled
       }
@@ -88,7 +119,7 @@ export function useServerErrorHandler() {
 
       return false; // Error was not handled
     },
-    [isOnline]
+    [isOnline, pathname]
   );
 
   const handleQueryError = useCallback(

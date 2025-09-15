@@ -72,11 +72,11 @@ const INDEX_OPTIONS = {
   title: "",
   headerLargeTitle: false,
   HeaderTitle: false,
-  headerBackButtonDisplayMode: "generic",
+  HeaderBackButton: false,
 } as const;
 const SIGNIN_OPTIONS = {
   title: "",
   headerLargeTitle: false,
   HeaderTitle: false,
-  headerBackButtonDisplayMode: "generic",
+  headerBackButton: false,
 } as const;

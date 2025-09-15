@@ -6,11 +6,14 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useConnectivity } from "@/context/ConnectivityContext";
 import { getOfflineExercises, OfflineExercise } from "@/lib/offlineStorage";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import * as Updates from "expo-updates";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Pressable,
   ScrollView,
   useColorScheme,
   View,
@@ -20,7 +23,6 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-// Helper function to format date for display
 const formatDateForDisplay = (dateString: string): string => {
   const today = new Date();
   const yesterday = new Date(today);
@@ -28,7 +30,6 @@ const formatDateForDisplay = (dateString: string): string => {
 
   const exerciseDate = new Date(dateString);
 
-  // Reset time to compare only dates
   const todayDate = new Date(
     today.getFullYear(),
     today.getMonth(),
@@ -50,7 +51,6 @@ const formatDateForDisplay = (dateString: string): string => {
   } else if (exerciseDateOnly.getTime() === yesterdayDate.getTime()) {
     return "Yesterday's Exercise Logs";
   } else {
-    // Format as "1st of August Exercise Logs"
     const day = exerciseDate.getDate();
     const month = exerciseDate.toLocaleString("default", { month: "long" });
     const daySuffix =
@@ -61,29 +61,23 @@ const formatDateForDisplay = (dateString: string): string => {
           : day === 3 || day === 23
             ? "rd"
             : "th";
-
     return `${day}${daySuffix} of ${month} Exercise Logs`;
   }
 };
 
-// Helper function to group exercises by date
 const groupExercisesByDate = (
   exercises: OfflineExercise[]
 ): { [key: string]: OfflineExercise[] } => {
   return exercises.reduce(
     (groups, exercise) => {
       const date = exercise.date;
-      if (!groups[date]) {
-        groups[date] = [];
-      }
+      if (!groups[date]) groups[date] = [];
       groups[date].push(exercise);
       return groups;
     },
     {} as { [key: string]: OfflineExercise[] }
   );
 };
-
-// This function will be defined inside the component to access the mutation
 
 export default function OfflineScreen() {
   const insets = useSafeAreaInsets();
@@ -92,6 +86,27 @@ export default function OfflineScreen() {
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const { isOnline, refresh } = useConnectivity();
+
+  // JS-driven spinner state
+  const [rotation, setRotation] = useState(0);
+  const spinRef = useRef<number | null>(null);
+
+  const startSpin = () => {
+    if (spinRef.current !== null) return;
+    const step = () => {
+      setRotation((prev) => (prev + 6) % 360);
+      spinRef.current = requestAnimationFrame(step);
+    };
+    spinRef.current = requestAnimationFrame(step);
+  };
+
+  const stopSpin = () => {
+    if (spinRef.current !== null) {
+      cancelAnimationFrame(spinRef.current);
+      spinRef.current = null;
+    }
+    setRotation(0);
+  };
 
   useEffect(() => {
     loadOfflineExercises();
@@ -108,46 +123,52 @@ export default function OfflineScreen() {
     }
   };
 
-  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadOfflineExercises();
     }, [])
   );
 
-  // Handle retry connection
   const handleRetryConnection = async () => {
     setRetrying(true);
-    try {
-      // Refresh connectivity status
-      refresh();
+    startSpin();
+    const minSpinMs = 900;
+    const startTime = Date.now();
 
-      // Wait for connectivity check to complete and check multiple times
+    try {
+      refresh();
       let attempts = 0;
       const maxAttempts = 5;
 
       while (attempts < maxAttempts) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Check if we're online after refresh
         if (isOnline) {
-          router.replace("/");
-          return;
+          try {
+            await Updates.reloadAsync();
+          } catch (e) {
+            console.error("Error reloading app:", e);
+          }
+          break;
         }
-
         attempts++;
       }
 
-      // If still offline after all attempts, show user feedback
-      Alert.alert(
-        "Connection Failed",
-        "Unable to establish internet connection. Please check your network settings and try again.",
-        [{ text: "OK" }]
-      );
+      if (!isOnline) {
+        Alert.alert(
+          "Connection Failed",
+          "Unable to establish internet connection. Please check your network settings and try again.",
+          [{ text: "OK" }]
+        );
+      }
     } catch (error) {
       console.error("Retry connection failed:", error);
     } finally {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, minSpinMs - elapsed);
+      if (remaining > 0)
+        await new Promise((resolve) => setTimeout(resolve, remaining));
       setRetrying(false);
+      stopSpin();
     }
   };
 
@@ -168,11 +189,9 @@ export default function OfflineScreen() {
 
   return (
     <>
-      <View
-        className="px-4 pb-3"
-        style={{
-          paddingTop: insets.top,
-        }}
+      <ThemedView
+        className="px-4 pb-3 justify-between flex-row"
+        style={{ paddingTop: insets.top }}
       >
         <View className="flex-row items-center">
           <MyIcon size={32} color={Colors[theme].highlight} />
@@ -185,7 +204,25 @@ export default function OfflineScreen() {
             ercule
           </ThemedText>
         </View>
-      </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            if (!retrying) handleRetryConnection();
+          }}
+          disabled={retrying}
+          className="ml-2"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <View style={{ transform: [{ rotate: `${rotation}deg` }] }}>
+            <MaterialIcons
+              name="refresh"
+              size={24}
+              color={Colors[theme].highlight}
+            />
+          </View>
+        </Pressable>
+      </ThemedView>
+
       <View className="flex-col justify-center px-4 my-4">
         <View className="items-center my-4">
           <ThemedText className="text-xl font-semibold text-center mb-2">
@@ -195,62 +232,37 @@ export default function OfflineScreen() {
             You&apos;re currently offline. Log your exercises here and
             they&apos;ll be automatically synced when you get back online.
           </ThemedText>
-          <ThemedText className="text-base text-center text-gray-600 leading-relaxed">
-            ({logs.length} logs)
-          </ThemedText>
         </View>
-
-        <View className="items-center justify-center flex-row gap-2">
-          <Button
-            onPress={() => {
-              router.push("/offline/logExercise");
-            }}
-          >
+        <View className="items-center justify-center">
+          <Button onPress={() => router.push("/offline/logExercise")}>
             Log Exercise
-          </Button>
-
-          {/* TODO: make this a little reload button next to logo */}
-          <Button
-            type="primary"
-            onPress={handleRetryConnection}
-            disabled={retrying}
-          >
-            {retrying ? "Checking Connection..." : "Retry Connection"}
           </Button>
         </View>
       </View>
-      {logs && logs.length > 0 ? (
+
+      {logs.length > 0 ? (
         <ScrollView className="w-full px-4 py-6">
           {(() => {
-            // Group exercises by date
-            const groupedExercises = groupExercisesByDate(logs);
-
-            // Sort dates in descending order (newest first)
-            const sortedDates = Object.keys(groupedExercises).sort((a, b) => {
-              return new Date(b).getTime() - new Date(a).getTime();
-            });
-
+            const grouped = groupExercisesByDate(logs);
+            const sortedDates = Object.keys(grouped).sort(
+              (a, b) => new Date(b).getTime() - new Date(a).getTime()
+            );
             return sortedDates.map((date) => {
-              const exercisesForDate = groupedExercises[date];
-
-              // Sort exercises within each date by timestamp (newest first)
-              const sortedExercises = exercisesForDate.sort((a, b) => {
-                const timestampA = new Date(a.timestamp).getTime();
-                const timestampB = new Date(b.timestamp).getTime();
-                return timestampB - timestampA;
-              });
-
+              const sortedExercises = grouped[date].sort(
+                (a, b) =>
+                  new Date(b.timestamp).getTime() -
+                  new Date(a.timestamp).getTime()
+              );
               return (
                 <View key={date} className="mb-6">
                   <ThemedText type="subtitle" className="mb-4 text-center">
                     {formatDateForDisplay(date)}
                   </ThemedText>
-
-                  {sortedExercises.map((log, index) => (
+                  {sortedExercises.map((log, idx) => (
                     <GetExerciseCard
                       key={log.id}
                       exercise={log}
-                      index={index}
+                      index={idx}
                       deletable
                       offline={loadOfflineExercises}
                     />

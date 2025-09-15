@@ -3,6 +3,7 @@ import { ThemedView } from "@/components/ThemedView";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { Colors } from "@/constants/Colors";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { formatDateAsString, getTodayString } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { router } from "expo-router";
@@ -11,30 +12,6 @@ import { ActivityIndicator, useColorScheme } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
 import DateLabelAssignment from "./DateLabelAssignment";
-
-// Helper function to format date as "20th of August"
-const formatDateAsString = (dateString: string): string => {
-  const date = new Date(dateString);
-  const day = date.getDate();
-  const month = date.toLocaleDateString("en-US", { month: "long" });
-
-  // Add ordinal suffix to day
-  const getOrdinalSuffix = (day: number): string => {
-    if (day > 3 && day < 21) return "th";
-    switch (day % 10) {
-      case 1:
-        return "st";
-      case 2:
-        return "nd";
-      case 3:
-        return "rd";
-      default:
-        return "th";
-    }
-  };
-
-  return `${day}${getOrdinalSuffix(day)} of ${month}`;
-};
 
 export default function ExerciseLogByDate({
   selectedDate,
@@ -73,7 +50,7 @@ export default function ExerciseLogByDate({
   );
 
   // Get today's date in yyyy-mm-dd format
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = getTodayString();
 
   // Compare and switch
   switch (true) {
@@ -141,7 +118,7 @@ export default function ExerciseLogByDate({
     <>
       <ThemedView className="flex-1 justify-center items-center my-8">
         <ThemedText type="title" className="mb-8 text-center">
-          {selectedDate === today ? "Today" : formatDateAsString(selectedDate)}
+          {formatDateAsString(selectedDate)}
         </ThemedText>
 
         <DateLabelAssignment selectedDate={selectedDate} />

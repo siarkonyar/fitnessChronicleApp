@@ -3,7 +3,9 @@ import ExerciseNameInput from "@/components/exercise/ExerciseNameInput";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { formatDateAsString } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -11,7 +13,11 @@ import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { FadeInUp, LinearTransition } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  FadeInUp,
+  LinearTransition,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
@@ -202,7 +208,7 @@ export default function Index() {
                   <Animated.View
                     key={set.id}
                     layout={LinearTransition}
-                    entering={FadeInUp.springify().damping(15)}
+                    entering={FadeInUp.easing(Easing.out(Easing.cubic))}
                   >
                     <AddSetCard
                       id={set.id}
@@ -246,7 +252,7 @@ export default function Index() {
                   className="items-center justify-between mt-2 mb-16"
                 >
                   <ThemedText type="title" className="font-bold mb-8">
-                    Previous Performance
+                    Previous session
                   </ThemedText>
                   {isLoading ? (
                     <ThemedText className="text-gray-500">
@@ -257,15 +263,20 @@ export default function Index() {
                       No previous exercise found
                     </ThemedText>
                   ) : sortedPreviousExercises.length > 0 ? (
-                    sortedPreviousExercises
-                      .slice(0, 4)
-                      .map((exercise, idx) => (
-                        <GetExerciseCard
-                          key={exercise.id}
-                          exercise={exercise}
-                          index={idx}
-                        />
-                      ))
+                    sortedPreviousExercises.slice(0, 4).map((exercise, idx) => (
+                      <React.Fragment key={exercise.id}>
+                        <ThemedView className="flex-col items-end">
+                          <ThemedText
+                            lightColor={Colors.light.mutedText}
+                            darkColor={Colors.dark.mutedText}
+                            className="text-sm mb-2"
+                          >
+                            {formatDateAsString(exercise.date)}
+                          </ThemedText>
+                          <GetExerciseCard exercise={exercise} index={idx} />
+                        </ThemedView>
+                      </React.Fragment>
+                    ))
                   ) : (
                     <ThemedText className="text-gray-500">
                       No previous exercise found
