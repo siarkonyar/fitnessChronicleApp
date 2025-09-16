@@ -5,7 +5,7 @@ export interface OfflineExercise {
   date: string;
   activity: string;
   sets: {
-    setType: "warmup" | "normal" | "failure" | "drop";
+    setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
     measure: "kg";
     value: string;
     reps: string;

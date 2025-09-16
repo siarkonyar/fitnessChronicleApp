@@ -20,12 +20,12 @@ type Props = {
   index: number;
   reps: string;
   value: string;
-  setType: "warmup" | "normal" | "failure" | "drop";
+  setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
   onRepsChange: (id: number, newReps: string) => void;
   onValueChange: (id: number, newValue: string) => void;
   onSetTypeChange: (
     id: number,
-    newSetType: "warmup" | "normal" | "failure" | "drop"
+    newSetType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr"
   ) => void;
   onRemove: (id: number) => void;
   onCopy: (id: number) => void;
@@ -104,13 +104,31 @@ export const AddSetCard: React.FC<Props> = ({
             D
           </ThemedText>
         );
+      case "pr":
+        return (
+          <ThemedText
+            lightColor={Colors[theme].success}
+            darkColor={Colors[theme].success}
+          >
+            PR
+          </ThemedText>
+        );
+      case "failedpr":
+        return (
+          <ThemedText
+            lightColor={Colors[theme].danger}
+            darkColor={Colors[theme].danger}
+          >
+            FPR
+          </ThemedText>
+        );
       default:
         return "th";
     }
   };
 
   const handleSetTypeSelect = (
-    selectedType: "warmup" | "normal" | "failure" | "drop"
+    selectedType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr"
   ) => {
     onSetTypeChange(id, selectedType);
     bottomSheetModalRef.current?.dismiss();
@@ -248,47 +266,240 @@ export const AddSetCard: React.FC<Props> = ({
             <TouchableOpacity
               key={"normal"}
               onPress={() => handleSetTypeSelect("normal")}
-              className="py-4 px-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 active:bg-gray-100 dark:active:bg-gray-800"
+              className="py-4 px-6 border-t-2 border-gray-200 dark:border-gray-700"
             >
-              <ThemedText className="text-xl font-medium text-center">
-                Normal
-              </ThemedText>
+              <ThemedView
+                className="flex-row items-center"
+                lightColor={Colors[theme].cardBackground}
+                darkColor={Colors[theme].cardBackground}
+              >
+                <ThemedView
+                  className="w-16 h-12 items-center justify-center mr-4 border-r border-gray-300 dark:border-gray-600 pr-4"
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText className="text-lg font-bold">
+                    {index + 1}
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView
+                  className="flex-1"
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText className="text-lg font-semibold">
+                    Normal Set
+                  </ThemedText>
+                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                    Regular working set
+                  </ThemedText>
+                </ThemedView>
+              </ThemedView>
             </TouchableOpacity>
+
             <TouchableOpacity
               key={"warmup"}
               onPress={() => handleSetTypeSelect("warmup")}
-              className="py-4 px-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 active:bg-gray-100 dark:active:bg-gray-800"
+              className="py-4 px-6 border-t-2 border-gray-200 dark:border-gray-700"
             >
-              <ThemedText
-                style={{ color: Colors[theme].secondary }}
-                className="text-xl font-medium text-center"
+              <ThemedView
+                className="flex-row items-center"
+                lightColor={Colors[theme].cardBackground}
+                darkColor={Colors[theme].cardBackground}
               >
-                Warmup
-              </ThemedText>
+                <ThemedView
+                  className="w-16 h-12 items-center justify-center mr-4 border-r pr-4"
+                  style={{ borderRightColor: Colors[theme].secondary }}
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].secondary }}
+                    className="text-lg font-bold"
+                  >
+                    W
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView
+                  className="flex-1"
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].secondary }}
+                    className="text-lg font-semibold"
+                  >
+                    Warmup Set
+                  </ThemedText>
+                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                    Light weight preparation
+                  </ThemedText>
+                </ThemedView>
+              </ThemedView>
             </TouchableOpacity>
+
             <TouchableOpacity
               key={"failure"}
               onPress={() => handleSetTypeSelect("failure")}
-              className="py-4 px-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 active:bg-gray-100 dark:active:bg-gray-800"
+              className="py-4 px-6 border-t-2 border-gray-200 dark:border-gray-700"
             >
-              <ThemedText
-                style={{ color: Colors[theme].danger }}
-                className="text-xl font-medium text-center"
+              <ThemedView
+                className="flex-row items-center"
+                lightColor={Colors[theme].cardBackground}
+                darkColor={Colors[theme].cardBackground}
               >
-                Failure
-              </ThemedText>
+                <ThemedView
+                  className="w-16 h-12 items-center justify-center mr-4 border-r pr-4"
+                  style={{ borderRightColor: Colors[theme].danger }}
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].danger }}
+                    className="text-lg font-bold"
+                  >
+                    F
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView
+                  className="flex-1"
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].danger }}
+                    className="text-lg font-semibold"
+                  >
+                    Failure Set
+                  </ThemedText>
+                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                    Pushed to muscle failure
+                  </ThemedText>
+                </ThemedView>
+              </ThemedView>
             </TouchableOpacity>
+
             <TouchableOpacity
               key={"drop"}
               onPress={() => handleSetTypeSelect("drop")}
-              className="py-4 px-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 active:bg-gray-100 dark:active:bg-gray-800"
+              className="py-4 px-6 border-t-2 border-gray-200 dark:border-gray-700"
             >
-              <ThemedText
-                style={{ color: Colors[theme].accentBlue }}
-                className="text-xl font-medium text-center"
+              <ThemedView
+                className="flex-row items-center"
+                lightColor={Colors[theme].cardBackground}
+                darkColor={Colors[theme].cardBackground}
               >
-                Drop
-              </ThemedText>
+                <ThemedView
+                  className="w-16 h-12 items-center justify-center mr-4 border-r pr-4"
+                  style={{ borderRightColor: Colors[theme].accentBlue }}
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].accentBlue }}
+                    className="text-lg font-bold"
+                  >
+                    D
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView
+                  className="flex-1"
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].accentBlue }}
+                    className="text-lg font-semibold"
+                  >
+                    Drop Set
+                  </ThemedText>
+                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                    Reduce weight and continue
+                  </ThemedText>
+                </ThemedView>
+              </ThemedView>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              key={"pr"}
+              onPress={() => handleSetTypeSelect("pr")}
+              className="py-4 px-6 border-t-2 border-gray-200 dark:border-gray-700"
+            >
+              <ThemedView
+                className="flex-row items-center"
+                lightColor={Colors[theme].cardBackground}
+                darkColor={Colors[theme].cardBackground}
+              >
+                <ThemedView
+                  className="w-16 h-12 items-center justify-center mr-4 border-r pr-4"
+                  style={{ borderRightColor: Colors[theme].success }}
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].success }}
+                    className="text-lg font-bold"
+                  >
+                    PR
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView
+                  className="flex-1"
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].success }}
+                    className="text-lg font-semibold"
+                  >
+                    Personal Record
+                  </ThemedText>
+                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                    New personal best achieved
+                  </ThemedText>
+                </ThemedView>
+              </ThemedView>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              key={"failedpr"}
+              onPress={() => handleSetTypeSelect("failedpr")}
+              className="py-4 px-6 border-t-2 border-b-2 border-gray-200 dark:border-gray-700"
+            >
+              <ThemedView
+                className="flex-row items-center"
+                lightColor={Colors[theme].cardBackground}
+                darkColor={Colors[theme].cardBackground}
+              >
+                <ThemedView
+                  className="w-16 h-12 items-center justify-center mr-4 border-r pr-4"
+                  style={{ borderRightColor: Colors[theme].danger }}
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].danger }}
+                    className="text-lg font-bold"
+                  >
+                    FPR
+                  </ThemedText>
+                </ThemedView>
+                <ThemedView
+                  className="flex-1"
+                  lightColor={Colors[theme].cardBackground}
+                  darkColor={Colors[theme].cardBackground}
+                >
+                  <ThemedText
+                    style={{ color: Colors[theme].danger }}
+                    className="text-lg font-semibold"
+                  >
+                    Failed PR Attempt
+                  </ThemedText>
+                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                    Attempted but couldn&apos;t complete
+                  </ThemedText>
+                </ThemedView>
+              </ThemedView>
             </TouchableOpacity>
           </ThemedView>
         </BottomSheetView>

@@ -101,7 +101,11 @@ export default function GetExerciseCard({
                       ? "F"
                       : set.setType === "drop"
                         ? "D"
-                        : `${index + 1}.`;
+                        : set.setType === "pr"
+                          ? "PR"
+                          : set.setType === "failedpr"
+                            ? "FPR"
+                            : `${index + 1}.`;
 
               return (
                 <ThemedText key={index} className="text-sm">
