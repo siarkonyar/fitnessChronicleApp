@@ -40,7 +40,7 @@ export default function Index() {
       id: number;
       reps: string;
       value: string;
-      setType: "warmup" | "normal" | "failure" | "drop";
+      setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
     }[]
   >([]);
 
@@ -77,7 +77,7 @@ export default function Index() {
 
   const updateSetType = (
     id: number,
-    newSetType: "warmup" | "normal" | "failure" | "drop"
+    newSetType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr"
   ) => {
     setSets((prev) =>
       prev.map((s) => (s.id === id ? { ...s, setType: newSetType } : s))
