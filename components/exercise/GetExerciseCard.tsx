@@ -65,7 +65,7 @@ export default function GetExerciseCard({
     );
   };
   return (
-    <TouchableOpacity>
+    <TouchableOpacity activeOpacity={1}>
       <Card className="shadow-md shadow-gray-900 p-3 rounded-lg mb-3 relative">
         {deletable && (
           <TouchableOpacity

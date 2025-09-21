@@ -21,6 +21,7 @@ type Props = {
   reps: string;
   value: string;
   setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
+  measurement: "kg" | "lbs" | "time" | "distance" | "step";
   onRepsChange: (id: number, newReps: string) => void;
   onValueChange: (id: number, newValue: string) => void;
   onSetTypeChange: (
@@ -37,6 +38,7 @@ export const AddSetCard: React.FC<Props> = ({
   reps,
   value,
   setType,
+  measurement,
   onRepsChange,
   onValueChange,
   onSetTypeChange,
@@ -89,8 +91,8 @@ export const AddSetCard: React.FC<Props> = ({
       case "failure":
         return (
           <ThemedText
-            lightColor={Colors[theme].danger}
-            darkColor={Colors[theme].danger}
+            lightColor={Colors[theme].highlight}
+            darkColor={Colors[theme].highlight}
           >
             F
           </ThemedText>
@@ -174,43 +176,58 @@ export const AddSetCard: React.FC<Props> = ({
             </ThemedView>
 
             <ThemedView>
-              <ThemedView className="flex-row items-center">
-                <Text className="text-xl text-gray-500 w-[50px]">Reps:</Text>
-                <ThemedView className="ml-2 justify-center overflow-hidden">
-                  <Picker
-                    selectedValue={reps}
-                    onValueChange={(val) => onRepsChange(id, val)}
-                    mode="dropdown"
-                    style={{
-                      width: KG_INPUT_TOTAL_WIDTH,
-                      height: 56,
-                      color: "#111",
-                      backgroundColor: "transparent",
-                    }}
-                    itemStyle={{
-                      fontSize: 20,
-                      height: 56,
-                    }}
-                  >
-                    {[
-                      "1",
-                      "2",
-                      "3-4",
-                      "5-6",
-                      "7-8",
-                      "9-10",
-                      "10-12",
-                      "12-15",
-                      "15-20",
-                      "20+",
-                    ].map((range) => (
-                      <Picker.Item label={range} value={range} key={range} />
-                    ))}
-                  </Picker>
+              {/* Only show reps picker for kg and lbs measurements */}
+              {(measurement === "kg" || measurement === "lbs") && (
+                <ThemedView className="flex-row items-center">
+                  <Text className="text-xl text-gray-500 w-[50px]">Reps:</Text>
+                  <ThemedView className="ml-2 justify-center overflow-hidden">
+                    <Picker
+                      selectedValue={reps}
+                      onValueChange={(val) => onRepsChange(id, val)}
+                      mode="dropdown"
+                      style={{
+                        width: KG_INPUT_TOTAL_WIDTH,
+                        height: 56,
+                        color: "#111",
+                        backgroundColor: "transparent",
+                      }}
+                      itemStyle={{
+                        fontSize: 20,
+                        height: 56,
+                      }}
+                    >
+                      {[
+                        "1",
+                        "2",
+                        "3-4",
+                        "5-6",
+                        "7-8",
+                        "9-10",
+                        "10-12",
+                        "12-15",
+                        "15-20",
+                        "20+",
+                      ].map((range) => (
+                        <Picker.Item label={range} value={range} key={range} />
+                      ))}
+                    </Picker>
+                  </ThemedView>
                 </ThemedView>
-              </ThemedView>
+              )}
               <ThemedView className="flex-row items-center">
-                <Text className="text-xl text-gray-500 w-[50px]">Kg:</Text>
+                <Text className="text-xl text-gray-500 w-[50px]">
+                  {measurement === "kg"
+                    ? "Kg:"
+                    : measurement === "lbs"
+                      ? "Lbs:"
+                      : measurement === "time"
+                        ? "Sec:"
+                        : measurement === "distance"
+                          ? "Km:"
+                          : measurement === "step"
+                            ? "Steps"
+                            : ""}
+                </Text>
                 <ThemedView className="ml-5 justify-center">
                   <ThemedTextInput
                     value={value}
@@ -350,12 +367,12 @@ export const AddSetCard: React.FC<Props> = ({
               >
                 <ThemedView
                   className="w-16 h-12 items-center justify-center mr-4 border-r pr-4"
-                  style={{ borderRightColor: Colors[theme].danger }}
+                  style={{ borderRightColor: Colors[theme].highlight }}
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
                 >
                   <ThemedText
-                    style={{ color: Colors[theme].danger }}
+                    style={{ color: Colors[theme].highlight }}
                     className="text-lg font-bold"
                   >
                     F
@@ -367,7 +384,7 @@ export const AddSetCard: React.FC<Props> = ({
                   darkColor={Colors[theme].cardBackground}
                 >
                   <ThemedText
-                    style={{ color: Colors[theme].danger }}
+                    style={{ color: Colors[theme].highlight }}
                     className="text-lg font-semibold"
                   >
                     Failure Set

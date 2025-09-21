@@ -14,10 +14,13 @@ export default function MutedCard({
   style,
   ...otherProps
 }: MutedCardProps) {
+  const { onBlur, onFocus, ...touchableProps } = otherProps as any;
+
   return (
     <TouchableOpacity
       className={`flex-row items-center p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-xl active:scale-95 transition-transform shadow-sm${className ? ` ${className}` : ""}`}
-      {...otherProps}
+      activeOpacity={1}
+      {...touchableProps}
       onPress={onPress}
     >
       {children}

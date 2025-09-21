@@ -129,7 +129,7 @@ export default function ExerciseNameInput({
         onChangeText={setTitle}
         onFocus={handleInputFocus}
         onBlur={handleInputBlur}
-        className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg w-full mb-4 text-3xl"
+        className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg w-full text-3xl"
         placeholder="Enter exercise name..."
         autoCapitalize="characters"
         style={{ textTransform: "uppercase" }} // 🔑 immediate uppercase display
