@@ -36,11 +36,20 @@ export default function Index() {
 
   const [isLogging, setIsLogging] = useState(false);
   const [measurement, setMeasurement] = useState<
-    "kg" | "lbs" | "time" | "distance" | "step"
+    "kg" | "lbs" | "time" | "distance" | "steps"
   >("kg");
 
   // Track previous length
   const prevLengthRef = useRef(sets.length);
+
+  const handleMeasurementChange = (
+    newMeasurement: "kg" | "lbs" | "time" | "distance" | "steps"
+  ) => {
+    if (newMeasurement !== measurement) {
+      setSets([]); // Reset sets only when measurement actually changes
+    }
+    setMeasurement(newMeasurement);
+  };
 
   const addSet = () => {
     const newSet = {
@@ -102,21 +111,49 @@ export default function Index() {
     try {
       setIsLogging(true);
       const formattedSets = sets.map(({ value, reps, setType }) => {
-        const baseSet = {
-          setType: setType,
-          measure: measurement,
-          value: value || "",
-        };
-
-        // Only include reps for kg and lbs measurements
-        if (measurement === "kg" || measurement === "lbs") {
-          return {
-            ...baseSet,
-            reps: reps || "",
-          };
+        // Create the correct object structure based on measurement type
+        switch (measurement) {
+          case "kg":
+            return {
+              measure: "kg" as const,
+              setType: setType,
+              value: value || "",
+              reps: reps || "",
+            };
+          case "lbs":
+            return {
+              measure: "lbs" as const,
+              setType: setType,
+              value: value || "",
+              reps: reps || "",
+            };
+          case "time":
+            return {
+              measure: "time" as const,
+              setType: setType as "warmup" | "normal" | "failure" | "pr",
+              value: value || "",
+            };
+          case "distance":
+            return {
+              measure: "distance" as const,
+              setType: setType as "warmup" | "normal" | "failure" | "pr",
+              value: value || "",
+            };
+          case "steps":
+            return {
+              measure: "steps" as const,
+              setType: setType as "warmup" | "normal" | "failure" | "pr",
+              value: value || "",
+            };
+          default:
+            // Fallback (should never reach here)
+            return {
+              measure: "kg" as const,
+              setType: setType,
+              value: value || "",
+              reps: reps || "",
+            };
         }
-
-        return baseSet;
       });
 
       const payload = {
@@ -173,7 +210,7 @@ export default function Index() {
                 <TouchableOpacity
                   key={1}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("kg")}
+                  onPress={() => handleMeasurementChange("kg")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
@@ -205,7 +242,7 @@ export default function Index() {
                 <TouchableOpacity
                   key={2}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("lbs")}
+                  onPress={() => handleMeasurementChange("lbs")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
@@ -237,7 +274,7 @@ export default function Index() {
                 <TouchableOpacity
                   key={3}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("time")}
+                  onPress={() => handleMeasurementChange("time")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
@@ -268,7 +305,7 @@ export default function Index() {
                 <TouchableOpacity
                   key={4}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("distance")}
+                  onPress={() => handleMeasurementChange("distance")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
@@ -301,7 +338,7 @@ export default function Index() {
                 <TouchableOpacity
                   key={5}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("step")}
+                  onPress={() => handleMeasurementChange("steps")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
@@ -312,7 +349,7 @@ export default function Index() {
                     borderTopRightRadius: 8,
                     borderBottomRightRadius: 8,
                     backgroundColor:
-                      measurement === "step"
+                      measurement === "steps"
                         ? Colors[theme].highlight
                         : "transparent",
                   }}
@@ -323,7 +360,7 @@ export default function Index() {
                       fontWeight: "500",
                       fontSize: 12,
                       color:
-                        measurement === "step"
+                        measurement === "steps"
                           ? Colors[theme].background
                           : Colors[theme].highlight,
                     }}
