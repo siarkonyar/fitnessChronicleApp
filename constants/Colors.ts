@@ -22,6 +22,7 @@ export const Colors = {
     tabBackGround: '#FFFFFF',
     cardBackground: '#FFFFFF',
     inputBackground: '#EDEFF2',
+    input: '#FFFFFF',
     separator: '#FFC099',
     mutedText: '#7C8289',
     highlight: '#FF4500',
@@ -45,6 +46,7 @@ export const Colors = {
     tabBackGround: '#121212',
     cardBackground: '#1A1A1A',
     inputBackground: '#2C2C2E',
+    input: '#1F2937', // gray-800 equivalent
     separator: '#6B2A10',
     mutedText: '#9BA1A6',
     highlight: '#FF4500',
