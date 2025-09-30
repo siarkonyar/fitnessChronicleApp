@@ -192,12 +192,12 @@ export const AddSetCard: React.FC<Props> = ({
               </TouchableOpacity>
             </ThemedView>
 
-            <ThemedView>
+            <ThemedView className="flex-1 min-w-0">
               {/* Only show reps picker for kg and lbs measurements */}
               {(measurement === "kg" || measurement === "lbs") && (
                 <ThemedView className="flex-row items-center mb-4">
                   <Text className="text-xl text-gray-500 w-[50px]">Reps:</Text>
-                  <ThemedView className="justify-center">
+                  <ThemedView className="justify-center flex-1 min-w-0">
                     <HorizontalWheelPicker
                       items={repRange}
                       value={reps}
@@ -207,7 +207,7 @@ export const AddSetCard: React.FC<Props> = ({
                   </ThemedView>
                 </ThemedView>
               )}
-              <ThemedView className="flex-row items-center w-full">
+              <ThemedView className="flex-row items-center">
                 <Text className="text-xl text-gray-500 w-[50px] flex-shrink-0">
                   {measurement === "kg"
                     ? "Kg:"
@@ -219,7 +219,7 @@ export const AddSetCard: React.FC<Props> = ({
                           ? "Steps"
                           : ""}
                 </Text>
-                <ThemedView className="justify-center w-full">
+                <ThemedView className="justify-center flex-1 min-w-0">
                   {measurement === "time" ? (
                     <>
                       <ThemedTextInput
