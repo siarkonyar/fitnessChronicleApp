@@ -68,7 +68,7 @@ export const AddSetCard: React.FC<Props> = ({
   // Variables
   const snapPoints = useMemo(() => [], []);
 
-  const flatListItemWidth = 60;
+  const flatListItemWidth = 80;
 
   // ...existing code...
 
@@ -197,7 +197,7 @@ export const AddSetCard: React.FC<Props> = ({
               {(measurement === "kg" || measurement === "lbs") && (
                 <ThemedView className="flex-row items-center mb-4">
                   <Text className="text-xl text-gray-500 w-[50px]">Reps:</Text>
-                  <ThemedView className="justify-center flex-1 min-w-0">
+                  <ThemedView className="justify-center flex-1 min-w-0 px-4">
                     <HorizontalWheelPicker
                       items={repRange}
                       value={reps}
@@ -219,7 +219,7 @@ export const AddSetCard: React.FC<Props> = ({
                           ? "Steps"
                           : ""}
                 </Text>
-                <ThemedView className="justify-center flex-1 min-w-0">
+                <ThemedView className="justify-center flex-1 min-w-0 px-4">
                   {measurement === "time" ? (
                     <>
                       <ThemedTextInput
