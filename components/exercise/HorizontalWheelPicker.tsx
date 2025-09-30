@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme.web";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
@@ -60,7 +61,45 @@ const HorizontalWheelPicker: React.FC<Props> = ({
         const w = e.nativeEvent.layout.width || containerWidth;
         if (w && w !== containerWidth) setContainerWidth(w);
       }}
+      style={{ position: "relative" }}
+      className="bg-gray-200 dark:bg-gray-900 rounded-lg"
     >
+      {/* Left fade gradient */}
+      <LinearGradient
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 80,
+          zIndex: 1,
+        }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        colors={[
+          Colors[theme].background,
+          `${Colors[theme].background}00`, // Using alpha channel for proper fade
+        ]}
+        pointerEvents="none"
+      />
+      {/* Right fade gradient */}
+      <LinearGradient
+        style={{
+          position: "absolute",
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: 80,
+          zIndex: 1,
+        }}
+        start={{ x: 1, y: 0 }}
+        end={{ x: 0, y: 0 }}
+        colors={[
+          Colors[theme].background,
+          `${Colors[theme].background}00`, // Using alpha channel for proper fade
+        ]}
+        pointerEvents="none"
+      />
       <FlatList
         ref={flatRef}
         horizontal
@@ -106,22 +145,27 @@ const HorizontalWheelPicker: React.FC<Props> = ({
           return (
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => {
-                const to = itemIndex * itemWidth;
-                flatRef.current?.scrollToOffset({
-                  offset: to,
-                  animated: true,
-                });
+              //TODO: re-enable onPress and make it better. it should scroll to the selected option
+              /* onPress={() => {
                 setSelectedIndex(itemIndex);
                 onChange(String(item));
-              }}
+                // Ensure proper centering by applying the same offset calculation as in onMomentumScrollEnd
+                requestAnimationFrame(() => {
+                  try {
+                    flatRef.current?.scrollToOffset({
+                      offset: itemIndex * itemWidth,
+                      animated: true,
+                    });
+                  } catch {}
+                });
+              }} */
             >
               <View
                 style={{
                   width: itemWidth,
                   alignItems: "center",
                   justifyContent: "center",
-                  paddingVertical: 8,
+                  paddingVertical: 12,
                 }}
               >
                 <Text
@@ -129,7 +173,7 @@ const HorizontalWheelPicker: React.FC<Props> = ({
                     fontSize: isSelected ? 18 : 14,
                     fontWeight: isSelected ? "700" : "500",
                     color: isSelected
-                      ? Colors[theme].highlight
+                      ? Colors[theme].text
                       : Colors[theme].mutedText,
                   }}
                 >

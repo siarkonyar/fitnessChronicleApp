@@ -228,7 +228,7 @@ export default function Index() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <ThemedView className="flex-1" style={{ paddingTop: 2 * insets.top }}>
-          <ThemedView className="px-4 pb-4">
+          <ThemedView className="px-4 my-4">
             {titleError ? (
               <>
                 <Text className="text-red-500 mb-2">
