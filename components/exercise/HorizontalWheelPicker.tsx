@@ -34,26 +34,36 @@ const HorizontalWheelPicker: React.FC<Props> = ({
 
   // Use only the real items; padding is handled by contentContainerStyle
   const data = useMemo(() => items, [items]);
-
-  const [selectedIndex, setSelectedIndex] = useState<number>(() =>
-    Math.max(0, items.indexOf(value))
-  );
+  // Derive selection from value for a fully-controlled component
+  const selectedIndex = useMemo(() => items.indexOf(value), [items, value]);
+  const safeSelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
 
   useEffect(() => {
-    const idx = items.indexOf(value);
-    if (idx >= 0) {
-      setSelectedIndex(idx);
-      // Wait for layout (containerWidth) to be measured so the padding is correct
+    // Wait for layout (containerWidth) to be measured so the padding is correct
+    requestAnimationFrame(() => {
+      try {
+        flatRef.current?.scrollToOffset({
+          offset: safeSelectedIndex * itemWidth,
+          animated: false,
+        });
+      } catch {}
+    });
+  }, [safeSelectedIndex, itemWidth, containerWidth]);
+
+  // Make sure we scroll to the selected value when it changes (like when cloning a set)
+  useEffect(() => {
+    if (value && items.includes(value)) {
+      const index = items.indexOf(value);
       requestAnimationFrame(() => {
         try {
           flatRef.current?.scrollToOffset({
-            offset: idx * itemWidth,
-            animated: false,
+            offset: index * itemWidth,
+            animated: true,
           });
         } catch {}
       });
     }
-  }, [value, items, itemWidth, containerWidth]);
+  }, [value, items, itemWidth]);
 
   return (
     <View
@@ -107,6 +117,8 @@ const HorizontalWheelPicker: React.FC<Props> = ({
         snapToInterval={itemWidth}
         snapToAlignment="center"
         decelerationRate="fast"
+        // Ensure items re-render when selection/value/items change
+        extraData={{ value, items }}
         snapToOffsets={data.map((_, i) => i * itemWidth)}
         style={{
           paddingLeft: sidePadding,
@@ -116,7 +128,12 @@ const HorizontalWheelPicker: React.FC<Props> = ({
           paddingRight: sidePadding, // Add right padding to allow scrolling to last items
         }}
         data={data}
-        keyExtractor={(_, idx) => String(idx)}
+        ListEmptyComponent={() => (
+          <View style={{ width: itemWidth, alignItems: "center" }}>
+            <Text style={{ color: Colors[theme].mutedText }}>No items</Text>
+          </View>
+        )}
+        keyExtractor={(item, idx) => `${item}-${idx}`}
         getItemLayout={(_data, index) => ({
           length: itemWidth,
           offset: itemWidth * index,
@@ -126,8 +143,7 @@ const HorizontalWheelPicker: React.FC<Props> = ({
           const offsetX = ev.nativeEvent.contentOffset.x;
           const rawIndex = Math.round(offsetX / itemWidth);
           const selected = Math.min(Math.max(0, rawIndex), items.length - 1);
-          if (selected !== selectedIndex) {
-            setSelectedIndex(selected);
+          if (items[selected] !== value) {
             onChange(items[selected]);
           }
           requestAnimationFrame(() => {
@@ -139,15 +155,13 @@ const HorizontalWheelPicker: React.FC<Props> = ({
             } catch {}
           });
         }}
-        renderItem={({ item, index }) => {
-          const itemIndex = index;
-          const isSelected = itemIndex === selectedIndex;
+        renderItem={({ item }) => {
+          const isSelected = String(item) === String(value);
           return (
             <TouchableOpacity
               activeOpacity={0.8}
               //TODO: re-enable onPress and make it better. it should scroll to the selected option
               /* onPress={() => {
-                setSelectedIndex(itemIndex);
                 onChange(String(item));
                 // Ensure proper centering by applying the same offset calculation as in onMomentumScrollEnd
                 requestAnimationFrame(() => {
