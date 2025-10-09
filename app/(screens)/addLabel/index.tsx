@@ -8,10 +8,9 @@ import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import EmojiPicker from "rn-emoji-keyboard";
 
 export default function Index() {
   const insets = useSafeAreaInsets();
@@ -27,27 +26,6 @@ export default function Index() {
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-
-  const emojiTheme = {
-    backdrop: "rgba(0,0,0,0.5)",
-    knob: Colors[theme].separator,
-    container: Colors[theme].cardBackground,
-    header: Colors[theme].text,
-    skinTonesContainer: Colors[theme].inputBackground,
-    category: {
-      icon: Colors[theme].text,
-      iconActive: Colors[theme].highlight,
-      container: Colors[theme].inputBackground,
-      containerActive: Colors[theme].separator,
-    },
-    search: {
-      text: Colors[theme].text,
-      placeholder: Colors[theme].mutedText,
-      icon: Colors[theme].icon,
-      background: Colors[theme].inputBackground,
-    },
-  } as const;
 
   const canSubmit =
     label.trim().length > 0 && description.trim().length > 0 && !isSubmitting;
@@ -84,14 +62,33 @@ export default function Index() {
           </ThemedText>
 
           <View className="items-center mb-6">
-            <Pressable
-              onPress={() => setIsEmojiPickerOpen(true)}
-              className="rounded-2xl p-6 border border-gray-200/50 dark:border-gray-600/50 active:scale-95 transition-transform"
-            >
-              <Text className="text-6xl leading-[72px] mb-2">
-                {label || "😀"}
-              </Text>
-            </Pressable>
+            <ThemedTextInput
+              value={label}
+              onChangeText={(t) => {
+                const chars = Array.from(t);
+                const last = chars[chars.length - 1] ?? "";
+                setLabel(last.toUpperCase());
+              }}
+              maxLength={1}
+              caretHidden
+              onKeyPress={({ nativeEvent: { key } }) => {
+                if (key === "Backspace") return setLabel("");
+                if (/[\p{L}\p{N}]/u.test(key) || /\p{Extended_Pictographic}/u.test(key)) {
+                  setLabel(key.toUpperCase());
+                }
+              }}
+              autoCapitalize="characters"
+              placeholder=""
+              className="w-[56px] h-[56px] border border-gray-300/50 dark:border-gray-600/50 rounded-xl mb-6 bg-white dark:bg-gray-800"
+              style={{
+                textAlign: "center",
+                textAlignVertical: "center" as any,
+                paddingTop: 0,
+                paddingBottom: 0,
+                fontSize: 28,
+                textTransform: "uppercase",
+              }}
+            />
             <ThemedText className="opacity-70 mt-3 text-center">
               Tap label to choose
             </ThemedText>
@@ -125,19 +122,6 @@ export default function Index() {
               {isSubmitting ? "Adding..." : "Add Label"}
             </Button>
           </Animated.View>
-
-          {/* TODO: searchbar is at the bottom. either change the package or find a way to put it on top */}
-          <EmojiPicker
-            open={isEmojiPickerOpen}
-            onClose={() => setIsEmojiPickerOpen(false)}
-            onEmojiSelected={(e) => {
-              setLabel(e.emoji);
-              setIsEmojiPickerOpen(false);
-            }}
-            theme={emojiTheme}
-            //enableSearchBar
-            categoryPosition="top"
-          />
         </View>
       </ScrollView>
     </ThemedView>

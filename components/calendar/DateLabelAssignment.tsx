@@ -153,8 +153,13 @@ export default function DateLabelAssignment({
           <MutedCard onPress={() => setIsLabelSelectionOpen(true)}>
             <View className="flex-col">
               <View className="flex-col items-center justify-center space-x-3">
-                <Text className="text-4xl leading-11">{label.label}</Text>
-                <ThemedText className="text-lg font-medium text-center text-gray-700 dark:text-gray-200">
+                <Text
+                  className="leading-11 text-6xl text-bold"
+                  style={{ color: Colors[theme].text }}
+                >
+                  {label.label}
+                </Text>
+                <ThemedText className="font-medium text-center">
                   {label.description}
                 </ThemedText>
               </View>
