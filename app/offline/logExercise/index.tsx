@@ -6,6 +6,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { saveExerciseToStorage } from "@/lib/offlineStorage";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { Checkbox } from "expo-checkbox";
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import { ScrollView, Text, TouchableOpacity } from "react-native";
@@ -41,6 +42,8 @@ export default function Index() {
 
   // Track previous length
   const prevLengthRef = useRef(sets.length);
+
+  const [isRepsFixed, setIsRepsFixed] = useState(false);
 
   const handleMeasurementChange = (
     newMeasurement: "kg" | "lbs" | "time" | "distance" | "steps"
@@ -197,6 +200,7 @@ export default function Index() {
           <ScrollView
             ref={scrollRef}
             className="flex-1 p-4"
+            nestedScrollEnabled
             onContentSizeChange={() => {
               if (sets.length > prevLengthRef.current) {
                 scrollRef.current?.scrollToEnd({ animated: true });
@@ -249,8 +253,8 @@ export default function Index() {
                     paddingHorizontal: 16,
                     borderWidth: 2,
                     borderColor: Colors[theme].highlight,
-                    borderRightWidth: 0,
-                    borderLeftWidth: 0,
+                    borderTopRightRadius: 8,
+                    borderBottomRightRadius: 8,
                     backgroundColor:
                       measurement === "lbs"
                         ? Colors[theme].highlight
@@ -271,104 +275,25 @@ export default function Index() {
                     Lbs
                   </ThemedText>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  key={3}
-                  activeOpacity={1}
-                  onPress={() => handleMeasurementChange("time")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 6,
-                    paddingHorizontal: 16,
-
-                    borderWidth: 2,
-                    borderColor: Colors[theme].highlight,
-                    backgroundColor:
-                      measurement === "time"
-                        ? Colors[theme].highlight
-                        : "transparent",
-                  }}
-                >
-                  <ThemedText
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "500",
-                      fontSize: 12,
-                      color:
-                        measurement === "time"
-                          ? Colors[theme].background
-                          : Colors[theme].highlight,
-                    }}
-                  >
-                    Time
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  key={4}
-                  activeOpacity={1}
-                  onPress={() => handleMeasurementChange("distance")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 6,
-                    paddingHorizontal: 16,
-
-                    borderWidth: 2,
-                    borderColor: Colors[theme].highlight,
-                    borderRightWidth: 0,
-                    borderLeftWidth: 0,
-                    backgroundColor:
-                      measurement === "distance"
-                        ? Colors[theme].highlight
-                        : "transparent",
-                  }}
-                >
-                  <ThemedText
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "500",
-                      fontSize: 12,
-                      color:
-                        measurement === "distance"
-                          ? Colors[theme].background
-                          : Colors[theme].highlight,
-                    }}
-                  >
-                    Km
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  key={5}
-                  activeOpacity={1}
-                  onPress={() => handleMeasurementChange("steps")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 6,
-                    paddingHorizontal: 16,
-
-                    borderWidth: 2,
-                    borderColor: Colors[theme].highlight,
-                    borderTopRightRadius: 8,
-                    borderBottomRightRadius: 8,
-                    backgroundColor:
-                      measurement === "steps"
-                        ? Colors[theme].highlight
-                        : "transparent",
-                  }}
-                >
-                  <ThemedText
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "500",
-                      fontSize: 12,
-                      color:
-                        measurement === "steps"
-                          ? Colors[theme].background
-                          : Colors[theme].highlight,
-                    }}
-                  >
-                    Steps
-                  </ThemedText>
-                </TouchableOpacity>
               </ThemedView>
+            </ThemedView>
+            <ThemedView className="mb-4 flex-row items-center justify-end">
+              <Checkbox
+                value={isRepsFixed}
+                onValueChange={(value) => {
+                  setIsRepsFixed(value);
+                  // Reset all reps to "1" when the toggle changes
+                  setSets((prev) => prev.map((s) => ({ ...s, reps: "1" })));
+                }}
+                color={Colors[theme].highlight}
+              />
+              <ThemedText
+                className="ml-2 text-sm"
+                lightColor={Colors[theme].mutedText}
+                darkColor={Colors[theme].mutedText}
+              >
+                fixed reps
+              </ThemedText>
             </ThemedView>
             <ThemedView className="w-full mb-8">
               {sets.map((set, index) => {
@@ -390,6 +315,7 @@ export default function Index() {
                       value={set.value}
                       setType={set.setType}
                       measurement={measurement}
+                      repType={isRepsFixed ? "fixed" : "range"}
                       onRepsChange={updateReps}
                       onValueChange={updateValue}
                       onSetTypeChange={updateSetType}
@@ -404,13 +330,13 @@ export default function Index() {
                 layout={LinearTransition}
                 className="flex-row items-start justify-between mt-2"
               >
-                <Button onPress={addSet} className="mb-16">
+                <Button onPress={addSet} className="mb-12">
                   + Enter Set
                 </Button>
               </Animated.View>
               <Animated.View
                 layout={LinearTransition}
-                className="items-center justify-between mt-2 mb-16"
+                className="items-center justify-between mb-16"
               >
                 <Button
                   type="primary"
