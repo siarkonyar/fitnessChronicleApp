@@ -10,6 +10,7 @@ import { formatDateAsString } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { Checkbox } from "expo-checkbox";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, TouchableOpacity } from "react-native";
@@ -45,6 +46,7 @@ export default function Index() {
       setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
     }[]
   >([]);
+  const [isRepsFixed, setIsRepsFixed] = useState(false);
 
   const [isLogging, setIsLogging] = useState(false);
   const [measurement, setMeasurement] = useState<
@@ -296,8 +298,10 @@ export default function Index() {
                     paddingHorizontal: 16,
                     borderWidth: 2,
                     borderColor: Colors[theme].highlight,
-                    borderRightWidth: 0,
-                    borderLeftWidth: 0,
+                    /* borderRightWidth: 0,
+                    borderLeftWidth: 0, */
+                    borderTopRightRadius: 8,
+                    borderBottomRightRadius: 8,
                     backgroundColor:
                       measurement === "lbs"
                         ? Colors[theme].highlight
@@ -318,7 +322,7 @@ export default function Index() {
                     Lbs
                   </ThemedText>
                 </TouchableOpacity>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   key={3}
                   activeOpacity={1}
                   onPress={() => handleMeasurementChange("time")}
@@ -414,8 +418,26 @@ export default function Index() {
                   >
                     Steps
                   </ThemedText>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </ThemedView>
+            </ThemedView>
+            <ThemedView className="mb-4 flex-row items-center justify-end">
+              <Checkbox
+                value={isRepsFixed}
+                onValueChange={(value) => {
+                  setIsRepsFixed(value);
+                  // Reset all reps to "1" when the toggle changes
+                  setSets((prev) => prev.map((s) => ({ ...s, reps: "1" })));
+                }}
+                color={Colors[theme].highlight}
+              />
+              <ThemedText
+                className="ml-2 text-sm"
+                lightColor={Colors[theme].mutedText}
+                darkColor={Colors[theme].mutedText}
+              >
+                fixed reps
+              </ThemedText>
             </ThemedView>
             <ThemedView className="w-full mb-8">
               {sets.map((set, index) => {
@@ -437,6 +459,7 @@ export default function Index() {
                       value={set.value}
                       setType={set.setType}
                       measurement={measurement}
+                      repType={isRepsFixed ? "fixed" : "range"}
                       onRepsChange={updateReps}
                       onValueChange={updateValue}
                       onSetTypeChange={updateSetType}

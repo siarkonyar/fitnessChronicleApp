@@ -12,8 +12,8 @@ import React, { useCallback, useMemo, useRef } from "react";
 import { Pressable, Text, TouchableOpacity } from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 import Card from "../Card";
+import HorizontalWheelPicker from "../HorizontalWheelPicker";
 import { ThemedText } from "../ThemedText";
-import HorizontalWheelPicker from "./HorizontalWheelPicker";
 
 type Props = {
   id: number;
@@ -22,6 +22,7 @@ type Props = {
   value: string;
   setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
   measurement: "kg" | "lbs" | "time" | "distance" | "steps";
+  repType: "fixed" | "range";
   onRepsChange: (id: number, newReps: string) => void;
   onValueChange: (id: number, newValue: string) => void;
   onSetTypeChange: (
@@ -39,6 +40,7 @@ export const AddSetCard: React.FC<Props> = ({
   value,
   setType,
   measurement,
+  repType,
   onRepsChange,
   onValueChange,
   onSetTypeChange,
@@ -90,6 +92,26 @@ export const AddSetCard: React.FC<Props> = ({
     }
 
     onValueChange(id, clean || "0");
+  };
+
+  const handleRepsChange = (text: string) => {
+    // Allow only numbers and one decimal point
+    const clean = text.replace(/[^0-9.]/g, "");
+    // Ensure only one decimal point
+    const parts = clean.split(".");
+    if (parts.length > 2) {
+      return; // More than one decimal point, ignore
+    }
+    // Limit decimal places to 2
+    if (parts.length === 2 && parts[1].length > 2) {
+      return; // Too many decimal places, ignore
+    }
+    // Limit integer part to 3 digits
+    if (parts[0].length > 3) {
+      return; // Too many digits in integer part, ignore
+    }
+
+    onRepsChange(id, clean || "0");
   };
 
   const setTypeDisplay = (type: string) => {
@@ -199,13 +221,26 @@ export const AddSetCard: React.FC<Props> = ({
                   <Text className="text-xl text-gray-500 w-[50px] mr-4">
                     Reps:
                   </Text>
-                  <ThemedView className="justify-center flex-1 min-w-0 px-4 max-w-64 border border-gray-300 dark:border-gray-600 rounded-lg">
-                    <HorizontalWheelPicker
-                      items={repRange}
-                      value={reps}
-                      onChange={(v) => onRepsChange(id, v)}
-                      itemWidth={flatListItemWidth}
-                    />
+                  <ThemedView className="justify-center flex-1 min-w-0 max-w-64">
+                    {repType === "fixed" ? (
+                      <ThemedTextInput
+                        value={reps}
+                        onChangeText={handleRepsChange}
+                        onFocus={() => onRepsChange(id, "")}
+                        keyboardType="decimal-pad"
+                        maxLength={6}
+                        className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
+                      />
+                    ) : (
+                      <ThemedView className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                        <HorizontalWheelPicker
+                          items={repRange}
+                          value={reps}
+                          onChange={(v) => onRepsChange(id, v)}
+                          itemWidth={flatListItemWidth}
+                        />
+                      </ThemedView>
+                    )}
                   </ThemedView>
                 </ThemedView>
               )}
