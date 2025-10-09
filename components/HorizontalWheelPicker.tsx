@@ -34,24 +34,32 @@ const HorizontalWheelPicker: React.FC<Props> = ({
 
   // Use only the real items; padding is handled by contentContainerStyle
   const data = useMemo(() => items, [items]);
-  // Derive selection from value for a fully-controlled component
-  const selectedIndex = useMemo(() => items.indexOf(value), [items, value]);
-  const safeSelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
-
+  // On mount, reset selection to the first item regardless of incoming value
+  const didInitRef = useRef(false);
   useEffect(() => {
-    // Wait for layout (containerWidth) to be measured so the padding is correct
-    requestAnimationFrame(() => {
-      try {
-        flatRef.current?.scrollToOffset({
-          offset: safeSelectedIndex * itemWidth,
-          animated: false,
-        });
-      } catch {}
-    });
-  }, [safeSelectedIndex, itemWidth, containerWidth]);
+    if (didInitRef.current) return;
+    didInitRef.current = true;
+    if (items && items.length > 0) {
+      const first = items[0];
+      if (first !== value) {
+        // Inform parent so state stays in sync with the picker
+        onChange(first);
+      }
+      // Ensure list is positioned at the first item visually
+      requestAnimationFrame(() => {
+        try {
+          flatRef.current?.scrollToOffset({ offset: 0, animated: false });
+        } catch {}
+      });
+    }
+  }, [items, onChange, value]);
 
-  // Make sure we scroll to the selected value when it changes (like when cloning a set)
+  /* // Sync scroll when the value changes AFTER mount (but not on initial render)
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
     if (value && items.includes(value)) {
       const index = items.indexOf(value);
       requestAnimationFrame(() => {
@@ -63,7 +71,7 @@ const HorizontalWheelPicker: React.FC<Props> = ({
         } catch {}
       });
     }
-  }, [value, items, itemWidth]);
+  }, [value, items, itemWidth]); */
 
   return (
     <View
