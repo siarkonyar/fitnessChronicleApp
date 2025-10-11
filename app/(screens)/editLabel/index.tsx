@@ -2,17 +2,15 @@ import { Button } from "@/components/Button";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
-import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { LabelWithIdSchema } from "@/types/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import EmojiPicker from "rn-emoji-keyboard";
 import { z } from "zod";
 
 export default function Index() {
@@ -47,7 +45,7 @@ export default function Index() {
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  //const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
   // Initialize form with label data when it loads
   useEffect(() => {
@@ -63,7 +61,7 @@ export default function Index() {
     }
   }, [error, handleQueryError]);
 
-  const emojiTheme = {
+  /* const emojiTheme = {
     backdrop: "rgba(0,0,0,0.5)",
     knob: Colors[theme].separator,
     container: Colors[theme].cardBackground,
@@ -81,7 +79,7 @@ export default function Index() {
       icon: Colors[theme].icon,
       background: Colors[theme].inputBackground,
     },
-  } as const;
+  } as const; */
 
   const canSubmit =
     label.trim().length > 0 && description.trim().length > 0 && !isSubmitting;
@@ -133,14 +131,49 @@ export default function Index() {
           </ThemedText>
 
           <View className="items-center mb-6">
-            <Pressable
-              onPress={() => setIsEmojiPickerOpen(true)}
+            {/* <Pressable
+              onPress={() => {}}
               className="rounded-2xl p-6 border border-gray-200/50 dark:border-gray-600/50 active:scale-95 transition-transform"
             >
-              <Text className="text-6xl leading-[72px] mb-2">
+              <ThemedText className="text-6xl leading-[72px] mb-2">
                 {label || "😀"}
-              </Text>
-            </Pressable>
+              </ThemedText>
+            </Pressable> */}
+            <ThemedTextInput
+              value={label}
+              onChangeText={(t) => {
+                const chars = Array.from(t); // grapheme-safe-ish
+                const last = chars[chars.length - 1] ?? "";
+                setLabel(last.toUpperCase());
+              }}
+              maxLength={1}
+              caretHidden
+              onKeyPress={({ nativeEvent: { key } }) => {
+                if (key === "Backspace") return setLabel("");
+                // Letters, numbers, and emoji/pictographic
+                if (
+                  /[\p{L}\p{N}]/u.test(key) ||
+                  /\p{Extended_Pictographic}/u.test(key)
+                ) {
+                  setLabel(key.toUpperCase());
+                }
+              }}
+              autoCapitalize="characters"
+              placeholder=""
+              className="w-[56px] h-[56px] border border-gray-300/50 dark:border-gray-600/50 rounded-xl mb-6 bg-white dark:bg-gray-800"
+              style={{
+                // center horizontally + vertically
+                textAlign: "center",
+                // Android only; safely ignored on iOS
+                textAlignVertical: "center" as any,
+                // remove vertical padding so centering is precise
+                paddingTop: 0,
+                paddingBottom: 0,
+                // pick a font size that fits inside the height
+                fontSize: 28,
+                textTransform: "uppercase",
+              }}
+            />
             <ThemedText className="opacity-70 mt-3 text-center">
               Tap label to choose
             </ThemedText>
@@ -175,7 +208,7 @@ export default function Index() {
             </Button>
           </Animated.View>
 
-          <EmojiPicker
+          {/* <EmojiPicker
             open={isEmojiPickerOpen}
             onClose={() => setIsEmojiPickerOpen(false)}
             onEmojiSelected={(e) => {
@@ -184,7 +217,7 @@ export default function Index() {
             }}
             theme={emojiTheme}
             categoryPosition="top"
-          />
+          /> */}
         </View>
       </ScrollView>
     </ThemedView>

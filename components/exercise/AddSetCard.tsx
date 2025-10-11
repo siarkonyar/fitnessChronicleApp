@@ -8,11 +8,11 @@ import {
   BottomSheetModal,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { Picker } from "@react-native-picker/picker";
 import React, { useCallback, useMemo, useRef } from "react";
 import { Pressable, Text, TouchableOpacity } from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 import Card from "../Card";
+import HorizontalWheelPicker from "../HorizontalWheelPicker";
 import { ThemedText } from "../ThemedText";
 
 type Props = {
@@ -21,7 +21,8 @@ type Props = {
   reps: string;
   value: string;
   setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
-  measurement: "kg" | "lbs" | "time" | "distance" | "step";
+  measurement: "kg" | "lbs" | "time" | "distance" | "steps";
+  repType: "fixed" | "range";
   onRepsChange: (id: number, newReps: string) => void;
   onValueChange: (id: number, newValue: string) => void;
   onSetTypeChange: (
@@ -39,21 +40,39 @@ export const AddSetCard: React.FC<Props> = ({
   value,
   setType,
   measurement,
+  repType,
   onRepsChange,
   onValueChange,
   onSetTypeChange,
   onRemove,
   onCopy,
 }) => {
-  // Width to make Reps picker equal to Kg inputs + dot combined
-  const KG_INPUT_TOTAL_WIDTH = 168;
   const theme = useColorScheme() ?? "light";
+  const repRange = useMemo(
+    () => [
+      "1",
+      "2",
+      "3-4",
+      "5-6",
+      "7-8",
+      "9-10",
+      "10-12",
+      "12-15",
+      "15-20",
+      "20+",
+    ],
+    []
+  );
 
   // Bottom sheet ref
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
   // Variables
   const snapPoints = useMemo(() => [], []);
+
+  const flatListItemWidth = 80;
+
+  // ...existing code...
 
   const handleValueChange = (text: string) => {
     // Allow only numbers and one decimal point
@@ -73,6 +92,26 @@ export const AddSetCard: React.FC<Props> = ({
     }
 
     onValueChange(id, clean || "0");
+  };
+
+  const handleRepsChange = (text: string) => {
+    // Allow only numbers and one decimal point
+    const clean = text.replace(/[^0-9.]/g, "");
+    // Ensure only one decimal point
+    const parts = clean.split(".");
+    if (parts.length > 2) {
+      return; // More than one decimal point, ignore
+    }
+    // Limit decimal places to 2
+    if (parts.length === 2 && parts[1].length > 2) {
+      return; // Too many decimal places, ignore
+    }
+    // Limit integer part to 3 digits
+    if (parts[0].length > 3) {
+      return; // Too many digits in integer part, ignore
+    }
+
+    onRepsChange(id, clean || "0");
   };
 
   const setTypeDisplay = (type: string) => {
@@ -169,74 +208,76 @@ export const AddSetCard: React.FC<Props> = ({
       <Animated.View exiting={SlideOutRight.duration(200)}>
         <Card>
           <ThemedView className="flex-row items-center justify-between w-full rounded-lg">
-            <ThemedView className="px-3">
-              <TouchableOpacity onPress={openDropdown}>
+            <ThemedView>
+              <TouchableOpacity className="p-3" onPress={openDropdown}>
                 {setTypeDisplay(setType)}
               </TouchableOpacity>
             </ThemedView>
 
-            <ThemedView>
+            <ThemedView className="flex-1 min-w-0">
               {/* Only show reps picker for kg and lbs measurements */}
               {(measurement === "kg" || measurement === "lbs") && (
-                <ThemedView className="flex-row items-center">
-                  <Text className="text-xl text-gray-500 w-[50px]">Reps:</Text>
-                  <ThemedView className="ml-2 justify-center overflow-hidden">
-                    <Picker
-                      selectedValue={reps}
-                      onValueChange={(val) => onRepsChange(id, val)}
-                      mode="dropdown"
-                      style={{
-                        width: KG_INPUT_TOTAL_WIDTH,
-                        height: 56,
-                        color: "#111",
-                        backgroundColor: "transparent",
-                      }}
-                      itemStyle={{
-                        fontSize: 20,
-                        height: 56,
-                      }}
-                    >
-                      {[
-                        "1",
-                        "2",
-                        "3-4",
-                        "5-6",
-                        "7-8",
-                        "9-10",
-                        "10-12",
-                        "12-15",
-                        "15-20",
-                        "20+",
-                      ].map((range) => (
-                        <Picker.Item label={range} value={range} key={range} />
-                      ))}
-                    </Picker>
+                <ThemedView className="flex-row items-center mb-4">
+                  <Text className="text-xl text-gray-500 w-[50px] mr-4">
+                    Reps:
+                  </Text>
+                  <ThemedView className="justify-center flex-1 min-w-0 max-w-64">
+                    {repType === "fixed" ? (
+                      <ThemedTextInput
+                        value={reps}
+                        onChangeText={handleRepsChange}
+                        onFocus={() => onRepsChange(id, "")}
+                        keyboardType="decimal-pad"
+                        maxLength={6}
+                        className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
+                      />
+                    ) : (
+                      <ThemedView className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                        <HorizontalWheelPicker
+                          items={repRange}
+                          value={reps}
+                          onChange={(v) => onRepsChange(id, v)}
+                          itemWidth={flatListItemWidth}
+                        />
+                      </ThemedView>
+                    )}
                   </ThemedView>
                 </ThemedView>
               )}
               <ThemedView className="flex-row items-center">
-                <Text className="text-xl text-gray-500 w-[50px]">
+                <Text className="text-xl text-gray-500 w-[50px] flex-shrink-0 mr-4">
                   {measurement === "kg"
                     ? "Kg:"
                     : measurement === "lbs"
                       ? "Lbs:"
-                      : measurement === "time"
-                        ? "Sec:"
-                        : measurement === "distance"
-                          ? "Km:"
-                          : measurement === "step"
-                            ? "Steps"
-                            : ""}
+                      : measurement === "distance"
+                        ? "Km:"
+                        : measurement === "steps"
+                          ? "Steps"
+                          : ""}
                 </Text>
-                <ThemedView className="ml-5 justify-center">
-                  <ThemedTextInput
-                    value={value}
-                    onChangeText={handleValueChange}
-                    onFocus={() => onValueChange(id, "")}
-                    keyboardType="decimal-pad"
-                    maxLength={6}
-                    className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-[150px] text-center"
-                  />
+                <ThemedView className="justify-center flex-1 min-w-0 max-w-64">
+                  {measurement === "time" ? (
+                    <>
+                      <ThemedTextInput
+                        value={value}
+                        onChangeText={handleValueChange}
+                        onFocus={() => onValueChange(id, "")}
+                        keyboardType="decimal-pad"
+                        maxLength={6}
+                        className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
+                      />
+                    </>
+                  ) : (
+                    <ThemedTextInput
+                      value={value}
+                      onChangeText={handleValueChange}
+                      onFocus={() => onValueChange(id, "")}
+                      keyboardType="decimal-pad"
+                      maxLength={6}
+                      className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
+                    />
+                  )}
                 </ThemedView>
               </ThemedView>
             </ThemedView>
