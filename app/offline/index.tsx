@@ -261,7 +261,7 @@ export default function OfflineScreen() {
                   {sortedExercises.map((log, idx) => (
                     <GetExerciseCard
                       key={log.id}
-                      exercise={log}
+                      exercise={log as any}
                       index={idx}
                       deletable
                       offline={loadOfflineExercises}

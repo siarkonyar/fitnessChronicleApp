@@ -110,7 +110,7 @@ export default function GetExerciseCard({
               return (
                 <ThemedText key={index} className="text-sm">
                   {setDisplay} {set.value ?? "?"}
-                  {set.measure} x {set.reps ?? "?"}
+                  {set.measure} x {"reps" in set ? (set.reps ?? "?") : "?"}
                 </ThemedText>
               );
             })}

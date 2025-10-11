@@ -10,6 +10,7 @@ import { formatDateAsString } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { Checkbox } from "expo-checkbox";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, Text, TouchableOpacity } from "react-native";
@@ -45,14 +46,24 @@ export default function Index() {
       setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
     }[]
   >([]);
+  const [isRepsFixed, setIsRepsFixed] = useState(false);
 
   const [isLogging, setIsLogging] = useState(false);
   const [measurement, setMeasurement] = useState<
-    "kg" | "lbs" | "time" | "distance" | "step"
+    "kg" | "lbs" | "time" | "distance" | "steps"
   >("kg");
 
   // Track previous length
   const prevLengthRef = useRef(sets.length);
+
+  const handleMeasurementChange = (
+    newMeasurement: "kg" | "lbs" | "time" | "distance" | "steps"
+  ) => {
+    if (newMeasurement !== measurement) {
+      setSets([]); // Reset sets only when measurement actually changes
+    }
+    setMeasurement(newMeasurement);
+  };
 
   const addSet = () => {
     const newSet = {
@@ -114,21 +125,49 @@ export default function Index() {
     try {
       setIsLogging(true);
       const formattedSets = sets.map(({ value, reps, setType }) => {
-        const baseSet = {
-          setType: setType,
-          measure: measurement,
-          value: value || "",
-        };
-
-        // Only include reps for kg and lbs measurements
-        if (measurement === "kg" || measurement === "lbs") {
-          return {
-            ...baseSet,
-            reps: reps || "",
-          };
+        // Create the correct object structure based on measurement type
+        switch (measurement) {
+          case "kg":
+            return {
+              measure: "kg" as const,
+              setType: setType,
+              value: value || "",
+              reps: reps || "",
+            };
+          case "lbs":
+            return {
+              measure: "lbs" as const,
+              setType: setType,
+              value: value || "",
+              reps: reps || "",
+            };
+          case "time":
+            return {
+              measure: "time" as const,
+              setType: setType as "warmup" | "normal" | "failure" | "pr",
+              value: value || "",
+            };
+          case "distance":
+            return {
+              measure: "distance" as const,
+              setType: setType as "warmup" | "normal" | "failure" | "pr",
+              value: value || "",
+            };
+          case "steps":
+            return {
+              measure: "steps" as const,
+              setType: setType as "warmup" | "normal" | "failure" | "pr",
+              value: value || "",
+            };
+          default:
+            // Fallback (should never reach here)
+            return {
+              measure: "kg" as const,
+              setType: setType,
+              value: value || "",
+              reps: reps || "",
+            };
         }
-
-        return baseSet;
       });
 
       const payload = {
@@ -191,7 +230,7 @@ export default function Index() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <ThemedView className="flex-1" style={{ paddingTop: 2 * insets.top }}>
-          <ThemedView className="px-4 pb-4">
+          <ThemedView className="px-4 my-4">
             {titleError ? (
               <>
                 <Text className="text-red-500 mb-2">
@@ -206,6 +245,7 @@ export default function Index() {
           <ScrollView
             ref={scrollRef}
             className="flex-1 p-4"
+            nestedScrollEnabled
             onContentSizeChange={() => {
               if (sets.length > prevLengthRef.current) {
                 scrollRef.current?.scrollToEnd({ animated: true });
@@ -219,7 +259,7 @@ export default function Index() {
                 <TouchableOpacity
                   key={1}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("kg")}
+                  onPress={() => handleMeasurementChange("kg")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
@@ -251,15 +291,17 @@ export default function Index() {
                 <TouchableOpacity
                   key={2}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("lbs")}
+                  onPress={() => handleMeasurementChange("lbs")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
                     paddingHorizontal: 16,
                     borderWidth: 2,
                     borderColor: Colors[theme].highlight,
-                    borderRightWidth: 0,
-                    borderLeftWidth: 0,
+                    /* borderRightWidth: 0,
+                    borderLeftWidth: 0, */
+                    borderTopRightRadius: 8,
+                    borderBottomRightRadius: 8,
                     backgroundColor:
                       measurement === "lbs"
                         ? Colors[theme].highlight
@@ -280,10 +322,10 @@ export default function Index() {
                     Lbs
                   </ThemedText>
                 </TouchableOpacity>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   key={3}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("time")}
+                  onPress={() => handleMeasurementChange("time")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
@@ -314,7 +356,7 @@ export default function Index() {
                 <TouchableOpacity
                   key={4}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("distance")}
+                  onPress={() => handleMeasurementChange("distance")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
@@ -347,7 +389,7 @@ export default function Index() {
                 <TouchableOpacity
                   key={5}
                   activeOpacity={1}
-                  onPress={() => setMeasurement("step")}
+                  onPress={() => handleMeasurementChange("steps")}
                   style={{
                     flex: 1,
                     paddingVertical: 6,
@@ -358,7 +400,7 @@ export default function Index() {
                     borderTopRightRadius: 8,
                     borderBottomRightRadius: 8,
                     backgroundColor:
-                      measurement === "step"
+                      measurement === "steps"
                         ? Colors[theme].highlight
                         : "transparent",
                   }}
@@ -369,15 +411,33 @@ export default function Index() {
                       fontWeight: "500",
                       fontSize: 12,
                       color:
-                        measurement === "step"
+                        measurement === "steps"
                           ? Colors[theme].background
                           : Colors[theme].highlight,
                     }}
                   >
                     Steps
                   </ThemedText>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </ThemedView>
+            </ThemedView>
+            <ThemedView className="mb-4 flex-row items-center justify-end">
+              <Checkbox
+                value={isRepsFixed}
+                onValueChange={(value) => {
+                  setIsRepsFixed(value);
+                  // Reset all reps to "1" when the toggle changes
+                  setSets((prev) => prev.map((s) => ({ ...s, reps: "1" })));
+                }}
+                color={Colors[theme].highlight}
+              />
+              <ThemedText
+                className="ml-2 text-sm"
+                lightColor={Colors[theme].mutedText}
+                darkColor={Colors[theme].mutedText}
+              >
+                fixed reps
+              </ThemedText>
             </ThemedView>
             <ThemedView className="w-full mb-8">
               {sets.map((set, index) => {
@@ -399,6 +459,7 @@ export default function Index() {
                       value={set.value}
                       setType={set.setType}
                       measurement={measurement}
+                      repType={isRepsFixed ? "fixed" : "range"}
                       onRepsChange={updateReps}
                       onValueChange={updateValue}
                       onSetTypeChange={updateSetType}

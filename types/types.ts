@@ -1,39 +1,41 @@
 import { z } from "zod";
 
-/* export const SetSchema = z.discriminatedUnion("setType", [
+export const SetSchema = z.discriminatedUnion("measure", [
   z.object({
-    setType: z.literal("kg"),
+    measure: z.literal("kg"),
+    setType: z.enum(["warmup", "normal", "failure", "drop", "pr", "failedpr"]),
     value: z.string().optional(),
     reps: z.string().optional(),
   }),
   z.object({
-    setType: z.literal("lbs"),
+    measure: z.literal("lbs"),
+    setType: z.enum(["warmup", "normal", "failure", "drop", "pr", "failedpr"]),
     value: z.string().optional(),
     reps: z.string().optional(),
   }),
   z.object({
-    setType: z.literal("time"),
-    value: z.string().optional(), // time in seconds, for example
-    reps: z.string().optional(),
+    measure: z.literal("time"),
+    setType: z.enum(["warmup", "normal", "failure", "pr"]),
+    value: z.string().optional(),
   }),
   z.object({
-    setType: z.literal("distance"),
-    value: z.string().optional(), // meters, km, etc.
-    reps: z.string().optional(),
+    measure: z.literal("distance"),
+    setType: z.enum(["warmup", "normal", "failure", "pr"]),
+    value: z.string().optional(),
   }),
   z.object({
-    setType: z.literal("steps"),
-    value: z.string().optional(), // whole number of steps
-    reps: z.string().optional(),
+    measure: z.literal("steps"),
+    setType: z.enum(["warmup", "normal", "failure", "pr"]),
+    value: z.string().optional(),
   }),
-]); */
+]);
 
-export const SetSchema = z.object({
+/* export const SetSchema = z.object({
   setType: z.enum(["warmup", "normal", "failure", "drop", "pr", "failedpr"]),
   measure: z.enum(["kg", "lbs", "time", "distance", "step"]),
   value: z.string().optional(),
   reps: z.string().optional(),
-});
+}); */
 
 // Zod schema for a fitness log entry
 export const ExerciseLogSchema = z.object({
