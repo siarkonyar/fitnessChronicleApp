@@ -108,12 +108,6 @@ export default function Index() {
             className="flex-row justify-end gap-3"
           >
             <Button
-              type="danger"
-              onPress={() => router.push("/(tabs)/settings")}
-            >
-              Cancel
-            </Button>
-            <Button
               type="primary"
               onPress={handleAddLabel}
               disabled={!canSubmit}

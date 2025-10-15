@@ -15,8 +15,10 @@ import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
 import { ThemedView } from "../ThemedView";
-import LabelCard from "../cards/LabelCard";
-import MutedCard from "../cards/MuteCard";
+import {
+  default as LabelCard,
+  default as LabeledCard,
+} from "../cards/LabelCard";
 
 // Represents an label assignment joined with its label data
 export type DateLabelAssignmentWithLabel = {
@@ -34,7 +36,7 @@ export default function DateLabelAssignment({
   const theme = useColorScheme() ?? "light";
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
 
-  type Label = z.infer<typeof LabelSchema>;
+  type Label = z.infer<typeof LabelWithIdSchema>;
   type LabelWithID = z.infer<typeof LabelWithIdSchema>;
 
   const { data, isLoading, error } =
@@ -148,28 +150,21 @@ export default function DateLabelAssignment({
 
   return (
     <>
-      <ThemedView>
+      <ThemedView className="w-full flex-row px-4 justify-center items-center">
         {data && label ? (
-          <MutedCard onPress={() => setIsLabelSelectionOpen(true)}>
-            <View className="flex-col">
-              <View className="flex-col items-center justify-center space-x-3">
-                <Text
-                  className="leading-11 text-6xl text-bold"
-                  style={{ color: Colors[theme].text }}
-                >
-                  {label.label}
-                </Text>
-                <ThemedText className="font-medium text-center">
-                  {label.description}
-                </ThemedText>
-              </View>
-              <ThemedText className="text-xs text-center mt-2 opacity-60">
-                Tap to change
-              </ThemedText>
-            </View>
-          </MutedCard>
+          <>
+            <LabeledCard
+              label={label}
+              index={0}
+              onPress={() => setIsLabelSelectionOpen(true)}
+              className="self-start"
+            />
+          </>
         ) : (
-          <Button onPress={() => setIsLabelSelectionOpen(true)}>
+          <Button
+            onPress={() => setIsLabelSelectionOpen(true)}
+            className="self-start"
+          >
             Assign a Label to This Day
           </Button>
         )}
