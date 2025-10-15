@@ -509,7 +509,7 @@ export default function Index() {
                   ) : sortedPreviousExercises.length > 0 ? (
                     sortedPreviousExercises.slice(0, 4).map((exercise, idx) => (
                       <React.Fragment key={exercise.id}>
-                        <ThemedView className="flex-col items-end">
+                        <ThemedView className="flex-col items-end w-full">
                           <ThemedText
                             lightColor={Colors.light.mutedText}
                             darkColor={Colors.dark.mutedText}
