@@ -10,9 +10,15 @@ interface LabelCardProps {
   index: number;
   label: z.infer<typeof LabelWithIdSchema>;
   onPress?: (labelId: string) => void;
+  className?: string;
 }
 
-export default function LabelCard({ index, label, onPress }: LabelCardProps) {
+export default function LabelCard({
+  index,
+  label,
+  onPress,
+  className,
+}: LabelCardProps) {
   function handlePress() {
     if (onPress && label.id) {
       onPress(label.id);
@@ -28,6 +34,7 @@ export default function LabelCard({ index, label, onPress }: LabelCardProps) {
     <MutedCard
       key={label.id ?? `${label.label}-${index}`}
       onPress={handlePress}
+      className={className}
     >
       <View className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full p-2 mr-4 shadow-sm justify-center items-center">
         <ThemedText
@@ -37,7 +44,7 @@ export default function LabelCard({ index, label, onPress }: LabelCardProps) {
           {label.label}
         </ThemedText>
       </View>
-      <ThemedText className="flex-1 text-base font-medium">
+      <ThemedText className="text-base font-medium">
         {label.description}
       </ThemedText>
     </MutedCard>

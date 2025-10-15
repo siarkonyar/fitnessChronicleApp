@@ -9,7 +9,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
-import { Pressable, Text, TouchableOpacity } from "react-native";
+import { Keyboard, Pressable, Text, TouchableOpacity } from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 import Card from "../Card";
 import HorizontalWheelPicker from "../HorizontalWheelPicker";
@@ -228,6 +228,9 @@ export const AddSetCard: React.FC<Props> = ({
                         onChangeText={handleRepsChange}
                         onFocus={() => onRepsChange(id, "")}
                         keyboardType="decimal-pad"
+                        returnKeyType="done"
+                        blurOnSubmit
+                        onSubmitEditing={() => Keyboard.dismiss()}
                         maxLength={6}
                         className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
                       />
@@ -264,6 +267,9 @@ export const AddSetCard: React.FC<Props> = ({
                         onChangeText={handleValueChange}
                         onFocus={() => onValueChange(id, "")}
                         keyboardType="decimal-pad"
+                        returnKeyType="done"
+                        blurOnSubmit
+                        onSubmitEditing={() => Keyboard.dismiss()}
                         maxLength={6}
                         className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
                       />
@@ -274,6 +280,9 @@ export const AddSetCard: React.FC<Props> = ({
                       onChangeText={handleValueChange}
                       onFocus={() => onValueChange(id, "")}
                       keyboardType="decimal-pad"
+                      returnKeyType="done"
+                      blurOnSubmit
+                      onSubmitEditing={() => Keyboard.dismiss()}
                       maxLength={6}
                       className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
                     />
