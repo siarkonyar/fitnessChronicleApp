@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "976528892739",
+    "project_id": "fitnesschronicle-d9080",
+    "storage_bucket": "fitnesschronicle-d9080.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:976528892739:android:fe40477397e0c09dba85f6",
+        "android_client_info": {
+          "package_name": "com.siar.konyar.fitnessChronicle"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "976528892739-4883211793u1l7gahh464d9laehv7epb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAE8gfvVd8Xm6N3vJl9A4xBTAGyZwI4j4o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "976528892739-4883211793u1l7gahh464d9laehv7epb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "976528892739-46tjra2qcre3ptn7rqc4ecrm8q83gfev.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "host.exp.Exponent"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   Button,
+  Keyboard,
   useColorScheme,
   View,
 } from "react-native";
@@ -23,26 +24,7 @@ export default function AuthPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [authLoading, setAuthLoading] = useState(false); // To show loading state for auth operations
-
-  // Form fields for fitness log
-  const [activity, setActivity] = useState("");
-  const [duration, setDuration] = useState("");
-  const [calories, setCalories] = useState("");
-  const [notes, setNotes] = useState("");
-
-  /* // ... inside your AuthScreen component
-  useEffect(() => {
-    const redirectUri = AuthSession.makeRedirectUri({
-      useProxy: false, // Set to false if you are not using an Expo managed workflow proxy
-      native: true, // Essential for native builds (simulators count!)
-      // We don't need a scheme for Expo Go, as it generates one.
-      // If you were building a standalone app, you'd define a scheme here.
-    });
-    console.log("Redirect URI for Simulator:", redirectUri);
-  }, []); */
-
-  // Listen for Firebase Auth state changes
+  const [authLoading, setAuthLoading] = useState(false);
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -96,20 +78,6 @@ export default function AuthPage() {
     }
   };
 
-  /* const handleAddLog = () => {
-    if (!activity || !duration) {
-      Alert.alert("Validation", "Activity and Duration are required.");
-      return;
-    }
-    addLogMutation.mutate({
-      date: new Date().toISOString(),
-      activity,
-      durationMinutes: parseInt(duration),
-      caloriesBurned: calories ? parseInt(calories) : undefined,
-      notes: notes || undefined,
-    });
-  }; */
-
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
@@ -124,6 +92,9 @@ export default function AuthPage() {
               autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
+              returnKeyType="done"
+              blurOnSubmit
+              onSubmitEditing={() => Keyboard.dismiss()}
               className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
             />
             <ThemedTextInput
@@ -131,6 +102,9 @@ export default function AuthPage() {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
+              returnKeyType="done"
+              blurOnSubmit
+              onSubmitEditing={() => Keyboard.dismiss()}
               className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
             />
             {authLoading ? (
