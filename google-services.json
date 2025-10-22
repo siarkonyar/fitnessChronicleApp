@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "976528892739-v2a7inv3dv0qikv9r0r291dj4b999d82.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.siar.konyar.fitnessChronicle",
+            "certificate_hash": "21918fa2ef302b489f20fed9b388ac79d02795e1"
+          }
+        },
+        {
           "client_id": "976528892739-4883211793u1l7gahh464d9laehv7epb.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -31,10 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "976528892739-46tjra2qcre3ptn7rqc4ecrm8q83gfev.apps.googleusercontent.com",
+              "client_id": "976528892739-3j7su7h6qfrbh3u9ba27moe4nuau5347.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "host.exp.Exponent"
+                "bundle_id": "com.siar.konyar.fitnessChronicle"
               }
             }
           ]
