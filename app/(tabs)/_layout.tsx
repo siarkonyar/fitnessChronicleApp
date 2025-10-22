@@ -24,19 +24,19 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
+        name="index"
+        options={{
+          title: "",
+          tabBarIcon: ({ color }) => <MyIcon size={38} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="calendar"
         options={{
           title: "",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="calendar" color={color} />
+            <IconSymbol size={32} name="calendar" color={color} />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "",
-          tabBarIcon: ({ color }) => <MyIcon size={48} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -44,7 +44,7 @@ export default function TabLayout() {
         options={{
           title: "",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.fill" color={color} />
+            <IconSymbol size={32} name="person.fill" color={color} />
           ),
         }}
       />

@@ -18,6 +18,7 @@ import { queryClient, trpc, trpcClient } from "../lib/trpc";
 export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    BebasNeue: require("../assets/fonts/BebasNeue-Regular.ttf"),
   });
 
   if (!loaded) {

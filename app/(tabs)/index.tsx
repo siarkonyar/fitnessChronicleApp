@@ -9,7 +9,6 @@ import { ExerciseLogWithIdSchema } from "@/types/types"; // Adjust the import pa
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import { AddSetCard } from "@/components/exercise/AddSetCard";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
   ActivityIndicator,
@@ -169,6 +168,7 @@ export default function HomeScreen() {
             darkColor={Colors[theme].highlight}
             type="title"
             className="ml-1"
+            //style={{ fontWeight: "normal", fontFamily: "BebasNeue" }}
           >
             ercule
           </ThemedText>

@@ -10,7 +10,7 @@ export default function EditLabelLayout() {
   const navigation = useNavigation();
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: "Add Label", // Sayfa başlığı (back yanındaki)
+      headerTitle: "Edit Label", // Sayfa başlığı (back yanındaki)
       headerBackTitle: "Back", // Geri butonu yazısı
       headerTintColor: Colors[theme].background,
       headerBackground: () => (
