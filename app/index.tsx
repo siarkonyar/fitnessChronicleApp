@@ -3,6 +3,7 @@ import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
+import { useConnectivity } from "@/context/ConnectivityContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { trpc } from "@/lib/trpc";
 import { router } from "expo-router";
@@ -21,6 +22,7 @@ export default function App() {
   const { isAuthenticated, authLoading } = useAuth();
   const { handleQueryError } = useServerErrorHandler();
   const utils = trpc.useUtils();
+  const { isOnline } = useConnectivity();
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.96);
@@ -43,12 +45,11 @@ export default function App() {
 
   // Warm critical queries during splash
   useEffect(() => {
-    if (authLoading) return;
-
     const today = new Date().toLocaleDateString("en-CA");
     const visibleMonth = today.slice(0, 7);
 
-    if (isAuthenticated) {
+    // Skip prefetching if offline to avoid noisy alerts on splash
+    if (isAuthenticated && isOnline) {
       Promise.all([
         utils.fitness.getExerciseLogsByMonth.prefetch({ month: visibleMonth }),
         utils.label.getAllLabelsFromMonth.prefetch({ date: visibleMonth }),
@@ -59,19 +60,20 @@ export default function App() {
         handleQueryError(error);
       });
     }
-  }, [authLoading, isAuthenticated, utils, handleQueryError]);
+  }, [authLoading, isAuthenticated, isOnline, utils, handleQueryError]);
 
   const navigateAfterFade = useCallback(() => {
+    // If offline, always land on the offline experience
+    if (!isOnline) {
+      router.replace("/offline");
+      return;
+    }
     if (isAuthenticated) {
       router.replace("/(tabs)");
-    } else {
-      router.replace("/signin");
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isOnline]);
 
   useEffect(() => {
-    if (authLoading) return;
-
     const timeoutId = setTimeout(() => {
       opacity.value = withTiming(
         0,
@@ -88,7 +90,7 @@ export default function App() {
     }, 2500);
 
     return () => clearTimeout(timeoutId);
-  }, [authLoading, isAuthenticated, navigateAfterFade, opacity]);
+  }, [isAuthenticated, navigateAfterFade, opacity]);
   return (
     <>
       <View

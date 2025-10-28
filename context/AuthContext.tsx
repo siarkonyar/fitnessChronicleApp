@@ -1,5 +1,6 @@
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "../lib/firebase"; // Import Firebase auth
+import { auth, db } from "../lib/firebase"; // Firebase auth and firestore
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -26,9 +27,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const unsubscribe = auth.onAuthStateChanged(
-        (user) => {
-          setIsAuthenticated(!!user); // Set to true if user exists, false otherwise
-          setAuthLoading(false); // Stop loading once auth state is determined
+        async (user) => {
+          try {
+            setIsAuthenticated(!!user);
+
+            if (user) {
+              // Upsert a user doc to verify access and track last login
+              await setDoc(
+                doc(db, "users", user.uid),
+                { email: user.email, lastLogin: serverTimestamp() },
+                { merge: true }
+              );
+              console.log(
+                "AuthContext: user session active, Firestore updated",
+                user.uid
+              );
+            }
+          } catch (firestoreErr) {
+            console.warn("AuthContext: failed to write user doc", firestoreErr);
+          } finally {
+            setAuthLoading(false);
+          }
         },
         (error) => {
           console.error("Auth state change error:", error);
