@@ -4,6 +4,8 @@ import UserLabelList from "@/components/lists/UserLabelList";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import * as Updates from "expo-updates";
 import React, { useState } from "react";
 import {
   Alert,
@@ -21,6 +23,13 @@ export default function Settings() {
     try {
       await auth.signOut();
       await AsyncStorage.clear();
+      // Attempt to fully reload the app after sign-out
+      if (Updates.reloadAsync) {
+        await Updates.reloadAsync();
+      } else {
+        // Fallback: navigate to the signin screen
+        router.replace("/signin");
+      }
     } catch (error) {
       console.error("Sign out error:", error);
       Alert.alert("Error", "Failed to sign out. Please try again.");
