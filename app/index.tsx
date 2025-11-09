@@ -70,6 +70,8 @@ export default function App() {
     }
     if (isAuthenticated) {
       router.replace("/(tabs)");
+    } else {
+      router.replace("/signin");
     }
   }, [isAuthenticated, isOnline]);
 
