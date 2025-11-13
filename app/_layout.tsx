@@ -39,12 +39,8 @@ export default function RootLayout() {
 }
 
 function AppSetup() {
-  const { isAuthenticated, authLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const colorScheme = useColorScheme();
-
-  if (authLoading) {
-    return null;
-  }
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
@@ -54,6 +50,7 @@ function AppSetup() {
         <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="(screens)" />
+          <Stack.Screen name="offline" options={{ headerShown: false }} />
         </Stack.Protected>
         <Stack.Screen name="offline" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
