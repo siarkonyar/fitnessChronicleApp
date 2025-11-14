@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "976528892739",
+    "project_id": "fitnesschronicle-d9080",
+    "storage_bucket": "fitnesschronicle-d9080.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:976528892739:android:fe40477397e0c09dba85f6",
+        "android_client_info": {
+          "package_name": "com.siar.konyar.fitnessChronicle"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "976528892739-ehbq68bnk2k7i2lslqug08daepgtogc7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.siar.konyar.fitnessChronicle",
+            "certificate_hash": "1619c68dfb12457f0afe1bd886a501d38503317f"
+          }
+        },
+        {
+          "client_id": "976528892739-sh255b3s4td7dfbbhqt8qk9dk46j083e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.siar.konyar.fitnessChronicle",
+            "certificate_hash": "6c501ce21ec9feb879b5f690182a6a8dbebd5b64"
+          }
+        },
+        {
+          "client_id": "976528892739-4883211793u1l7gahh464d9laehv7epb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAE8gfvVd8Xm6N3vJl9A4xBTAGyZwI4j4o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "976528892739-4883211793u1l7gahh464d9laehv7epb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "976528892739-3j7su7h6qfrbh3u9ba27moe4nuau5347.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.siar.konyar.fitnessChronicle"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
