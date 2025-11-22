@@ -1,9 +1,9 @@
-// src/lib/trpc.ts (NEW FILE YOU ARE CREATING)
+// src/lib/trpc.ts
+import { getAuth } from '@react-native-firebase/auth';
 import { QueryClient } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../types/trpc'; // <--- IMPORTANT: This now points to your types file!
-import { auth } from './firebase'; // Your Firebase client auth instance
+import type { AppRouter } from '../types/trpc';
 
 // 1. Create a tRPC instance with React Query integration
 export const trpc = createTRPCReact<AppRouter>();
@@ -27,11 +27,11 @@ export const trpcClient = trpc.createClient({
       url: process.env.EXPO_PUBLIC_BACKEND_URL || "", // <--- IMPORTANT: Use your server's actual IP address or domain
       async headers() {
         try {
-          const user = auth?.currentUser;
+          const user = getAuth().currentUser;
           if (user) {
             const idToken = await user.getIdToken();
             return {
-              Authorization: `Bearer ${idToken}`, // Send ID token to server
+              Authorization: `Bearer ${idToken}`, // Send Firebase ID token to server
             };
           }
         } catch (error) {

@@ -1,59 +1,40 @@
 // App.tsx (or your main component) - UPDATED FOR EMAIL/PASSWORD
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Text, useColorScheme, View } from "react-native";
 
+import {
+  FirebaseAuthTypes,
+  getAuth,
+  onAuthStateChanged,
+} from "@react-native-firebase/auth";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Link, router } from "expo-router";
-import { onAuthStateChanged, User } from "firebase/auth"; // Firebase Auth types
 import { Colors } from "../../constants/Colors";
-import { auth } from "../../lib/firebase"; // Your Firebase client setup
 import { queryClient, trpc, trpcClient } from "../../lib/trpc"; // Your tRPC setup
 import MyIcon from "../LogoIcon";
 import { ThemedView } from "../ThemedView";
-import GoogleAuth from "./GoogleAuth";
+import AuthButtons from "./AuthButtons";
 
 export default function AuthPage() {
   const theme = useColorScheme() ?? "light";
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  /*   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authLoading, setAuthLoading] = useState(false); */
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      // setAuthLoading(false); // Auth operation complete
-    });
-    return unsubscribe; // Cleanup subscription
-  }, []);
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+
+  const handleAuthStateChanged = useCallback(
+    (user: FirebaseAuthTypes.User | null) => {
+      setUser(user);
+      if (initializing) setInitializing(false);
+    },
+    [initializing]
+  );
 
   useEffect(() => {
-    if (currentUser) {
+    if (user) {
       router.push("/(tabs)"); // Navigate to home page on successful login
     }
-  }, [currentUser]);
-
-  /* const handleSignUp = async () => {
-    setAuthLoading(true);
-    try {
-      await signUpWithEmail(email, password);
-      router.replace("/(tabs)");
-      // User will be set by onAuthStateChanged
-    } catch (err: any) {
-      Alert.alert("Sign Up Error", err.message);
-      setAuthLoading(false); // Authentication failed
-    }
-  };
-
-  const handleSignIn = async () => {
-    setAuthLoading(true);
-    try {
-      await signInWithEmail(email, password);
-      // User will be set by onAuthStateChanged
-    } catch (err: any) {
-      Alert.alert("Sign In Error", err.message);
-      setAuthLoading(false); // Authentication failed
-    }
-  }; */
+    const subscriber = onAuthStateChanged(getAuth(), handleAuthStateChanged);
+    return subscriber; // unsubscribe on unmount
+  }, [user, handleAuthStateChanged]);
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
@@ -68,43 +49,6 @@ export default function AuthPage() {
             lightColor="transparent"
             darkColor="transparent"
           >
-            {/* <ThemedTextInput
-              placeholder="Email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-              returnKeyType="done"
-              blurOnSubmit
-              onSubmitEditing={() => Keyboard.dismiss()}
-              className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
-            />
-            <ThemedTextInput
-              placeholder="Password"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              returnKeyType="done"
-              blurOnSubmit
-              onSubmitEditing={() => Keyboard.dismiss()}
-              className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
-            />
-            {authLoading ? (
-              <ActivityIndicator size="small" color="#007bff" />
-            ) : (
-              <View className="space-y-3">
-                <Button
-                  title="Sign Up"
-                  onPress={handleSignUp}
-                  color="#007bff"
-                />
-                <Button
-                  title="Sign In"
-                  onPress={handleSignIn}
-                  color="#28a745"
-                />
-              </View>
-            )} */}
             <View className="items-center mb-4">
               <Text
                 style={{
@@ -132,8 +76,8 @@ export default function AuthPage() {
                 Log in to start logging your workouts and tracking your progress
                 today.
               </Text>
+              <AuthButtons />
             </View>
-            <GoogleAuth />
           </ThemedView>
         </ThemedView>
         <ThemedView lightColor="transparent" darkColor="transparent">
