@@ -247,9 +247,9 @@ export default function Index() {
             className="flex-1 p-4"
             nestedScrollEnabled
             onContentSizeChange={() => {
-              if (sets.length > prevLengthRef.current) {
+              /* if (sets.length > prevLengthRef.current) {
                 scrollRef.current?.scrollToEnd({ animated: true });
-              }
+              } */
               prevLengthRef.current = sets.length;
             }}
           >

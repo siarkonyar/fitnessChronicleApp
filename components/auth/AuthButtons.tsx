@@ -1,74 +1,68 @@
 import { Colors } from "@/constants/Colors";
-import { auth } from "@/lib/firebase";
-import * as Google from "expo-auth-session/providers/google";
-import { BlurView } from "expo-blur";
-import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
-import { useEffect, useState } from "react";
 import {
-  Alert,
-  Platform,
-  Pressable,
-  Text,
-  useColorScheme,
-  View,
-} from "react-native";
+  getAuth,
+  GoogleAuthProvider,
+  signInWithCredential,
+} from "@react-native-firebase/auth";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { BlurView } from "expo-blur";
+import { useState } from "react";
+import { Platform, Pressable, Text, useColorScheme, View } from "react-native";
 import { SvgXml } from "react-native-svg";
 
-export default function GoogleAuth() {
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID!,
+});
+
+export default function AuthButtons() {
   const [loading, setLoading] = useState(false);
   const theme = useColorScheme() ?? "light";
   // Keep some transparency so the blur is visible. 0x40 ≈ 25% alpha.
   const highlightWithAlpha = `${Colors[theme].highlight}40`;
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID!,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID!,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID!,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID!,
-    scopes: ["profile", "email"],
-  });
-  useEffect(() => {
-    if (!response) return;
 
-    if (response.type === "success" && response.authentication?.idToken) {
-      const cred = GoogleAuthProvider.credential(
-        response.authentication.idToken,
-        response.authentication.accessToken ?? undefined
-      );
+  async function onGoogleButtonPress() {
+    try {
       setLoading(true);
-      signInWithCredential(auth, cred)
-        .catch((err) => {
-          console.warn("Firebase signInWithCredential error", err);
-          Alert.alert("Sign-in failed", "Please try again.");
-        })
-        .finally(() => setLoading(false));
-      return;
-    }
+      // Check if your device supports Google Play
+      await GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
+      });
+      // Get the users ID token
+      const signInResult = await GoogleSignin.signIn();
 
-    if (response.type === "cancel") {
-      console.log("Google sign-in cancelled by user");
+      // Get the ID token from the sign-in result (v13+ format)
+      const idToken = signInResult.data?.idToken;
+      if (!idToken) {
+        throw new Error("No ID token found");
+      }
+
+      // Create a Google credential with the token
+      const googleCredential = GoogleAuthProvider.credential(idToken);
+
+      // Sign-in the user with the credential
+      const userCredential = await signInWithCredential(
+        getAuth(),
+        googleCredential
+      );
+
+      return userCredential;
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      throw error;
+    } finally {
       setLoading(false);
-    } else if (response.type === "dismiss") {
-      console.log("Google sign-in dismissed");
-    } else if (response.type === "error") {
-      console.warn("Google sign-in error", response.error);
-      Alert.alert("Sign-in error", response.error?.message ?? "Unknown error");
     }
-  }, [response]);
+  }
 
   return (
     <View className="mt-4 items-center flex-col justify-center">
       {Platform.OS === "ios" && (
         <Pressable
-          disabled={!request || loading}
+          disabled={loading}
           onPress={() => {
             setLoading(true);
-            promptAsync().catch((err) => {
-              console.warn("promptAsync error", err);
-              Alert.alert("Could not start sign-in", "Please try again.");
-              setLoading(false);
-            });
           }}
-          style={{ opacity: !request || loading ? 0.7 : 1 }}
+          style={{ opacity: loading ? 0.7 : 1 }}
           className="mb-6"
         >
           <BlurView
@@ -106,16 +100,11 @@ export default function GoogleAuth() {
         </Pressable>
       )}
       <Pressable
-        disabled={!request || loading}
+        disabled={loading}
         onPress={() => {
-          setLoading(true);
-          promptAsync().catch((err) => {
-            console.warn("promptAsync error", err);
-            Alert.alert("Could not start sign-in", "Please try again.");
-            setLoading(false);
-          });
+          onGoogleButtonPress();
         }}
-        style={{ opacity: !request || loading ? 0.7 : 1 }}
+        style={{ opacity: loading ? 0.7 : 1 }}
       >
         <BlurView
           intensity={50}

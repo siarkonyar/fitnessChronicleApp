@@ -1,72 +1,88 @@
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  FirebaseAuthTypes,
+  signOut as firebaseSignOut,
+  getAuth,
+  onAuthStateChanged,
+} from "@react-native-firebase/auth";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth, db } from "../lib/firebase"; // Firebase auth and firestore
 
 interface AuthContextType {
+  user: FirebaseAuthTypes.User | null;
   isAuthenticated: boolean;
   authLoading: boolean;
+  signOut: () => Promise<void>;
+  getIdToken: (forceRefresh?: boolean) => Promise<string | null>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  authLoading: true,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      if (!auth) {
-        console.error("Auth not initialized");
+    // Subscribe to authentication state changes
+    const subscriber = onAuthStateChanged(getAuth(), (firebaseUser) => {
+      setUser(firebaseUser);
+      if (authLoading) {
         setAuthLoading(false);
-        return;
       }
+    });
 
-      const unsubscribe = auth.onAuthStateChanged(
-        async (user) => {
-          try {
-            setIsAuthenticated(!!user);
+    // Unsubscribe on unmount
+    return subscriber;
+  }, [authLoading]);
 
-            if (user) {
-              // Upsert a user doc to verify access and track last login
-              await setDoc(
-                doc(db, "users", user.uid),
-                { email: user.email, lastLogin: serverTimestamp() },
-                { merge: true }
-              );
-              console.log(
-                "AuthContext: user session active, Firestore updated",
-                user.uid
-              );
-            }
-          } catch (firestoreErr) {
-            console.warn("AuthContext: failed to write user doc", firestoreErr);
-          } finally {
-            setAuthLoading(false);
-          }
-        },
-        (error) => {
-          console.error("Auth state change error:", error);
-          setAuthLoading(false);
-        }
-      );
-
-      return unsubscribe; // Cleanup listener on unmount
+  const signOut = async () => {
+    try {
+      // Sign out from Google to allow account selection on next sign-in
+      await GoogleSignin.revokeAccess();
+      await GoogleSignin.signOut();
     } catch (error) {
-      console.error("Auth initialization error:", error);
-      setAuthLoading(false);
+      console.warn("Google Sign-Out Error:", error);
+      // Continue with Firebase sign out even if Google sign out fails
     }
-  }, []);
 
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, authLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+    try {
+      // Sign out from Firebase
+      await firebaseSignOut(getAuth());
+    } catch (error) {
+      console.error("Firebase Sign-Out Error:", error);
+      throw error;
+    }
+  };
 
-export const useAuth = () => useContext(AuthContext);
+  const getIdToken = async (
+    forceRefresh: boolean = false
+  ): Promise<string | null> => {
+    try {
+      if (!user) {
+        return null;
+      }
+      const token = await user.getIdToken(forceRefresh);
+      return token;
+    } catch (error) {
+      console.error("Error getting ID token:", error);
+      return null;
+    }
+  };
+
+  const value: AuthContextType = {
+    user,
+    isAuthenticated: !!user,
+    authLoading,
+    signOut,
+    getIdToken,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
