@@ -35,7 +35,6 @@ export function ErrorBoundary({
   return <>{children}</>;
 }
 
-// HOC for wrapping components that use tRPC queries
 export function withErrorHandling<P extends object>(
   Component: React.ComponentType<P>,
   errorSelector?: (props: P) => any,

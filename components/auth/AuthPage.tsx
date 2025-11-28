@@ -7,13 +7,14 @@ import {
   getAuth,
   onAuthStateChanged,
 } from "@react-native-firebase/auth";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Link, router } from "expo-router";
 import { Colors } from "../../constants/Colors";
-import { queryClient, trpc, trpcClient } from "../../lib/trpc"; // Your tRPC setup
 import MyIcon from "../LogoIcon";
 import { ThemedView } from "../ThemedView";
 import AuthButtons from "./AuthButtons";
+
+const queryClient = new QueryClient();
 
 export default function AuthPage() {
   const theme = useColorScheme() ?? "light";
@@ -37,93 +38,91 @@ export default function AuthPage() {
   }, [user, handleAuthStateChanged]);
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <ThemedView
+        className="flex-1 items-center justify-center h-screen p-4"
+        lightColor="transparent"
+        darkColor="transparent"
+      >
         <ThemedView
-          className="flex-1 items-center justify-center h-screen p-4"
+          className="p-6 w-full max-w-md"
           lightColor="transparent"
           darkColor="transparent"
         >
-          <ThemedView
-            className="p-6 w-full max-w-md"
-            lightColor="transparent"
-            darkColor="transparent"
-          >
-            <View className="items-center mb-4">
+          <View className="items-center mb-4">
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: "600",
+                marginBottom: 8,
+                color: Colors[theme].highlight,
+              }}
+            >
+              Welcome to
+            </Text>
+            <View className="flex-row items-center mb-8">
+              <MyIcon size={48} color={Colors[theme].highlight} />
               <Text
                 style={{
-                  fontSize: 32,
+                  fontSize: 36,
                   fontWeight: "600",
-                  marginBottom: 8,
                   color: Colors[theme].highlight,
                 }}
               >
-                Welcome to
+                ercule
               </Text>
-              <View className="flex-row items-center mb-8">
-                <MyIcon size={48} color={Colors[theme].highlight} />
-                <Text
-                  style={{
-                    fontSize: 36,
-                    fontWeight: "600",
-                    color: Colors[theme].highlight,
-                  }}
-                >
-                  ercule
-                </Text>
-              </View>
-              <Text className="text-center text-white">
-                Log in to start logging your workouts and tracking your progress
-                today.
-              </Text>
-              <AuthButtons />
             </View>
-          </ThemedView>
+            <Text className="text-center text-white">
+              Log in to start logging your workouts and tracking your progress
+              today.
+            </Text>
+            <AuthButtons />
+          </View>
         </ThemedView>
-        <ThemedView lightColor="transparent" darkColor="transparent">
-          <Text
-            className="text-center text-xs"
-            style={{
-              color:
-                theme === "light"
-                  ? Colors.light.mutedText
-                  : Colors.dark.mutedText,
-            }}
-          >
-            © 2025 Hercule. All rights reserved.
-          </Text>
-          <Text
-            className="text-center text-xs"
-            style={{
-              color:
-                theme === "light"
-                  ? Colors.light.mutedText
-                  : Colors.dark.mutedText,
-            }}
-          >
-            By signing in, you agree to our Terms of Service and Privacy Policy.
-          </Text>
-          <Text
-            className="text-center mb-2 text-xs"
-            style={{
-              color:
-                theme === "light"
-                  ? Colors.light.mutedText
-                  : Colors.dark.mutedText,
-            }}
-          >
-            Learn more about how we handle your data in our{" "}
-            <Link href="https://siarkonyar.com/tos" className="underline">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="https://siarkonyar.com/privacy" className="underline">
-              Privacy Policy
-            </Link>
-            .
-          </Text>
-        </ThemedView>
-      </QueryClientProvider>
-    </trpc.Provider>
+      </ThemedView>
+      <ThemedView lightColor="transparent" darkColor="transparent">
+        <Text
+          className="text-center text-xs"
+          style={{
+            color:
+              theme === "light"
+                ? Colors.light.mutedText
+                : Colors.dark.mutedText,
+          }}
+        >
+          © 2025 Hercule. All rights reserved.
+        </Text>
+        <Text
+          className="text-center text-xs"
+          style={{
+            color:
+              theme === "light"
+                ? Colors.light.mutedText
+                : Colors.dark.mutedText,
+          }}
+        >
+          By signing in, you agree to our Terms of Service and Privacy Policy.
+        </Text>
+        <Text
+          className="text-center mb-2 text-xs"
+          style={{
+            color:
+              theme === "light"
+                ? Colors.light.mutedText
+                : Colors.dark.mutedText,
+          }}
+        >
+          Learn more about how we handle your data in our{" "}
+          <Link href="https://siarkonyar.com/tos" className="underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="https://siarkonyar.com/privacy" className="underline">
+            Privacy Policy
+          </Link>
+          .
+        </Text>
+      </ThemedView>
+    </QueryClientProvider>
   );
 }

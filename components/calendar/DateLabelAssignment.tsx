@@ -1,8 +1,15 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { trpc } from "@/lib/trpc";
+import {
+  asignLabelToDay,
+  deleteAssignment,
+  getAllLabels,
+  getLabelAsignmentByDate,
+} from "@/lib/firebase";
 import { LabelSchema, LabelWithIdSchema } from "@/types/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
@@ -35,45 +42,56 @@ export default function DateLabelAssignment({
 }) {
   const theme = useColorScheme() ?? "light";
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
+  const queryClient = useQueryClient();
 
-  type Label = z.infer<typeof LabelWithIdSchema>;
   type LabelWithID = z.infer<typeof LabelWithIdSchema>;
 
-  const { data, isLoading, error } =
-    trpc.label.getLabelAsignmentByDate.useQuery({
-      date: selectedDate,
-    }) as {
-      data: DateLabelAssignmentWithLabel | undefined;
-      isLoading: boolean;
-      error: any;
-    };
+  const { data, isLoading, error } = useQuery({
+    queryKey: queryKeys.labelAssignments.byDate(selectedDate),
+    queryFn: () => getLabelAsignmentByDate(selectedDate),
+  });
   const labelId = data?.labelId;
   const {
     data: label,
     isLoading: labelsLoading,
     error: labelError,
-  } = trpc.label.getLabelById.useQuery(
-    { id: labelId ?? "" },
-    { enabled: !!labelId }
-  ) as {
-    data: Label | undefined;
-    isLoading: boolean;
-    error: any;
-  };
+  } = useQuery({
+    queryKey: queryKeys.labels.byId(labelId ? labelId : "undefined"),
+    queryFn: () => getLabelById(labelId ? labelId : "undefined"),
+  });
 
-  const asignLabelToDayMutation = trpc.label.asignLabelToDay.useMutation({
+  const asignLabelToDayMutation = useMutation({
+    mutationFn: asignLabelToDay,
     onError: (error) => {
       handleMutationError(error);
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labelAssignments.byDate(selectedDate),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labelAssignments.byMonth(selectedDate.slice(0, 7)),
+      });
+    },
   });
-  const deleteAssignedLabelMutation = trpc.label.deleteAssignment.useMutation({
+  const deleteAssignedLabelMutation = useMutation({
+    mutationFn: deleteAssignment,
     onError: (error) => {
       handleMutationError(error);
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labelAssignments.byDate(selectedDate),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labelAssignments.byMonth(selectedDate.slice(0, 7)),
+      });
+    },
   });
-  const utils = trpc.useUtils();
-  const { data: labelsRaw, error: labelsRawError } =
-    trpc.label.getAllLabels.useQuery();
+  const { data: labelsRaw, error: labelsRawError } = useQuery({
+    queryKey: queryKeys.labels.all,
+    queryFn: () => getAllLabels(),
+  });
   const [isLabelSelectionOpen, setIsLabelSelectionOpen] = React.useState(false);
   const [isAssigningLabel, setIsAssigningLabel] = React.useState(false);
 
@@ -95,14 +113,6 @@ export default function DateLabelAssignment({
         date: selectedDate,
         labelId: labelId,
       });
-      // Invalidate relevant queries to refresh the data
-      await utils.label.getLabelAsignmentByDate.invalidate({
-        date: selectedDate,
-      });
-      // Also invalidate the calendar query to refresh label display
-      await utils.label.getAllLabelsFromMonth.invalidate({
-        date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
-      });
 
       setIsAssigningLabel(false);
       setIsLabelSelectionOpen(false);
@@ -114,17 +124,7 @@ export default function DateLabelAssignment({
   async function handleDeleteAssignedLabel(date: string) {
     try {
       setIsAssigningLabel(true);
-      await deleteAssignedLabelMutation.mutateAsync({
-        date: selectedDate,
-      });
-      // Invalidate relevant queries to refresh the data
-      await utils.label.getLabelAsignmentByDate.invalidate({
-        date: selectedDate,
-      });
-      // Also invalidate the calendar query to refresh label display
-      await utils.label.getAllLabelsFromMonth.invalidate({
-        date: selectedDate.slice(0, 7), // Get the month part (YYYY-MM)
-      });
+      await deleteAssignedLabelMutation.mutateAsync(selectedDate);
 
       setIsAssigningLabel(false);
       setIsLabelSelectionOpen(false);
@@ -236,4 +236,7 @@ export default function DateLabelAssignment({
       </Modal>
     </>
   );
+}
+function getLabelById(arg0: any) {
+  throw new Error("Function not implemented.");
 }

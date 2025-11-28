@@ -1,6 +1,8 @@
+import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { trpc } from "@/lib/trpc";
+import { getAllLabels } from "@/lib/firebase";
 import { LabelWithIdSchema } from "@/types/types";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { Text, View } from "react-native";
@@ -17,7 +19,10 @@ export default function UserLabelList() {
     data: labelsRaw,
     isLoading,
     error,
-  } = trpc.label.getAllLabels.useQuery();
+  } = useQuery({
+    queryKey: queryKeys.labels.all,
+    queryFn: () => getAllLabels(),
+  });
   const labels: labelScheme[] = Array.isArray(labelsRaw)
     ? (labelsRaw as labelScheme[])
     : [];

@@ -1,14 +1,14 @@
-# Server Error Handling System
+# Offline Error Handling
 
-This document explains how to implement offline error handling for tRPC queries and mutations in the Fitness Chronicle app.
+This document explains how to implement offline error handling for Firebase queries and mutations in the Fitness Chronicle app.
 
 ## Overview
 
-The server error handling system automatically detects when network operations fail due to connectivity issues and provides users with helpful alerts and navigation options to the offline page. It also supports custom error handling for validation errors, server errors, and other custom error types.
+The offline error handling system automatically detects when network operations fail due to connectivity issues and provides users with helpful alerts and navigation options to the offline page. It also supports custom error handling for validation errors, server errors, and other custom error types.
 
 ## How It Works
 
-1. **Automatic Detection**: The system monitors network errors from tRPC operations
+1. **Automatic Detection**: The system monitors network errors from Firebase operations
 2. **Smart Alerts**: Shows appropriate alerts based on connectivity status
 3. **Navigation**: Automatically offers to redirect users to the offline page
 4. **Fallback Handling**: Allows custom error handling for non-network errors
@@ -26,8 +26,8 @@ const { handleQueryError, handleMutationError, handleError } = useServerErrorHan
 ```
 
 **Functions:**
-- `handleQueryError(error, customHandlers?)`: Handles errors from tRPC queries
-- `handleMutationError(error, customHandlers?)`: Handles errors from tRPC mutations
+- `handleQueryError(error, customHandlers?)`: Handles errors from React Query queries
+- `handleMutationError(error, customHandlers?)`: Handles errors from React Query mutations
 - `handleError(error, operation, customHandlers?)`: Generic error handler
 
 
@@ -63,13 +63,16 @@ const customHandlers = {
 #### For Queries
 
 ```typescript
-import { useOfflineErrorHandler } from "@/hooks/useOfflineErrorHandler";
+import { useQuery } from '@tanstack/react-query';
+import { getExerciseLogByDate } from '@/lib/firebase';
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 
 export default function MyComponent() {
-  const { handleQueryError } = useOfflineErrorHandler();
+  const { handleQueryError } = useServerErrorHandler();
 
-  const { data, error } = trpc.fitness.getExerciseLogByDate.useQuery({
-    date: new Date().toLocaleDateString("en-CA"),
+  const { data, error } = useQuery({
+    queryKey: ['exerciseLogs', new Date().toLocaleDateString("en-CA")],
+    queryFn: () => getExerciseLogByDate(new Date().toLocaleDateString("en-CA")),
   });
 
   // Handle errors automatically
@@ -86,14 +89,21 @@ export default function MyComponent() {
 #### For Mutations
 
 ```typescript
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { addExerciseLog } from '@/lib/firebase';
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 
 export default function MyComponent() {
   const { handleMutationError } = useServerErrorHandler();
+  const queryClient = useQueryClient();
 
-  const mutation = trpc.fitness.addExerciseLog.useMutation({
+  const mutation = useMutation({
+    mutationFn: addExerciseLog,
     onError: (error) => {
       handleMutationError(error);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['exerciseLogs', variables.date] });
     },
   });
 
@@ -106,10 +116,15 @@ export default function MyComponent() {
 #### Basic Wrapping
 
 ```typescript
+import { useQuery } from '@tanstack/react-query';
+import { getAllExercises } from '@/lib/firebase';
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function MyComponent() {
-  const { data, error } = trpc.fitness.getExercises.useQuery();
+  const { data, error } = useQuery({
+    queryKey: ['exercises'],
+    queryFn: () => getAllExercises(),
+  });
 
   return (
     <ErrorBoundary error={error}>
@@ -127,10 +142,15 @@ export default function MyComponent() {
 #### With Custom Error Handling
 
 ```typescript
+import { useQuery } from '@tanstack/react-query';
+import { getAllExercises } from '@/lib/firebase';
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function MyComponent() {
-  const { data, error } from trpc.fitness.getExercises.useQuery();
+  const { data, error } = useQuery({
+    queryKey: ['exercises'],
+    queryFn: () => getAllExercises(),
+  });
 
   const handleCustomError = (error) => {
     // Handle non-network errors (e.g., validation errors)
@@ -226,7 +246,7 @@ Actions: ["Retry", "Go Offline"]
 
 ## Best Practices
 
-1. **Always handle errors**: Use the offline error handlers for all tRPC operations
+1. **Always handle errors**: Use the offline error handlers for all Firebase operations
 2. **Provide fallbacks**: Have offline alternatives for critical operations
 3. **User guidance**: Clear messaging about what users can do when offline
 4. **Consistent experience**: Use the same error handling pattern across the app
@@ -264,19 +284,38 @@ To add server error handling to existing components:
 
 ```typescript
 import React, { useEffect } from "react";
-import { trpc } from "@/lib/trpc";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getAllExercises, deleteExercise } from "@/lib/firebase";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { Alert } from "react-native";
 
 export default function ExerciseList() {
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
+  const queryClient = useQueryClient();
 
   // Query with error handling
-  const { data: exercises, error } = trpc.fitness.getExercises.useQuery();
+  const { data: exercises, error } = useQuery({
+    queryKey: ['exercises'],
+    queryFn: () => getAllExercises(),
+  });
 
   // Mutation with error handling
-  const deleteMutation = trpc.fitness.deleteExercise.useMutation({
+  const deleteMutation = useMutation({
+    mutationFn: deleteExercise,
     onError: (error) => {
-      handleMutationError(error);
+      const wasHandled = handleMutationError(error, {
+        onValidationError: (err) => {
+          Alert.alert("Invalid Operation", "Cannot delete this exercise");
+          return true;
+        },
+      });
+
+      if (!wasHandled) {
+        Alert.alert("Error", "Failed to delete exercise");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exercises'] });
     },
   });
 
