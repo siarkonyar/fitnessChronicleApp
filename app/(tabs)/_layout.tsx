@@ -35,7 +35,7 @@ export default function TabLayout() {
         options={{
           title: "",
           tabBarIcon: ({ color }) => (
-            <Ionicons size={32} name="calendar-outline" color={color} />
+            <Ionicons size={28} name="calendar-outline" color={color} />
           ),
         }}
       />
@@ -44,7 +44,7 @@ export default function TabLayout() {
         options={{
           title: "",
           tabBarIcon: ({ color }) => (
-            <Ionicons size={32} name="person-outline" color={color} />
+            <Ionicons size={28} name="person-outline" color={color} />
           ),
         }}
       />
