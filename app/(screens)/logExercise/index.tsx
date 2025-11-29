@@ -4,17 +4,21 @@ import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { formatDateAsString } from "@/lib/dateUtils";
-import { addExerciseLog, getLatestExercisesByName } from "@/lib/firebase/exercise";
+import {
+  addExerciseLog,
+  getLatestExercisesByName,
+} from "@/lib/firebase/exercise";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "expo-checkbox";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { ScrollView, Text, TouchableOpacity } from "react-native";
+import { Platform, ScrollView, Text, TouchableOpacity } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   Easing,
@@ -24,13 +28,13 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
-import { queryKeys } from "@/constants/QueryKeys";
 
 export default function Index() {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const theme = useColorScheme() ?? "light";
   const queryClient = useQueryClient();
+  const topPadding = Platform.OS === "android" ? 48 : 2 * insets.top;
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
 
   const addExerciseLogMutation = useMutation({
@@ -227,7 +231,7 @@ export default function Index() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
-        <ThemedView className="flex-1" style={{ paddingTop: 2 * insets.top }}>
+        <ThemedView className="flex-1" style={{ paddingTop: topPadding }}>
           <ThemedView className="px-4 my-4">
             {titleError ? (
               <>
