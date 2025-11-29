@@ -1,5 +1,7 @@
 import { Colors } from "@/constants/Colors";
+import { appleAuth } from "@invertase/react-native-apple-authentication";
 import {
+  AppleAuthProvider,
   getAuth,
   GoogleAuthProvider,
   signInWithCredential,
@@ -54,6 +56,30 @@ export default function AuthButtons() {
     }
   }
 
+  async function onAppleButtonPress() {
+    // Start the sign-in request
+    const appleAuthRequestResponse = await appleAuth.performRequest({
+      requestedOperation: appleAuth.Operation.LOGIN,
+      // As per the FAQ of react-native-apple-authentication, the name should come first in the following array.
+      // See: https://github.com/invertase/react-native-apple-authentication#faqs
+      requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+    });
+
+    // Ensure Apple returned a user identityToken
+    if (!appleAuthRequestResponse.identityToken) {
+      throw new Error("Apple Sign-In failed - no identify token returned");
+    }
+
+    // Create a Firebase credential from the response
+    const { identityToken, nonce } = appleAuthRequestResponse;
+    const appleCredential = AppleAuthProvider.credential(identityToken, nonce);
+
+    setLoading(false);
+
+    // Sign the user in with the credential
+    return signInWithCredential(getAuth(), appleCredential);
+  }
+
   return (
     <View className="mt-4 items-center flex-col justify-center">
       {Platform.OS === "ios" && (
@@ -61,6 +87,7 @@ export default function AuthButtons() {
           disabled={loading}
           onPress={() => {
             setLoading(true);
+            onAppleButtonPress();
           }}
           style={{ opacity: loading ? 0.7 : 1 }}
           className="mb-6"
