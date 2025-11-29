@@ -78,4 +78,8 @@ npx expo prebuild --clean
 
 npx expo run:ios --configuration Release --device
 
-eas build -p android --profile production
+# Build both platforms with production profile
+eas build --platform android --profile production
+
+# Or build and submit separately
+eas build --platform ios --profile production --auto-submit
