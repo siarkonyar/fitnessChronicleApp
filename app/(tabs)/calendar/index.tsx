@@ -1,8 +1,10 @@
 import ExerciseLogByDate from "@/components/calendar/ExerciseLogByDate";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { trpc } from "@/lib/trpc";
-import { ExerciseLogSchema } from "@/types/types";
+import { getExerciseLogsByMonth } from "@/lib/firebase/exercise";
+import { getAllLabelsFromMonth } from "@/lib/firebase/label";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,7 +17,6 @@ import {
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { z } from "zod";
 
 export default function CalendarScreen() {
   const today = new Date().toLocaleDateString("en-CA");
@@ -24,37 +25,32 @@ export default function CalendarScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const theme = useColorScheme() ?? "light";
   const { handleQueryError } = useServerErrorHandler();
+  const queryClient = useQueryClient();
 
   // TODO: make this useeffect work
   useEffect(() => {
     setSelectedDate(today);
   }, [today]);
 
-  type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
-
   const {
-    data: logs,
+    data: exerciseData,
     isLoading: logsLoading,
     error: logsError,
-  } = trpc.fitness.getExerciseLogsByMonth.useQuery({
-    month: visibleMonth,
-  }) as {
-    data: { logs: ExerciseLog[]; uniqueDates: string[] };
-    isLoading: boolean;
-    error: any;
-  };
+  } = useQuery({
+    queryKey: queryKeys.exerciseLogs.byMonth(visibleMonth),
+    queryFn: () => getExerciseLogsByMonth(visibleMonth),
+  });
+
+  const exerciseUniqueDates = exerciseData?.uniqueDates;
 
   const {
-    data: labels,
+    data: labels, // 👈 Direkt labels olarak al (array döndürüyor)
     isLoading: labelsLoading,
     error: labelsError,
-  } = trpc.label.getAllLabelsFromMonth.useQuery({
-    date: visibleMonth,
-  }) as {
-    data: { date: string; label: string }[] | undefined;
-    isLoading: boolean;
-    error: any;
-  };
+  } = useQuery({
+    queryKey: queryKeys.labels.byMonth(visibleMonth),
+    queryFn: () => getAllLabelsFromMonth(visibleMonth),
+  });
 
   useEffect(() => {
     if (logsError) {
@@ -66,6 +62,12 @@ export default function CalendarScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.exerciseLogs.byMonth(visibleMonth),
+    });
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.labels.byMonth(visibleMonth),
+    });
     setTimeout(() => setRefreshing(false), 1500);
   };
 
@@ -92,29 +94,26 @@ export default function CalendarScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[Colors[theme].highlight]} // Android
-              tintColor={Colors[theme].highlight} // iOS
+              colors={[Colors[theme].highlight]}
+              tintColor={Colors[theme].highlight}
             />
           }
         >
           <Calendar
             key={theme}
-            // Initially visible month
             current={visibleMonth}
-            // Handler which gets executed on day press
-            /*  onDayPress={(day) => {
-              setSelectedDate(day.dateString);
-            }} */
             onMonthChange={(month) => {
               const newMonth = `${month.year}-${String(month.month).padStart(2, "0")}`;
               setVisibleMonth(newMonth);
             }}
             dayComponent={({ date, state }) => {
               if (!date) return null;
+
               const label = labels?.find(
                 (log) => log.date === date.dateString
               )?.label;
-              const isMarked = logs?.uniqueDates.includes(date.dateString);
+
+              const isMarked = exerciseUniqueDates?.includes(date.dateString);
               const isToday = date.dateString === today;
               const isSelectedDay = date.dateString === selectedDate;
 
@@ -171,38 +170,6 @@ export default function CalendarScreen() {
                 </TouchableOpacity>
               );
             }}
-            // Mark specific dates
-
-            // markedDates={{
-            //   ...logs?.uniqueDates.reduce(
-            //     (acc, date) => {
-            //       acc[date] = {
-            //         selected: true,
-            //         selectedColor: Colors[theme].calendarMarker,
-            //       };
-            //       if (date === today) {
-            //         acc[date] = {
-            //           selected: true,
-            //           selectedColor: Colors[theme].calendarMarker,
-            //           marked: true,
-            //           dotColor: Colors[theme].cardBackground,
-            //         };
-            //       }
-            //       return acc;
-            //     },
-            //     {} as Record<string, MarkingProps>
-            //   ),
-
-            //   /* [today]: {
-            //     marked: true,
-            //     dotColor: Colors[theme].cardBackground,
-            //   }, */
-
-            //   /* "2025-08-07": { marked: true },
-            // "2025-08-08": { disabled: true }, */
-            // }}
-
-            // Theme customization
             theme={
               {
                 backgroundColor: Colors[theme].background,

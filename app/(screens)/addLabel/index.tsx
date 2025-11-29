@@ -2,10 +2,10 @@ import { Button } from "@/components/Button";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { trpc } from "@/lib/trpc";
+import { addLabel } from "@/lib/firebase/label";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, View } from "react-native";
@@ -15,13 +15,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function Index() {
   const insets = useSafeAreaInsets();
   const { handleMutationError } = useServerErrorHandler();
-  const addLabelMutation = trpc.label.addLabel.useMutation({
+  const queryClient = useQueryClient();
+  const addLabelMutation = useMutation({
+    mutationFn: addLabel,
     onError: (error) => {
       handleMutationError(error);
     },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.all,
+      });
+    },
   });
-  const utils = trpc.useUtils();
-  const theme = useColorScheme() ?? "light";
 
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
@@ -39,7 +44,6 @@ export default function Index() {
         description: description.trim(),
         dates: [] as string[],
       });
-      await utils.label.getAllLabels.invalidate();
       setLabel("");
       setDescription("");
       router.push("/(tabs)/settings");
@@ -73,7 +77,10 @@ export default function Index() {
               caretHidden
               onKeyPress={({ nativeEvent: { key } }) => {
                 if (key === "Backspace") return setLabel("");
-                if (/[\p{L}\p{N}]/u.test(key) || /\p{Extended_Pictographic}/u.test(key)) {
+                if (
+                  /[\p{L}\p{N}]/u.test(key) ||
+                  /\p{Extended_Pictographic}/u.test(key)
+                ) {
                   setLabel(key.toUpperCase());
                 }
               }}

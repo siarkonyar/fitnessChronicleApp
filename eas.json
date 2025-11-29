@@ -31,9 +31,6 @@
       "autoIncrement": true,
       "android": {
         "image": "latest"
-      },
-      "ios": {
-        "simulator": true
       }
     }
   },

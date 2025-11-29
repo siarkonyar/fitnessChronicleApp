@@ -1,10 +1,12 @@
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { deleteExerciseLog } from "@/lib/firebase/exercise";
 import { deleteOfflineExercise } from "@/lib/offlineStorage";
-import { trpc } from "@/lib/trpc";
 import { ExerciseLogWithIdSchema } from "@/types/types"; // path doğruysa sıkıntı yok
 import { Feather } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { Alert, Text, TouchableOpacity } from "react-native";
 import { z } from "zod";
@@ -29,14 +31,21 @@ export default function GetExerciseCard({
 }: GetExerciseCardProps) {
   const theme = useColorScheme() ?? "light";
   const { handleMutationError } = useServerErrorHandler();
-  const deleteExerciseNameMutation = trpc.fitness.deleteExerciseLog.useMutation(
-    {
-      onError: (error) => {
-        handleMutationError(error);
-      },
-    }
-  );
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
+  const deleteExerciseMutation = useMutation({
+    mutationFn: deleteExerciseLog,
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.exerciseLogs.byDate(exercise.date),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.exerciseLogs.byMonth(exercise.date.slice(0, 7)),
+      });
+    },
+  });
 
   const handleDeletion = async () => {
     Alert.alert(
@@ -56,13 +65,7 @@ export default function GetExerciseCard({
               offline?.(); // Notify parent component to refresh
               return;
             }
-            await deleteExerciseNameMutation.mutateAsync({ id: exercise.id });
-            await utils.fitness.getExerciseLogByDate.invalidate({
-              date: exercise.date,
-            });
-            await utils.fitness.getExerciseLogsByMonth.invalidate({
-              month: exercise.date.slice(0, 7),
-            });
+            await deleteExerciseMutation.mutateAsync(exercise.id);
           },
         },
       ]

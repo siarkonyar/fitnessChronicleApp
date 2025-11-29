@@ -12,11 +12,17 @@ export function useServerErrorHandler() {
   const pathname = usePathname();
 
   const handleError = useCallback(
-    (error: any, operation: "query" | "mutation", customHandlers?: {
-      onOfflineError?: (error: any) => boolean;
-      onServerError?: (error: any) => boolean;
-      onValidationError?: (error: any) => boolean;
-    }) => {
+    (
+      error: any,
+      operation: "query" | "mutation",
+      customHandlers?: {
+        onOfflineError?: (error: any) => boolean;
+        onServerError?: (error: any) => boolean;
+        onValidationError?: (error: any) => boolean;
+        onAuthError?: (error: any) => boolean;
+        onPermissionError?: (error: any) => boolean;
+      }
+    ) => {
       // Check if the error is network-related
       const isNetworkError =
         error?.message?.includes("Network request failed") ||
@@ -26,7 +32,10 @@ export function useServerErrorHandler() {
         error?.message?.includes("ENOTFOUND") ||
         error?.code === "NETWORK_ERROR" ||
         error?.code === "TIMEOUT" ||
-        error?.code === "CONNECTION_REFUSED";
+        error?.code === "CONNECTION_REFUSED" ||
+        // Firebase-specific network error codes
+        error?.code === "unavailable" ||
+        error?.code === "failed-precondition";
 
       // Check if it's a validation error
       const isValidationError =
@@ -113,7 +122,10 @@ export function useServerErrorHandler() {
       // If it's a network error but we think we're online, just log it silently
       // The queries will retry automatically when connection is restored
       if (isNetworkError && isOnline) {
-        console.log(`Network error detected while online for ${operation}:`, error);
+        console.log(
+          `Network error detected while online for ${operation}:`,
+          error
+        );
         return true; // Error was handled silently
       }
 
@@ -123,20 +135,26 @@ export function useServerErrorHandler() {
   );
 
   const handleQueryError = useCallback(
-    (error: any, customHandlers?: {
-      onOfflineError?: (error: any) => boolean;
-      onServerError?: (error: any) => boolean;
-      onValidationError?: (error: any) => boolean;
-    }) => handleError(error, "query", customHandlers),
+    (
+      error: any,
+      customHandlers?: {
+        onOfflineError?: (error: any) => boolean;
+        onServerError?: (error: any) => boolean;
+        onValidationError?: (error: any) => boolean;
+      }
+    ) => handleError(error, "query", customHandlers),
     [handleError]
   );
 
   const handleMutationError = useCallback(
-    (error: any, customHandlers?: {
-      onOfflineError?: (error: any) => boolean;
-      onServerError?: (error: any) => boolean;
-      onValidationError?: (error: any) => boolean;
-    }) => handleError(error, "mutation", customHandlers),
+    (
+      error: any,
+      customHandlers?: {
+        onOfflineError?: (error: any) => boolean;
+        onServerError?: (error: any) => boolean;
+        onValidationError?: (error: any) => boolean;
+      }
+    ) => handleError(error, "mutation", customHandlers),
     [handleError]
   );
 

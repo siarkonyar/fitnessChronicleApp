@@ -4,16 +4,21 @@ import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { formatDateAsString } from "@/lib/dateUtils";
-import { trpc } from "@/lib/trpc";
+import {
+  addExerciseLog,
+  getLatestExercisesByName,
+} from "@/lib/firebase/exercise";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "expo-checkbox";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { ScrollView, Text, TouchableOpacity } from "react-native";
+import { Platform, ScrollView, Text, TouchableOpacity } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   Easing,
@@ -28,13 +33,25 @@ export default function Index() {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const theme = useColorScheme() ?? "light";
+  const queryClient = useQueryClient();
+  const topPadding = Platform.OS === "android" ? 48 : 2 * insets.top;
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
-  const addExerciseLogMutation = trpc.fitness.addExerciseLog.useMutation({
+
+  const addExerciseLogMutation = useMutation({
+    mutationFn: addExerciseLog,
     onError: (error) => {
       handleMutationError(error);
     },
+    onSuccess: (data, variables) => {
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.exerciseLogs.byDate(variables.date),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.exerciseLogs.byMonth(variables.date.slice(0, 7)),
+      });
+    },
   });
-  const utils = trpc.useUtils();
 
   const [titleError, setTitleError] = useState(false);
   const [title, setTitle] = useState("");
@@ -178,13 +195,6 @@ export default function Index() {
 
       await addExerciseLogMutation.mutateAsync(payload);
 
-      await utils.fitness.getExerciseLogByDate.invalidate({
-        date: payload.date,
-      });
-      await utils.fitness.getExerciseLogsByMonth.invalidate({
-        month: payload.date.slice(0, 7),
-      });
-
       console.log("Exercise logged successfully!", payload);
       router.push("/(tabs)");
 
@@ -201,19 +211,11 @@ export default function Index() {
     data: previousExercises,
     isLoading,
     error,
-  } = trpc.fitness.getLatestExercisesByName.useQuery(
-    {
-      name: title.trim().toLowerCase(),
-    },
-    {
-      enabled: title.trim().length > 0,
-      retry: false,
-    }
-  ) as {
-    data: ExerciseLog[] | undefined;
-    isLoading: boolean;
-    error: any;
-  };
+  } = useQuery({
+    queryKey: queryKeys.latestExercises.byName(title.trim().toLowerCase()),
+    queryFn: () => getLatestExercisesByName(title.trim().toLowerCase()),
+    enabled: title.trim().length > 0,
+  });
 
   const sortedPreviousExercises = React.useMemo(() => {
     if (!previousExercises) return [] as ExerciseLog[];
@@ -229,7 +231,7 @@ export default function Index() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
-        <ThemedView className="flex-1" style={{ paddingTop: 2 * insets.top }}>
+        <ThemedView className="flex-1" style={{ paddingTop: topPadding }}>
           <ThemedView className="px-4 my-4">
             {titleError ? (
               <>

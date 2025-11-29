@@ -3,9 +3,9 @@ import React from "react";
 
 import { HapticTab } from "@/components/HapticTab";
 import MyIcon from "@/components/LogoIcon";
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? "light";
@@ -35,7 +35,7 @@ export default function TabLayout() {
         options={{
           title: "",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={32} name="calendar" color={color} />
+            <Ionicons size={28} name="calendar-outline" color={color} />
           ),
         }}
       />
@@ -44,7 +44,7 @@ export default function TabLayout() {
         options={{
           title: "",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={32} name="person.fill" color={color} />
+            <Ionicons size={28} name="person-outline" color={color} />
           ),
         }}
       />

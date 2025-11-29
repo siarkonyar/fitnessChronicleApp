@@ -2,14 +2,14 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { formatDateAsString, getTodayString } from "@/lib/dateUtils";
-import { trpc } from "@/lib/trpc";
-import { ExerciseLogWithIdSchema } from "@/types/types";
+import { getExerciseLogByDate } from "@/lib/firebase/exercise";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, useColorScheme } from "react-native";
-import { z } from "zod";
 import { Button } from "../Button";
 import DateLabelAssignment from "./DateLabelAssignment";
 
@@ -18,7 +18,6 @@ export default function ExerciseLogByDate({
 }: {
   selectedDate: string;
 }) {
-  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
   const theme = useColorScheme() ?? "light";
   const { handleQueryError } = useServerErrorHandler();
 
@@ -26,13 +25,10 @@ export default function ExerciseLogByDate({
     data: logs,
     isLoading,
     error,
-  } = trpc.fitness.getExerciseLogByDate.useQuery({
-    date: selectedDate,
-  }) as {
-    data: ExerciseLog[] | undefined;
-    isLoading: boolean;
-    error: any;
-  };
+  } = useQuery({
+    queryKey: queryKeys.exerciseLogs.byDate(selectedDate),
+    queryFn: () => getExerciseLogByDate(selectedDate),
+  });
 
   useEffect(() => {
     if (error) {

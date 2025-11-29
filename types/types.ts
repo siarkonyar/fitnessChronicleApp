@@ -1,4 +1,16 @@
 import { z } from "zod";
+import firestore from '@react-native-firebase/firestore';
+
+// Update to use RN Firebase Timestamp
+const FirestoreTimestampSchema = z.union([
+  z.date(),
+  z.custom<firestore.Timestamp>(
+    (val) => val instanceof firestore.Timestamp,
+    {
+      message: "Expected a Firebase Firestore Timestamp object",
+    }
+  ).transform((timestamp) => timestamp.toDate()),
+]);
 
 export const SetSchema = z.discriminatedUnion("measure", [
   z.object({
@@ -44,7 +56,7 @@ export const ExerciseLogSchema = z.object({
     caloriesBurned: z.number().int().optional(),
     notes: z.string().max(500).optional(),
     sets: z.array(SetSchema), // Array of exercise sets
-    createdAt: z.date().optional(),
+    createdAt: FirestoreTimestampSchema.optional(),
 });
 
 export const LabelSchema = z.object({
@@ -52,19 +64,19 @@ export const LabelSchema = z.object({
     description: z.string().min(1).max(100), // Add length constraints
     dates: z.array(z.string().date()).default([]).optional(), // Make dates optional with default empty array
     muscleGroups: z.array(z.string()).default([]).optional(),
-    createdAt: z.date().optional(),
+    createdAt: FirestoreTimestampSchema.optional(),
 });
 
 export const DaySchema = z.object({
     date: z.string().date(), // ISO 8601 date string
     labelId: z.string().min(1), // Reference to emoji ID instead of full object
-    createdAt: z.date().optional(),
+    createdAt: FirestoreTimestampSchema.optional(),
 });
 
 export const ExerciseNameListSchema = z.object({
-    name: z.string(),
-    createdAt: z.date().optional(),
-})
+  name: z.string(),
+  createdAt: FirestoreTimestampSchema.optional(),
+});
 
 // Zod schema for emoji assignments with an ID (when reading from DB)
 export const LabelWithIdSchema = LabelSchema.extend({

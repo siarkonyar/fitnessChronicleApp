@@ -1,7 +1,11 @@
+import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { trpc } from "@/lib/trpc";
-import { ExerciseNameListSchema } from "@/types/types";
+import {
+  deleteExerciseName,
+  getAllExerciseNames,
+} from "@/lib/firebase/exercise";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import {
   Keyboard,
@@ -12,7 +16,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { z } from "zod";
 import exerciseNames from "../../types/exercise_names_master.json";
 import { ThemedText } from "../ThemedText";
 import { ThemedTextInput } from "../ThemedTextInput";
@@ -30,27 +33,31 @@ export default function ExerciseNameInput({
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  type ExerciseNameList = z.infer<typeof ExerciseNameListSchema>;
-  const { data } = trpc.fitness.getAllExerciseNames.useQuery() as {
-    data: { names: ExerciseNameList[] } | undefined;
-    error: any;
-  };
-
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const { handleMutationError } = useServerErrorHandler();
 
-  const deleteExerciseNameMutation =
-    trpc.fitness.deleteExerciseName.useMutation({
-      onError: (error) => {
-        handleMutationError(error);
-      },
-    });
+  const { data } = useQuery({
+    queryKey: queryKeys.exerciseNames.all,
+    queryFn: () => getAllExerciseNames(),
+  });
+
+  const deleteExerciseNameMutation = useMutation({
+    mutationFn: deleteExerciseName,
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.exerciseNames.all,
+      });
+    },
+  });
 
   useEffect(() => {
     if (title.trim().length > 0) {
-      // Ensure names is an array before calling map
-      const previousExerciseNames = Array.isArray(data?.names)
-        ? data.names.map((item) => item.name)
+      // Ensure data is an array before calling map
+      const previousExerciseNames = Array.isArray(data)
+        ? data.map((item) => item.name)
         : [];
 
       // Filter from master exercise names
@@ -105,15 +112,8 @@ export default function ExerciseNameInput({
     try {
       // Optimistically update UI
       setSuggestionsFromPrevios((prev) => prev.filter((n) => n !== suggestion));
-      // Trigger server mutation and refresh cache when done
-      deleteExerciseNameMutation.mutate(
-        { name: suggestion },
-        {
-          onSettled: () => {
-            utils.fitness.getAllExerciseNames.invalidate();
-          },
-        }
-      );
+      // Trigger mutation - cache will be invalidated in onSuccess
+      deleteExerciseNameMutation.mutate(suggestion);
     } catch (error) {
       console.log(error);
     }

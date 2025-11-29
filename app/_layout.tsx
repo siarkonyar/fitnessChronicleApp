@@ -5,7 +5,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -13,7 +13,8 @@ import React from "react";
 import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import "../global.css";
-import { queryClient, trpc, trpcClient } from "../lib/trpc";
+
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -28,11 +29,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ConnectivityProvider>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            <AppSetup />
-          </QueryClientProvider>
-        </trpc.Provider>
+        <QueryClientProvider client={queryClient}>
+          <AppSetup />
+        </QueryClientProvider>
       </ConnectivityProvider>
     </AuthProvider>
   );
@@ -52,7 +51,6 @@ function AppSetup() {
           <Stack.Screen name="(screens)" />
           <Stack.Screen name="offline" options={{ headerShown: false }} />
         </Stack.Protected>
-        <Stack.Screen name="offline" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>

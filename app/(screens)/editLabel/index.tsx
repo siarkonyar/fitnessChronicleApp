@@ -2,45 +2,56 @@ import { Button } from "@/components/Button";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { trpc } from "@/lib/trpc";
-import { LabelWithIdSchema } from "@/types/types";
+import { editLabel, getLabelById } from "@/lib/firebase/label";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { z } from "zod";
 
 export default function Index() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const labelId = params.id as string;
-  type labelScheme = z.infer<typeof LabelWithIdSchema>;
 
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
-  const editLabelMutation = trpc.label.editLabel.useMutation({
+  const queryClient = useQueryClient();
+  const editLabelMutation = useMutation({
+    mutationFn: ({
+      id,
+      label,
+      description,
+    }: {
+      id: string;
+      label: string;
+      description: string;
+    }) => editLabel(id, { label, description }),
     onError: (error) => {
       handleMutationError(error);
     },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.byId(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.all,
+      });
+    },
   });
-  const utils = trpc.useUtils();
-  const theme = useColorScheme() ?? "light";
 
   // Get the label data
   const {
     data: labelData,
     isLoading,
     error,
-  } = trpc.label.getLabelById.useQuery(
-    { id: labelId },
-    { enabled: !!labelId }
-  ) as {
-    data: labelScheme | undefined;
-    isLoading: boolean;
-    error: any;
-  };
+  } = useQuery({
+    queryKey: queryKeys.labels.byId(labelId),
+    queryFn: () => getLabelById(labelId),
+    enabled: !!labelId,
+  });
 
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
@@ -93,8 +104,6 @@ export default function Index() {
         label: label.trim(),
         description: description.trim(),
       });
-      await utils.label.getAllLabels.invalidate();
-      await utils.label.getLabelById.invalidate({ id: labelId });
       router.push("/(tabs)/settings");
     } catch (error) {
       console.log(error);

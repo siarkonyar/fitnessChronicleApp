@@ -4,12 +4,16 @@ import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { clearAllOfflineExercises, offlineData } from "@/lib/offlineStorage";
-import { trpc } from "@/lib/trpc"; // Adjust the import path as necessary
-import { ExerciseLogWithIdSchema } from "@/types/types"; // Adjust the import path as necessary
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
+import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import {
+  getExerciseLogByDate,
+  syncOfflineExercises,
+} from "@/lib/firebase/exercise";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -21,16 +25,16 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { z } from "zod";
 
 export default function HomeScreen() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
-  const { handleQueryError } = useServerErrorHandler();
+  const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const [refreshing, setRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const hasAttemptedSync = useRef(false);
   const lastSyncAttempt = useRef<number>(0);
+  const queryClient = useQueryClient();
 
   // Function to reset sync state (can be called when user manually retries)
   const resetSyncState = () => {
@@ -39,26 +43,31 @@ export default function HomeScreen() {
     lastSyncAttempt.current = 0;
   };
 
-  const syncMutation = trpc.fitness.syncOfflineExercises.useMutation({
+  const syncMutation = useMutation({
+    mutationFn: syncOfflineExercises,
     onError: (error) => {
       setIsSyncing(false);
+      handleMutationError(error);
     },
     onSuccess: () => {
       setIsSyncing(false);
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.exerciseLogs.byDate(
+          new Date().toLocaleDateString("en-CA")
+        ),
+      });
     },
   });
-  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
   const {
     data: logs,
     isLoading,
     error,
-  } = trpc.fitness.getExerciseLogByDate.useQuery({
-    date: new Date().toLocaleDateString("en-CA"),
-  }) as {
-    data: ExerciseLog[] | undefined;
-    isLoading: boolean;
-    error: any;
-  };
+  } = useQuery({
+    queryFn: () => getExerciseLogByDate(new Date().toLocaleDateString("en-CA")),
+    queryKey: queryKeys.exerciseLogs.byDate(
+      new Date().toLocaleDateString("en-CA")
+    ),
+  });
 
   useEffect(() => {
     if (error) {
@@ -105,7 +114,6 @@ export default function HomeScreen() {
             return exercise;
           });
 
-          // Use tRPC to sync offline exercises to server
           await syncMutation.mutateAsync(exercises);
           await clearAllOfflineExercises();
         }

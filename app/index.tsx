@@ -2,10 +2,16 @@
 import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
 import { useConnectivity } from "@/context/ConnectivityContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { trpc } from "@/lib/trpc";
+import {
+  getExerciseLogByDate,
+  getExerciseLogsByMonth,
+} from "@/lib/firebase/exercise";
+import { getAllLabels, getAllLabelsFromMonth } from "@/lib/firebase/label";
+import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useCallback, useEffect } from "react";
 import { useColorScheme, View } from "react-native";
@@ -21,8 +27,8 @@ export default function App() {
   const theme = useColorScheme() ?? "light";
   const { isAuthenticated, authLoading } = useAuth();
   const { handleQueryError } = useServerErrorHandler();
-  const utils = trpc.useUtils();
   const { isOnline } = useConnectivity();
+  const queryClient = useQueryClient();
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.96);
@@ -51,16 +57,28 @@ export default function App() {
     // Skip prefetching if offline to avoid noisy alerts on splash
     if (isAuthenticated && isOnline) {
       Promise.all([
-        utils.fitness.getExerciseLogsByMonth.prefetch({ month: visibleMonth }),
-        utils.label.getAllLabelsFromMonth.prefetch({ date: visibleMonth }),
-        utils.fitness.getExerciseLogByDate.prefetch({ date: today }),
-        utils.label.getAllLabels.prefetch(),
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.exerciseLogs.byMonth(visibleMonth),
+          queryFn: () => getExerciseLogsByMonth(visibleMonth),
+        }),
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.labels.byMonth(visibleMonth),
+          queryFn: () => getAllLabelsFromMonth(visibleMonth),
+        }),
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.exerciseLogs.byDate(today),
+          queryFn: () => getExerciseLogByDate(today),
+        }),
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.labels.all,
+          queryFn: () => getAllLabels(),
+        }),
       ]).catch((error) => {
         // Handle prefetch errors with offline redirection
         handleQueryError(error);
       });
     }
-  }, [authLoading, isAuthenticated, isOnline, utils, handleQueryError]);
+  }, [authLoading, isAuthenticated, isOnline, queryClient, handleQueryError]);
 
   const navigateAfterFade = useCallback(() => {
     // If offline, always land on the offline experience

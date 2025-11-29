@@ -12,7 +12,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.siar.konyar.fitnessChronicle",
       "appleTeamId": "TAMQ259Y2Y",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
