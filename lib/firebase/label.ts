@@ -1,10 +1,12 @@
-import { useAuth } from "@/context/AuthContext";
 import { DaySchema, LabelSchema, LabelWithIdSchema } from "@/types/types";
+import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
 
 const GetCurrentUserId = () => {
-  return useAuth().user?.uid;
+  const user = auth().currentUser;
+  if (!user) throw new Error("User not authenticated");
+  return user.uid;
 };
 
 type Label = z.infer<typeof LabelSchema>;

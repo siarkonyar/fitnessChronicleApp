@@ -7,7 +7,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { formatDateAsString } from "@/lib/dateUtils";
-import { addExerciseLog, getLatestExercisesByName } from "@/lib/firebase";
+import { addExerciseLog, getLatestExercisesByName } from "@/lib/firebase/exercise";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

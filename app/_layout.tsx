@@ -51,7 +51,6 @@ function AppSetup() {
           <Stack.Screen name="(screens)" />
           <Stack.Screen name="offline" options={{ headerShown: false }} />
         </Stack.Protected>
-        <Stack.Screen name="offline" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>

@@ -2,7 +2,8 @@ import ExerciseLogByDate from "@/components/calendar/ExerciseLogByDate";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { getAllLabelsFromMonth, getExerciseLogsByMonth } from "@/lib/firebase";
+import { getExerciseLogsByMonth } from "@/lib/firebase/exercise";
+import { getAllLabelsFromMonth } from "@/lib/firebase/label";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import {

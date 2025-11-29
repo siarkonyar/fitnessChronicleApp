@@ -2,7 +2,7 @@ import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { deleteExerciseLog } from "@/lib/firebase";
+import { deleteExerciseLog } from "@/lib/firebase/exercise";
 import { deleteOfflineExercise } from "@/lib/offlineStorage";
 import { ExerciseLogWithIdSchema } from "@/types/types"; // path doğruysa sıkıntı yok
 import { Feather } from "@expo/vector-icons";

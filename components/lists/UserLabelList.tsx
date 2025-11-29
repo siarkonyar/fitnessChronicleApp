@@ -1,6 +1,6 @@
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { getAllLabels } from "@/lib/firebase";
+import { getAllLabels } from "@/lib/firebase/label";
 import { LabelWithIdSchema } from "@/types/types";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -23,11 +23,15 @@ export default function UserLabelList() {
     queryKey: queryKeys.labels.all,
     queryFn: () => getAllLabels(),
   });
+
   const labels: labelScheme[] = Array.isArray(labelsRaw)
     ? (labelsRaw as labelScheme[])
     : [];
 
   useEffect(() => {
+    console.log("Labels fetched:", labelsRaw);
+    console.log("error:", error);
+    console.log("isLoading:", isLoading);
     if (error) {
       handleQueryError(error);
     }

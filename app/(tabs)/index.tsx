@@ -9,7 +9,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { getExerciseLogByDate, syncOfflineExercises } from "@/lib/firebase";
+import {
+  getExerciseLogByDate,
+  syncOfflineExercises,
+} from "@/lib/firebase/exercise";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ActivityIndicator,

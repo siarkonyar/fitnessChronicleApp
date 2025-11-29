@@ -7,11 +7,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useConnectivity } from "@/context/ConnectivityContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
-  getAllLabels,
-  getAllLabelsFromMonth,
   getExerciseLogByDate,
   getExerciseLogsByMonth,
-} from "@/lib/firebase";
+} from "@/lib/firebase/exercise";
+import { getAllLabels, getAllLabelsFromMonth } from "@/lib/firebase/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useCallback, useEffect } from "react";

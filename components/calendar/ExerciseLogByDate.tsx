@@ -5,7 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { formatDateAsString, getTodayString } from "@/lib/dateUtils";
-import { getExerciseLogByDate } from "@/lib/firebase";
+import { getExerciseLogByDate } from "@/lib/firebase/exercise";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useEffect } from "react";

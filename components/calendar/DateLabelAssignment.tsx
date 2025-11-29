@@ -7,7 +7,8 @@ import {
   deleteAssignment,
   getAllLabels,
   getLabelAsignmentByDate,
-} from "@/lib/firebase";
+  getLabelById,
+} from "@/lib/firebase/label";
 import { LabelSchema, LabelWithIdSchema } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect } from "react";
@@ -236,7 +237,4 @@ export default function DateLabelAssignment({
       </Modal>
     </>
   );
-}
-function getLabelById(arg0: any) {
-  throw new Error("Function not implemented.");
 }
