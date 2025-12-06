@@ -1,23 +1,28 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import UserLabelList from "@/components/lists/UserLabelList";
+import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
 import React, { useState } from "react";
 import {
   Alert,
+  Image,
   RefreshControl,
   ScrollView,
+  TouchableOpacity,
   useColorScheme,
+  View,
 } from "react-native";
 
 export default function Settings() {
   const [refreshing, setRefreshing] = useState(false);
   const theme = useColorScheme() ?? "light";
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
 
   const handleSignout = async () => {
     try {
@@ -57,12 +62,92 @@ export default function Settings() {
           />
         }
       >
+        {/* Profile Picture positioned to overlap card top border */}
+        <View className="items-center mb-4" style={{ marginTop: 24 }}>
+          <View style={{ position: "absolute", top: -24, zIndex: 10 }}>
+            {user?.photoURL ? (
+              <Image
+                source={{ uri: user.photoURL }}
+                className="w-24 h-24 rounded-full"
+                style={{
+                  borderWidth: 3,
+                  borderColor: Colors[theme].highlight,
+                  backgroundColor: Colors[theme].background,
+                }}
+              />
+            ) : (
+              <View
+                className="w-24 h-24 rounded-full items-center justify-center"
+                style={{
+                  backgroundColor: Colors[theme].highlight + "20",
+                  borderWidth: 3,
+                  borderColor: Colors[theme].highlight,
+                }}
+              >
+                <MaterialIcons
+                  name="person"
+                  size={48}
+                  color={Colors[theme].highlight}
+                />
+              </View>
+            )}
+          </View>
+        </View>
+
         <Card className="mb-4">
-          <Button type="danger" onPress={handleSignout}>
-            Sign Out
-          </Button>
+          <View className="items-center py-4" style={{ paddingTop: 60 }}>
+            {/* User Info */}
+            <ThemedText
+              type="defaultSemiBold"
+              className="text-lg mb-1 text-center"
+            >
+              {user?.displayName || "User"}
+            </ThemedText>
+            {user?.email && (
+              <ThemedText className="text-sm mb-4 text-center opacity-70">
+                {user.email}
+              </ThemedText>
+            )}
+          </View>
         </Card>
         <UserLabelList />
+
+        <View className="mb-4 mt-12">
+          {/* <ThemedText
+            type="subtitle"
+            className="mb-4"
+            darkColor={Colors[theme].danger}
+            lightColor={Colors[theme].danger}
+          >
+            Danger Zone
+          </ThemedText> */}
+          <View className="w-full mb-8">
+            <Button type="danger" onPress={handleSignout}>
+              Sign Out
+            </Button>
+          </View>
+          <View className="w-full">
+            <Card>
+              <TouchableOpacity
+                className="flex-row justify-between"
+                onPress={() => router.push("/deleteAccount")}
+              >
+                <ThemedText
+                  type="defaultSemiBold"
+                  darkColor={Colors[theme].danger}
+                  lightColor={Colors[theme].danger}
+                >
+                  Delete Account
+                </ThemedText>
+                <MaterialIcons
+                  name="chevron-right"
+                  size={24}
+                  color={Colors[theme].danger}
+                />
+              </TouchableOpacity>
+            </Card>
+          </View>
+        </View>
       </ScrollView>
     </>
   );

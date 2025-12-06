@@ -1,9 +1,11 @@
 import {
+  deleteUser,
   FirebaseAuthTypes,
   signOut as firebaseSignOut,
   getAuth,
   onAuthStateChanged,
 } from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -13,6 +15,8 @@ interface AuthContextType {
   authLoading: boolean;
   signOut: () => Promise<void>;
   getIdToken: (forceRefresh?: boolean) => Promise<string | null>;
+
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authLoading,
     signOut,
     getIdToken,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -86,3 +91,51 @@ export function useAuth() {
   }
   return context;
 }
+
+export const deleteAccount = async () => {
+  const currentUser = getAuth().currentUser;
+  try {
+    if (!currentUser) {
+      throw new Error("No user is currently signed in.");
+    }
+
+    const userId = currentUser.uid;
+    const userDocRef = firestore().collection("users").doc(userId);
+
+    // Delete fitnessLogs subcollection
+    const logsSnapshot = await userDocRef.collection("fitnessLogs").get();
+    const logDeletePromises = logsSnapshot.docs.map((doc: any) =>
+      doc.ref.delete()
+    );
+    await Promise.all(logDeletePromises);
+
+    // Delete exerciseNames subcollection
+    const namesSnapshot = await userDocRef.collection("exerciseNames").get();
+    const nameDeletePromises = namesSnapshot.docs.map((doc: any) =>
+      doc.ref.delete()
+    );
+    await Promise.all(nameDeletePromises);
+
+    // Delete labels subcollection if exists
+    const labelsSnapshot = await userDocRef.collection("labels").get();
+    const labelDeletePromises = labelsSnapshot.docs.map((doc: any) =>
+      doc.ref.delete()
+    );
+    await Promise.all(labelDeletePromises);
+
+    await userDocRef.delete();
+
+    try {
+      await GoogleSignin.revokeAccess();
+      await GoogleSignin.signOut();
+    } catch (error) {
+      console.warn("Google Sign-Out Error during account deletion:", error);
+    }
+
+    // Delete the Firebase Auth user
+    await deleteUser(currentUser);
+  } catch (error) {
+    console.error("Error deleting user account:", error);
+    throw error;
+  }
+};

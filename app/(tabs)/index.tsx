@@ -245,7 +245,7 @@ export default function HomeScreen() {
         <View className="flex-1 justify-center px-6">
           <View className="items-center mb-6">
             <ThemedText className="text-xl font-semibold text-center mb-2">
-              🏋️ Ready to Get Moving?
+              Ready to Get Moving?
             </ThemedText>
             <ThemedText className="text-base text-center text-gray-600 leading-relaxed">
               Seems like you haven&apos;t started working out yet. It&apos;s the

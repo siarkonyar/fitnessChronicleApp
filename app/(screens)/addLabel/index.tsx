@@ -8,12 +8,13 @@ import { addLabel } from "@/lib/firebase/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Platform, ScrollView, View } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {
   const insets = useSafeAreaInsets();
+  const topPadding = Platform.OS === "android" ? 48 : 2 * insets.top;
   const { handleMutationError } = useServerErrorHandler();
   const queryClient = useQueryClient();
   const addLabelMutation = useMutation({
@@ -55,7 +56,7 @@ export default function Index() {
   }
 
   return (
-    <ThemedView className="flex-1" style={{ paddingTop: 2 * insets.top }}>
+    <ThemedView className="flex-1" style={{ paddingTop: topPadding }}>
       <ScrollView className="flex-1 p-4">
         <View className="p-6">
           <ThemedText className="text-2xl font-bold mb-2 text-center">

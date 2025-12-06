@@ -11,6 +11,7 @@ import {
 } from "@/lib/firebase/label";
 import { LabelSchema, LabelWithIdSchema } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
@@ -221,13 +222,25 @@ export default function DateLabelAssignment({
                     <ThemedText className="text-center opacity-70 mb-2">
                       No labels available
                     </ThemedText>
-                    <ThemedText className="text-sm text-center opacity-50">
+                    <ThemedText className="text-sm text-center opacity-50 mb-2">
                       Please add some labels first
                     </ThemedText>
+                    <Button
+                      className="mt-1"
+                      onPress={() => {
+                        setIsLabelSelectionOpen(false);
+                        router.push("/settings");
+                      }}
+                    >
+                      Add Labels
+                    </Button>
                   </View>
                 )}
 
-                <Button onPress={() => setIsLabelSelectionOpen(false)}>
+                <Button
+                  type="danger"
+                  onPress={() => setIsLabelSelectionOpen(false)}
+                >
                   Cancel
                 </Button>
               </View>

@@ -489,7 +489,7 @@ export default function Index() {
                   onPress={logExercise}
                   disabled={isLogging}
                 >
-                  {isLogging ? "Logging Exercise..." : "🏋️ Log Exercise"}
+                  {isLogging ? "Logging Exercise..." : "Log Exercise"}
                 </Button>
               </Animated.View>
               {title.trim().length > 0 && (

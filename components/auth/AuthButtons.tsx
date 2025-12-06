@@ -21,6 +21,7 @@ export default function AuthButtons() {
   const theme = useColorScheme() ?? "light";
   // Keep some transparency so the blur is visible. 0x40 ≈ 25% alpha.
   const highlightWithAlpha = `${Colors[theme].highlight}40`;
+  const [appleError, setAppleError] = useState<any | null>(null);
 
   async function onGoogleButtonPress() {
     try {
@@ -57,27 +58,40 @@ export default function AuthButtons() {
   }
 
   async function onAppleButtonPress() {
-    // Start the sign-in request
-    const appleAuthRequestResponse = await appleAuth.performRequest({
-      requestedOperation: appleAuth.Operation.LOGIN,
-      // As per the FAQ of react-native-apple-authentication, the name should come first in the following array.
-      // See: https://github.com/invertase/react-native-apple-authentication#faqs
-      requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
-    });
+    try {
+      // Start the sign-in request
+      const appleAuthRequestResponse = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        // As per the FAQ of react-native-apple-authentication, the name should come first in the following array.
+        // See: https://github.com/invertase/react-native-apple-authentication#faqs
+        requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+      });
 
-    // Ensure Apple returned a user identityToken
-    if (!appleAuthRequestResponse.identityToken) {
-      throw new Error("Apple Sign-In failed - no identify token returned");
+      // Ensure Apple returned a user identityToken
+      if (!appleAuthRequestResponse.identityToken) {
+        throw new Error("Apple Sign-In failed - no identify token returned");
+      }
+
+      // Create a Firebase credential from the response
+      const { identityToken, nonce } = appleAuthRequestResponse;
+      const appleCredential = AppleAuthProvider.credential(
+        identityToken,
+        nonce
+      );
+
+      setLoading(false);
+
+      // Sign the user in with the credential
+      return signInWithCredential(getAuth(), appleCredential);
+    } catch (error) {
+      console.error("Apple Sign-In Error:", error);
+      console.error("Error Code:", (error as any).code);
+      console.error("Error Message:", (error as any).message);
+      setAppleError(error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
-
-    // Create a Firebase credential from the response
-    const { identityToken, nonce } = appleAuthRequestResponse;
-    const appleCredential = AppleAuthProvider.credential(identityToken, nonce);
-
-    setLoading(false);
-
-    // Sign the user in with the credential
-    return signInWithCredential(getAuth(), appleCredential);
   }
 
   return (
@@ -168,6 +182,11 @@ export default function AuthButtons() {
           </View>
         </BlurView>
       </Pressable>
+      {appleError && (
+        <Text style={{ color: "red", marginTop: 8 }}>
+          {appleError.message || "An error occurred during Apple Sign-In."}
+        </Text>
+      )}
     </View>
   );
 }

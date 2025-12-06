@@ -83,3 +83,5 @@ eas build --platform android --profile production
 
 # Or build and submit separately
 eas build --platform ios --profile production --auto-submit
+
+eas submit --platform ios

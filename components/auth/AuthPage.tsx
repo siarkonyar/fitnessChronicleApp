@@ -80,7 +80,11 @@ export default function AuthPage() {
           </View>
         </ThemedView>
       </ThemedView>
-      <ThemedView lightColor="transparent" darkColor="transparent">
+      <ThemedView
+        lightColor="transparent"
+        darkColor="transparent"
+        className="mb-4"
+      >
         <Text
           className="text-center text-xs"
           style={{
