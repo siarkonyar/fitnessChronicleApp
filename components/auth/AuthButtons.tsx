@@ -182,11 +182,6 @@ export default function AuthButtons() {
           </View>
         </BlurView>
       </Pressable>
-      {appleError && (
-        <Text style={{ color: "red", marginTop: 8 }}>
-          {appleError.message || "An error occurred during Apple Sign-In."}
-        </Text>
-      )}
     </View>
   );
 }

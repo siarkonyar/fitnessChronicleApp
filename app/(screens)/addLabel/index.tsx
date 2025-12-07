@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {
   const insets = useSafeAreaInsets();
-  const topPadding = Platform.OS === "android" ? 48 : 2 * insets.top;
+  const topPadding = Platform.OS === "android" ? 128 : 2 * insets.top;
   const { handleMutationError } = useServerErrorHandler();
   const queryClient = useQueryClient();
   const addLabelMutation = useMutation({

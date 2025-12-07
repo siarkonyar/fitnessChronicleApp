@@ -2,6 +2,7 @@ import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import UserLabelList from "@/components/lists/UserLabelList";
 import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -64,7 +65,11 @@ export default function Settings() {
       >
         {/* Profile Picture positioned to overlap card top border */}
         <View className="items-center mb-4" style={{ marginTop: 24 }}>
-          <View style={{ position: "absolute", top: -24, zIndex: 10 }}>
+          <ThemedView
+            style={{ position: "absolute", top: -24, zIndex: 10 }}
+            darkColor={Colors.dark.background}
+            lightColor={Colors.light.background}
+          >
             {user?.photoURL ? (
               <Image
                 source={{ uri: user.photoURL }}
@@ -91,7 +96,7 @@ export default function Settings() {
                 />
               </View>
             )}
-          </View>
+          </ThemedView>
         </View>
 
         <Card className="mb-4">
