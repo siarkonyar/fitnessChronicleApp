@@ -34,7 +34,7 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const theme = useColorScheme() ?? "light";
   const queryClient = useQueryClient();
-  const topPadding = Platform.OS === "android" ? 128 : 2 * insets.top;
+  const topPadding = Platform.OS === "android" ? 64 : 2 * insets.top;
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
 
   const addExerciseLogMutation = useMutation({

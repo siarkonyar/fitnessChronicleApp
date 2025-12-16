@@ -117,7 +117,7 @@ export default function Settings() {
         </Card>
         <UserLabelList />
 
-        <View className="mb-4 mt-12">
+        <View className="mb-8 mt-12">
           {/* <ThemedText
             type="subtitle"
             className="mb-4"

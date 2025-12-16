@@ -103,14 +103,6 @@ export default function HomeScreen() {
               sets: offlineExercise.sets,
             };
 
-            // Only add optional fields if they exist
-            if (offlineExercise.caloriesBurned !== undefined) {
-              exercise.caloriesBurned = offlineExercise.caloriesBurned;
-            }
-            if (offlineExercise.notes !== undefined) {
-              exercise.notes = offlineExercise.notes;
-            }
-
             return exercise;
           });
 

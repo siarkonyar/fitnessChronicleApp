@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {
   const insets = useSafeAreaInsets();
-  const topPadding = Platform.OS === "android" ? 128 : 2 * insets.top;
+  const topPadding = Platform.OS === "android" ? 64 : 2 * insets.top;
   const theme = useColorScheme() ?? "light";
   const { deleteAccount, user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);

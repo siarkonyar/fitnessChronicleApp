@@ -264,6 +264,29 @@ export const syncOfflineExercises = async (exerciseLogs: ExerciseLog[]) => {
   if (!userId) throw new Error("User not authenticated");
   if (exerciseLogs.length === 0) return;
 
+  const orderedSnapshot = await firestore()
+    .collection("users")
+    .doc(userId)
+    .collection("fitnessLogs")
+    .orderBy("createdAt", "desc")
+    .limit(1)
+    .get();
+
+  const lastExercise = orderedSnapshot.docs.map((doc) =>
+    ExerciseLogWithIdSchema.parse({
+      id: doc.id,
+      ...doc.data(),
+    })
+  );
+
+  if (
+    lastExercise.length > 0 &&
+    lastExercise[0].createdAt &&
+    new Date().getTime() - lastExercise[0].createdAt.getTime() < 10000
+  ) {
+    throw new Error("Last offline log made less then 10 seconds ago.");
+  }
+
   const batch = firestore().batch();
   const exerciseNamesToAdd = new Set<string>();
 

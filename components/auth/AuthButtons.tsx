@@ -21,7 +21,6 @@ export default function AuthButtons() {
   const theme = useColorScheme() ?? "light";
   // Keep some transparency so the blur is visible. 0x40 ≈ 25% alpha.
   const highlightWithAlpha = `${Colors[theme].highlight}40`;
-  const [appleError, setAppleError] = useState<any | null>(null);
 
   async function onGoogleButtonPress() {
     try {
@@ -87,7 +86,6 @@ export default function AuthButtons() {
       console.error("Apple Sign-In Error:", error);
       console.error("Error Code:", (error as any).code);
       console.error("Error Message:", (error as any).message);
-      setAppleError(error);
       throw error;
     } finally {
       setLoading(false);
