@@ -76,9 +76,9 @@ export const AddSetCard: React.FC<Props> = ({
 
   const handleValueChange = (text: string) => {
     // Allow only numbers and one decimal point
-    const clean = text.replace(/[^0-9.]/g, "");
+    const clean = text.replace(/[^0-9.,]/g, "");
     // Ensure only one decimal point
-    const parts = clean.split(".");
+    const parts = clean.split(/[.,]/);
     if (parts.length > 2) {
       return; // More than one decimal point, ignore
     }
@@ -96,9 +96,9 @@ export const AddSetCard: React.FC<Props> = ({
 
   const handleRepsChange = (text: string) => {
     // Allow only numbers and one decimal point
-    const clean = text.replace(/[^0-9.]/g, "");
+    const clean = text.replace(/[^0-9.,]/g, "");
     // Ensure only one decimal point
-    const parts = clean.split(".");
+    const parts = clean.split(/[.,]/);
     if (parts.length > 2) {
       return; // More than one decimal point, ignore
     }
