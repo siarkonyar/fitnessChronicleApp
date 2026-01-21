@@ -20,6 +20,7 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     BebasNeue: require("../assets/fonts/BebasNeue-Regular.ttf"),
+    Inter: require("../assets/fonts/Inter/static/Inter_18pt-Medium.ttf")
   });
 
   if (!loaded) {
