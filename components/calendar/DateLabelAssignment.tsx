@@ -24,10 +24,7 @@ import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
 import { ThemedView } from "../ThemedView";
-import {
-  default as LabelCard,
-  default as LabeledCard,
-} from "../cards/LabelCard";
+import LabelCard from "../cards/LabelCard";
 
 // Represents an label assignment joined with its label data
 export type DateLabelAssignmentWithLabel = {
@@ -155,7 +152,7 @@ export default function DateLabelAssignment({
       <ThemedView className="w-full flex-row px-4 justify-center items-center">
         {data && label ? (
           <>
-            <LabeledCard
+            <LabelCard
               label={label}
               index={0}
               onPress={() => setIsLabelSelectionOpen(true)}

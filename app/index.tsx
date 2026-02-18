@@ -62,11 +62,15 @@ export default function App() {
           queryFn: () => getExerciseLogsByMonth(visibleMonth),
         }),
         queryClient.prefetchQuery({
-          queryKey: queryKeys.labels.byMonth(visibleMonth),
+          queryKey: queryKeys.labelAssignments.byMonth(visibleMonth),
           queryFn: () => getAllLabelsFromMonth(visibleMonth),
         }),
         queryClient.prefetchQuery({
           queryKey: queryKeys.exerciseLogs.byDate(today),
+          queryFn: () => getExerciseLogByDate(today),
+        }),
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.labelAssignments.byDate(today),
           queryFn: () => getExerciseLogByDate(today),
         }),
         queryClient.prefetchQuery({

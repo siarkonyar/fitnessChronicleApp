@@ -268,7 +268,6 @@ export const AddSetCard: React.FC<Props> = ({
                         onFocus={() => onValueChange(id, "")}
                         keyboardType="decimal-pad"
                         returnKeyType="done"
-                        blurOnSubmit
                         onSubmitEditing={() => Keyboard.dismiss()}
                         maxLength={6}
                         className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
@@ -281,7 +280,6 @@ export const AddSetCard: React.FC<Props> = ({
                       onFocus={() => onValueChange(id, "")}
                       keyboardType="decimal-pad"
                       returnKeyType="done"
-                      blurOnSubmit
                       onSubmitEditing={() => Keyboard.dismiss()}
                       maxLength={6}
                       className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
