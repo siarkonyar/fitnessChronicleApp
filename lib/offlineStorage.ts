@@ -155,3 +155,29 @@ export const offlineData = async (): Promise<string> => {
     throw error;
   }
 };
+
+const HAPTICS_ENABLED_KEY = "hapticsEnabled";
+
+/**
+ * Save haptics enabled state to storage
+ */
+export const saveHapticsEnabled = async (enabled: boolean): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(HAPTICS_ENABLED_KEY, JSON.stringify(enabled));
+  } catch (error) {
+    console.error('Failed to save haptics setting:', error);
+  }
+};
+
+/**
+ * Get haptics enabled state from storage (defaults to true)
+ */
+export const getHapticsEnabled = async (): Promise<boolean> => {
+  try {
+    const value = await AsyncStorage.getItem(HAPTICS_ENABLED_KEY);
+    return value !== null ? JSON.parse(value) : true; // Default to enabled
+  } catch (error) {
+    console.error('Failed to get haptics setting:', error);
+    return true; // Default to enabled on error
+  }
+};
