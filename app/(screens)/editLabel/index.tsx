@@ -4,7 +4,7 @@ import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { editLabel, getLabelById } from "@/lib/firebase/label";
+import { deleteLabel, editLabel, getLabelById } from "@/lib/firebase/label";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -43,6 +43,21 @@ export default function Index() {
     },
   });
 
+  const deleteLabelMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => deleteLabel(id),
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: (variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.byId(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.all,
+      });
+    },
+  });
+
   // Get the label data
   const {
     data: labelData,
@@ -56,7 +71,8 @@ export default function Index() {
 
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   //const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
   // Initialize form with label data when it loads
@@ -94,12 +110,12 @@ export default function Index() {
   } as const; */
 
   const canSubmit =
-    label.trim().length > 0 && description.trim().length > 0 && !isSubmitting;
+    label.trim().length > 0 && description.trim().length > 0 && !isEditing;
 
   async function handleEditLabel() {
     if (!canSubmit || !labelId) return;
     try {
-      setIsSubmitting(true);
+      setIsEditing(true);
       await editLabelMutation.mutateAsync({
         id: labelId,
         label: label.trim(),
@@ -109,7 +125,22 @@ export default function Index() {
     } catch (error) {
       console.log(error);
     } finally {
-      setIsSubmitting(false);
+      setIsEditing(false);
+    }
+  }
+
+  async function handleDeleteLabel() {
+    if (!canSubmit || !labelId) return;
+    try {
+      setIsDeleting(true);
+      await deleteLabelMutation.mutateAsync({
+        id: labelId,
+      });
+      router.push("/(tabs)/settings");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -203,12 +234,20 @@ export default function Index() {
             className="flex-row justify-end gap-3"
           >
             <Button
+              type="danger"
+              onPress={handleDeleteLabel}
+              disabled={!canSubmit}
+              style={{ opacity: canSubmit ? 1 : 0.5 }}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+            <Button
               type="primary"
               onPress={handleEditLabel}
               disabled={!canSubmit}
               style={{ opacity: canSubmit ? 1 : 0.5 }}
             >
-              {isSubmitting ? "Saving..." : "Save"}
+              {isEditing ? "Saving..." : "Save"}
             </Button>
           </Animated.View>
 
