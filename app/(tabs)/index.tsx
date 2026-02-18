@@ -53,7 +53,7 @@ export default function HomeScreen() {
       setIsSyncing(false);
       queryClient.invalidateQueries({
         queryKey: queryKeys.exerciseLogs.byDate(
-          new Date().toLocaleDateString("en-CA")
+          new Date().toLocaleDateString("en-CA"),
         ),
       });
     },
@@ -65,7 +65,7 @@ export default function HomeScreen() {
   } = useQuery({
     queryFn: () => getExerciseLogByDate(new Date().toLocaleDateString("en-CA")),
     queryKey: queryKeys.exerciseLogs.byDate(
-      new Date().toLocaleDateString("en-CA")
+      new Date().toLocaleDateString("en-CA"),
     ),
   });
 
@@ -126,7 +126,7 @@ export default function HomeScreen() {
       if (!isSyncing && now - lastSyncAttempt.current > 10000) {
         resetSyncState();
       }
-    }, [isSyncing])
+    }, [isSyncing]),
   );
 
   const onRefresh = () => {
@@ -202,24 +202,11 @@ export default function HomeScreen() {
               </ThemedText>
             </View>
           )}
-          {[...logs]
-            .sort((a, b) => {
-              // Access the createdAt object (you might still need 'as any' here if your frontend types don't match)
-              const createdAtA = (a as any).createdAt;
-              const createdAtB = (b as any).createdAt;
-
-              // Convert each Firestore Timestamp object into a single comparable millisecond value
-              // (seconds * 1000 for milliseconds + nanoseconds / 1,000,000 for milliseconds)
-              const timeValueA =
-                createdAtA._seconds * 1000 +
-                createdAtA._nanoseconds / 1_000_000;
-              const timeValueB =
-                createdAtB._seconds * 1000 +
-                createdAtB._nanoseconds / 1_000_000;
-
-              // Subtracting the values directly sorts them from oldest to newest
-              return timeValueA - timeValueB;
-            })
+          {logs
+            .sort(
+              (a, b) =>
+                (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
+            )
             .map((log, index) => (
               <GetExerciseCard
                 key={index}
