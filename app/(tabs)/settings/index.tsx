@@ -5,16 +5,18 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
+import { getHapticsEnabled, saveHapticsEnabled } from "@/lib/offlineStorage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
   RefreshControl,
   ScrollView,
+  Switch,
   TouchableOpacity,
   useColorScheme,
   View,
@@ -22,8 +24,18 @@ import {
 
 export default function Settings() {
   const [refreshing, setRefreshing] = useState(false);
+  const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const theme = useColorScheme() ?? "light";
   const { signOut, user } = useAuth();
+
+  useEffect(() => {
+    getHapticsEnabled().then(setHapticsEnabled);
+  }, []);
+
+  const handleHapticsToggle = async (value: boolean) => {
+    setHapticsEnabled(value);
+    await saveHapticsEnabled(value);
+  };
 
   const handleSignout = async () => {
     try {
@@ -116,6 +128,22 @@ export default function Settings() {
           </View>
         </Card>
         <UserLabelList />
+
+        <View className="mb-4">
+          <Card className="flex-row justify-between">
+            <ThemedText type="defaultSemiBold">Use Haptics</ThemedText>
+            <Switch
+              value={hapticsEnabled}
+              onValueChange={handleHapticsToggle}
+              trackColor={{
+                false: Colors[theme].background,
+                true: Colors[theme].highlight,
+              }}
+              thumbColor={Colors[theme].background}
+              ios_backgroundColor={Colors[theme].background}
+            />
+          </Card>
+        </View>
 
         <View className="mb-8 mt-12">
           {/* <ThemedText
