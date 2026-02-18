@@ -35,6 +35,8 @@ export default function Settings() {
   const handleHapticsToggle = async (value: boolean) => {
     setHapticsEnabled(value);
     await saveHapticsEnabled(value);
+
+    await Updates.reloadAsync();
   };
 
   const handleSignout = async () => {
