@@ -75,7 +75,7 @@ export default function Index() {
                 setLabel(last.toUpperCase());
               }}
               maxLength={1}
-              caretHidden
+              caretHidden={false}
               onKeyPress={({ nativeEvent: { key } }) => {
                 if (key === "Backspace") return setLabel("");
                 if (
