@@ -48,7 +48,7 @@ export default function CalendarScreen() {
     isLoading: labelsLoading,
     error: labelsError,
   } = useQuery({
-    queryKey: queryKeys.labels.byMonth(visibleMonth),
+    queryKey: queryKeys.labelAssignments.byMonth(visibleMonth),
     queryFn: () => getAllLabelsFromMonth(visibleMonth),
   });
 
@@ -66,7 +66,7 @@ export default function CalendarScreen() {
       queryKey: queryKeys.exerciseLogs.byMonth(visibleMonth),
     });
     queryClient.invalidateQueries({
-      queryKey: queryKeys.labels.byMonth(visibleMonth),
+      queryKey: queryKeys.labelAssignments.byMonth(visibleMonth),
     });
     setTimeout(() => setRefreshing(false), 1500);
   };
@@ -110,7 +110,7 @@ export default function CalendarScreen() {
               if (!date) return null;
 
               const label = labels?.find(
-                (log) => log.date === date.dateString
+                (log) => log.date === date.dateString,
               )?.label;
 
               const isMarked = exerciseUniqueDates?.includes(date.dateString);

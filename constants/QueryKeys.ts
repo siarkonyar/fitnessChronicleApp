@@ -18,8 +18,6 @@ export const queryKeys = {
   labels: {
     all: ["labels"] as const,
     byId: (id: string) => [...queryKeys.labels.all, id] as const,
-    byMonth: (month: string) =>
-      [...queryKeys.labels.all, "month", month] as const,
   },
 
   // Label Assignments
