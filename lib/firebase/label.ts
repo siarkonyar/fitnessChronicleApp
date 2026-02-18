@@ -110,8 +110,8 @@ export const getAllLabelsFromMonth = async (date: string) => {
         .doc(userId)
         .collection("labels")
         .doc(labelId)
-        .get()
-    )
+        .get(),
+    ),
   );
 
   // Track assignments to delete (those with non-existent labels)
@@ -147,7 +147,7 @@ export const getAllLabelsFromMonth = async (date: string) => {
 
     // Remove deleted assignments from the results
     const validAssignments = assignments.filter(
-      (a) => !assignmentsToDelete.includes(a.labelId)
+      (a) => !assignmentsToDelete.includes(a.labelId),
     );
 
     // Return { date, label } for each valid assignment
@@ -207,7 +207,8 @@ export const editLabel = async (labelId: string, label: Label) => {
   };
 
   if (label !== undefined) {
-    updateData.label = label;
+    updateData.label = label.label;
+    updateData.description = label.description;
   }
 
   if (label.description !== undefined) {
