@@ -21,6 +21,7 @@ export default function AuthButtons() {
   const theme = useColorScheme() ?? "light";
   // Keep some transparency so the blur is visible. 0x40 ≈ 25% alpha.
   const highlightWithAlpha = `${Colors[theme].highlight}40`;
+  const [appleError, setAppleError] = useState<Error | null>(null);;
 
   async function onGoogleButtonPress() {
     try {
@@ -84,6 +85,7 @@ export default function AuthButtons() {
       return signInWithCredential(getAuth(), appleCredential);
     } catch (error) {
       console.error("Apple Sign-In Error:", error);
+      setAppleError(error as Error);
       console.error("Error Code:", (error as any).code);
       console.error("Error Message:", (error as any).message);
       throw error;
@@ -180,6 +182,23 @@ export default function AuthButtons() {
           </View>
         </BlurView>
       </Pressable>
+
+      {appleError && (
+        <View className="mt-4 px-4">
+          <Text
+            style={{
+              color: "#EF4444",
+              fontSize: 14,
+              textAlign: "center",
+            }}
+          >
+            Error meesage: {appleError.message}
+            Cause: {appleError.cause as string}
+            Name: {appleError.name as string}
+            stack: {appleError.stack as string}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
