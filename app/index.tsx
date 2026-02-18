@@ -86,10 +86,10 @@ export default function App() {
 
   const navigateAfterFade = useCallback(() => {
     // If offline, always land on the offline experience
-    if (!isOnline) {
+    /* if (!isOnline) {
       router.replace("/offline");
       return;
-    }
+    } */
     if (isAuthenticated) {
       router.replace("/(tabs)");
     } else {
@@ -109,7 +109,7 @@ export default function App() {
           if (finished) {
             runOnJS(navigateAfterFade)();
           }
-        }
+        },
       );
     }, 2500);
 
