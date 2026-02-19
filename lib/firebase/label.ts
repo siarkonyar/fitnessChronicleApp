@@ -358,12 +358,10 @@ export const getLabelAsignmentByDate = async (date: string) => {
     return null;
   }
 
-  return {
-    id: assignmentDoc.id,
-    date: assignmentData.date,
-    labelId: assignmentData.labelId,
-    label: labelData.label,
-  };
+  return LabelWithIdSchema.parse({
+    id: labelData.id,
+    ...labelData.data(),
+  });
 };
 
 export const deleteAssignment = async (date: string) => {
