@@ -136,9 +136,7 @@ export default function DateLabelAssignment({
   return (
     <>
       <ThemedView className="w-full flex-row px-4 justify-center items-center">
-        <ThemedText>{String(data?.label)}</ThemedText>
-
-        {data && data.label ? (
+        {data ? (
           <>
             <LabelCard
               label={data}
