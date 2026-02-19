@@ -18,6 +18,7 @@ export default function Card({
     <ThemedView
       style={{
         borderColor: Colors[theme].highlight,
+        backgroundColor: Colors[theme].elevation,
       }}
       className={`w-full border p-3 rounded-lg mb-3${className ? ` ${className}` : ""}`}
       {...otherProps}

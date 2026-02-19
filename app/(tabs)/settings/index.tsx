@@ -79,11 +79,7 @@ export default function Settings() {
       >
         {/* Profile Picture positioned to overlap card top border */}
         <View className="items-center mb-4" style={{ marginTop: 24 }}>
-          <ThemedView
-            style={{ position: "absolute", top: -24, zIndex: 10 }}
-            darkColor={Colors.dark.background}
-            lightColor={Colors.light.background}
-          >
+          <ThemedView style={{ position: "absolute", top: -24, zIndex: 10 }}>
             {user?.photoURL ? (
               <Image
                 source={{ uri: user.photoURL }}
@@ -91,7 +87,7 @@ export default function Settings() {
                 style={{
                   borderWidth: 3,
                   borderColor: Colors[theme].highlight,
-                  backgroundColor: Colors[theme].background,
+                  backgroundColor: Colors[theme].transparent,
                 }}
               />
             ) : (
