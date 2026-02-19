@@ -352,15 +352,9 @@ export const getLabelAsignmentByDate = async (date: string) => {
     return null; // Return null since the assignment was deleted
   }
 
-  const labelData = labelDoc.data();
-
-  if (!labelData) {
-    return null;
-  }
-
   return LabelWithIdSchema.parse({
-    id: labelData.id,
-    ...labelData.data(),
+    id: labelDoc.id,
+    ...labelDoc.data(),
   });
 };
 
