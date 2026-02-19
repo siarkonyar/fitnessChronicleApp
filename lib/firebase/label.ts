@@ -354,11 +354,15 @@ export const getLabelAsignmentByDate = async (date: string) => {
 
   const labelData = labelDoc.data();
 
+  if (!labelData) {
+    return null;
+  }
+
   return {
     id: assignmentDoc.id,
     date: assignmentData.date,
     labelId: assignmentData.labelId,
-    label: labelData,
+    label: labelData.label,
   };
 };
 

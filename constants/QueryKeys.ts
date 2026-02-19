@@ -4,7 +4,7 @@ export const queryKeys = {
     all: ["exerciseLogs"] as const,
     byDate: (date: string) => [...queryKeys.exerciseLogs.all, date] as const,
     byMonth: (month: string) =>
-      [...queryKeys.exerciseLogs.all, "month", month] as const,
+      [...queryKeys.exerciseLogs.all, month] as const,
     byId: (id: string) => [...queryKeys.exerciseLogs.all, id] as const,
   },
 
@@ -24,7 +24,7 @@ export const queryKeys = {
   labelAssignments: {
     all: ["labelAssignments"] as const,
     byMonth: (month: string) =>
-      [...queryKeys.labelAssignments.all, "month", month] as const,
+      [...queryKeys.labelAssignments.all, month] as const,
     byDate: (date: string) =>
       [...queryKeys.labelAssignments.all, date] as const,
   },

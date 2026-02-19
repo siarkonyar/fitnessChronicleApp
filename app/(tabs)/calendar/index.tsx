@@ -44,7 +44,7 @@ export default function CalendarScreen() {
   const exerciseUniqueDates = exerciseData?.uniqueDates;
 
   const {
-    data: labels, // 👈 Direkt labels olarak al (array döndürüyor)
+    data: labels,
     isLoading: labelsLoading,
     error: labelsError,
   } = useQuery({

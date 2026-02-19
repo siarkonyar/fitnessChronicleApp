@@ -7,7 +7,6 @@ import {
   deleteAssignment,
   getAllLabels,
   getLabelAsignmentByDate,
-  getLabelById,
 } from "@/lib/firebase/label";
 import { LabelSchema, LabelWithIdSchema } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,15 +48,6 @@ export default function DateLabelAssignment({
     queryKey: queryKeys.labelAssignments.byDate(selectedDate),
     queryFn: () => getLabelAsignmentByDate(selectedDate),
   });
-  const labelId = data?.labelId;
-  const {
-    data: label,
-    isLoading: labelsLoading,
-    error: labelError,
-  } = useQuery({
-    queryKey: queryKeys.labels.byId(labelId ? labelId : "undefined"),
-    queryFn: () => getLabelById(labelId ? labelId : "undefined"),
-  });
 
   const asignLabelToDayMutation = useMutation({
     mutationFn: asignLabelToDay,
@@ -97,12 +87,10 @@ export default function DateLabelAssignment({
   useEffect(() => {
     if (error) {
       handleQueryError(error);
-    } else if (labelError) {
-      handleQueryError(labelError);
     } else if (labelsRawError) {
       handleQueryError(labelsRawError);
     }
-  }, [error, labelError, labelsRawError, handleQueryError]);
+  }, [error, labelsRawError, handleQueryError]);
 
   //TODO: after clicking on an label it shows the loading screen but right after that for a split second it shows the card again. it happens so fast but it is still annoying to see
   async function handleAsignLabelToDay(labelId: string) {
@@ -133,11 +121,9 @@ export default function DateLabelAssignment({
     }
   }
 
-  const labels: LabelWithID[] = Array.isArray(labelsRaw)
-    ? (labelsRaw as LabelWithID[])
-    : [];
+  const labels: LabelWithID[] = labelsRaw as LabelWithID[];
 
-  if (isLoading || labelsLoading) {
+  if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center py-8">
         <ThemedText className="text-lg text-center opacity-70">
@@ -150,10 +136,12 @@ export default function DateLabelAssignment({
   return (
     <>
       <ThemedView className="w-full flex-row px-4 justify-center items-center">
-        {data && label ? (
+        <ThemedText>{String(data?.label)}</ThemedText>
+
+        {data && data.label ? (
           <>
             <LabelCard
-              label={label}
+              label={data}
               index={0}
               onPress={() => setIsLabelSelectionOpen(true)}
               className="self-start"
