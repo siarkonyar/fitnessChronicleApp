@@ -36,6 +36,9 @@
         "image": "latest",
         "track": "internal"
       },
+      "ios": {
+        "image": "latest"
+      },
       "env": {
         "APP_ENV": "production"
       }
