@@ -1,6 +1,6 @@
 export default {
   expo: {
-    name: "Hercule",
+    name: process.env.APP_ENV === 'production' ? '"Hercule"' : '"Hercule" (DEV)',
     slug: "fitnessChronicle",
     version: "1.0.0",
     orientation: "portrait",
@@ -10,7 +10,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.siar.konyar.fitnessChronicle",
+      bundleIdentifier: process.env.APP_ENV === 'production' ? "com.siar.konyar.fitnessChronicle" : "com.siar.konyar.fitnessChronicle-dev",
       usesAppleSignIn: true,
       appleTeamId: "TAMQ259Y2Y",
       googleServicesFile: "./GoogleService-Info.plist",
