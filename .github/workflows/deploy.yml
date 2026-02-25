@@ -2,7 +2,7 @@ name: EAS Build & Submit
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
   workflow_dispatch:
 
 jobs:
