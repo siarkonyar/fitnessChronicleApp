@@ -33,7 +33,8 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "image": "latest"
+        "image": "latest",
+        "track": "internal"
       },
       "env": {
         "APP_ENV": "production"
