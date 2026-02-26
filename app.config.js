@@ -1,6 +1,6 @@
 export default {
   expo: {
-    name: process.env.APP_ENV === 'production' ? '"Hercule"' : '"Hercule" (DEV)',
+    name: process.env.APP_ENV === 'production' ? 'Hercule' : 'Hercule (DEV)',
     slug: "fitnessChronicle",
     version: "1.0.0",
     orientation: "portrait",
