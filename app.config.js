@@ -27,7 +27,7 @@ export default {
         backgroundColor: "#ffffff"
       },
       edgeToEdgeEnabled: true,
-      package: process.env.APP_ENV === 'production' ? "com.siar.konyar.fitnessChronicle" : "com.siar.konyar.fitnessChronicle-dev",
+      package: process.env.APP_ENV === 'production' ? "com.siar.konyar.fitnessChronicle" : "com.siar.konyar.fitnessChronicle_dev",
       googleServicesFile: "./google-services.json"
     },
     web: {
