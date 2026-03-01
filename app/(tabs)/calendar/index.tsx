@@ -3,7 +3,7 @@ import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { getExerciseLogsByMonth } from "@/lib/firebase/exercise";
-import { getAllLabelsFromMonth } from "@/lib/firebase/label";
+import { getAllLabels, getAllLabelsFromMonth } from "@/lib/firebase/label";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import {
@@ -52,13 +52,20 @@ export default function CalendarScreen() {
     queryFn: () => getAllLabelsFromMonth(visibleMonth),
   });
 
+  const { data: labelDefinitions, error: labelDefinitionsError } = useQuery({
+    queryKey: queryKeys.labels.all, // adjust to your queryKeys structure
+    queryFn: () => getAllLabels(), // your function to fetch all label definitions
+  });
+
   useEffect(() => {
     if (logsError) {
       handleQueryError(logsError);
     } else if (labelsError) {
       handleQueryError(labelsError);
+    } else if (labelDefinitionsError) {
+      handleQueryError(labelDefinitionsError);
     }
-  }, [logsError, labelsError, handleQueryError]);
+  }, [logsError, labelsError, labelDefinitionsError, handleQueryError]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -109,8 +116,12 @@ export default function CalendarScreen() {
             dayComponent={({ date, state }) => {
               if (!date) return null;
 
-              const label = labels?.find(
+              const labelId = labels?.find(
                 (log) => log.date === date.dateString,
+              )?.labelId;
+
+              const label = labelDefinitions?.find(
+                (l) => l.id === labelId,
               )?.label;
 
               const isMarked = exerciseUniqueDates?.includes(date.dateString);
