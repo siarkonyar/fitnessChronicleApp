@@ -1,5 +1,9 @@
+import { queryKeys } from "@/constants/QueryKeys";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { deleteLabel, editLabel } from "@/lib/firebase/label";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
-import { View } from "react-native";
+import { Alert, View } from "react-native";
 import { z } from "zod";
 import { LabelWithIdSchema } from "../../types/types";
 import { RoundedButton } from "../RoundButton";
@@ -12,7 +16,6 @@ interface LabelCardProps {
   index: number;
   label: z.infer<typeof LabelWithIdSchema>;
   onPress?: (labelId: string) => void;
-  onSave?: (updatedLabel: z.infer<typeof LabelWithIdSchema>) => void;
   className?: string;
   editable?: boolean;
 }
@@ -22,10 +25,10 @@ export default function LabelCard({
   label,
   editable,
   onPress,
-  onSave,
   className,
 }: LabelCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editedLabel, setEditedLabel] = useState(label.label);
   const [editedDescription, setEditedDescription] = useState(label.description);
 
@@ -39,17 +42,86 @@ export default function LabelCard({
     setIsEditing(true);
   }
 
-  function handleSave() {
-    if (onSave) {
-      onSave({ ...label, label: editedLabel, description: editedDescription });
+  const { handleMutationError, handleQueryError } = useServerErrorHandler();
+  const queryClient = useQueryClient();
+  const editLabelMutation = useMutation({
+    mutationFn: ({
+      id,
+      label,
+      description,
+    }: {
+      id: string;
+      label: string;
+      description: string;
+    }) => editLabel(id, { label, description }),
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.byId(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labelAssignments.all,
+      });
+    },
+  });
+
+  const deleteLabelMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => deleteLabel(id),
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: (variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.byId(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.labelAssignments.all,
+      });
+    },
+  });
+
+  async function handleEditLabel() {
+    try {
+      setIsEditing(true);
+      await editLabelMutation.mutateAsync({
+        id: label.id,
+        label: editedLabel.trim(),
+        description: editedDescription.trim(),
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsEditing(false);
     }
-    setIsEditing(false);
   }
 
-  function handleCancel() {
-    setEditedLabel(label.label);
-    setEditedDescription(label.description);
-    setIsEditing(false);
+  async function handleDeleteLabel() {
+    if (!label.id) return;
+    Alert.alert("Delete Label", "Are you sure you want to delete this label?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setIsDeleting(true);
+            await deleteLabelMutation.mutateAsync({ id: label.id });
+          } catch (error) {
+            console.log(error);
+          } finally {
+            setIsDeleting(false);
+          }
+        },
+      },
+    ]);
   }
 
   return (
@@ -114,8 +186,12 @@ export default function LabelCard({
         <ThemedView className="flex-row">
           {isEditing ? (
             <>
-              <RoundedButton icon="check" onPress={handleSave} />
-              <RoundedButton icon="delete" onPress={handleCancel} />
+              <RoundedButton icon="check" onPress={handleEditLabel} />
+              <RoundedButton
+                type="red"
+                icon="delete"
+                onPress={handleDeleteLabel}
+              />
             </>
           ) : (
             <RoundedButton icon="edit" onPress={handleEditPress} />
