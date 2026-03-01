@@ -3,7 +3,9 @@ import React from "react";
 import { View } from "react-native";
 import { z } from "zod";
 import { LabelWithIdSchema } from "../../types/types";
+import { Button } from "../Button";
 import { ThemedText } from "../ThemedText";
+import { ThemedView } from "../ThemedView";
 import MutedCard from "./MuteCard";
 
 interface LabelCardProps {
@@ -20,7 +22,7 @@ export default function LabelCard({
   className,
 }: LabelCardProps) {
   function handlePress() {
-    if (onPress && label.id) {
+    if (onPress) {
       onPress(label.id);
     } else {
       router.push({
@@ -34,19 +36,21 @@ export default function LabelCard({
     <MutedCard
       key={label.id ?? `${label.label}-${index}`}
       onPress={handlePress}
-      className={className}
+      className={`${className} flex justify-between`}
     >
-      <View className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full p-2 mr-4 shadow-sm justify-center items-center">
-        <ThemedText
-          className="leading-7"
-          style={{ fontWeight: "bold", fontSize: 18 }}
-        >
-          {label.label}
+      <ThemedView className="flex-row items-center justify-center">
+        <View className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full p-2 mr-4 shadow-sm justify-center items-center">
+          <ThemedText
+            className="leading-7"
+            style={{ fontWeight: "bold", fontSize: 18 }}
+          >
+            {label.label}
+          </ThemedText>
+        </View>
+        <ThemedText className="text-base font-medium">
+          {label.description}
         </ThemedText>
-      </View>
-      <ThemedText className="text-base font-medium">
-        {label.description}
-      </ThemedText>
+      </ThemedView>
     </MutedCard>
   );
 }
