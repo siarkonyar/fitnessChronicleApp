@@ -12,7 +12,7 @@ export type RoundedButtonProps = Omit<PressableProps, "children"> & {
   type?: "default" | "red";
   textStyle?: TextStyle;
   icon: keyof typeof Feather.glyphMap;
-  onPress: void;
+  onPress?: (id: string) => void;
 };
 
 export function RoundedButton({
@@ -66,8 +66,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CCC0040",
   },
   primaryText: {
-    fontSize: 16,
-    lineHeight: 24,
     color: "#4CCC00", // white text
     fontWeight: "600",
   },
@@ -75,8 +73,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF000040", // light red background
   },
   dangerText: {
-    fontSize: 16,
-    lineHeight: 24,
     color: "#FF0000", // solid red text
     fontWeight: "600",
   },

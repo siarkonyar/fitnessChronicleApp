@@ -3,7 +3,7 @@ import React from "react";
 import { View } from "react-native";
 import { z } from "zod";
 import { LabelWithIdSchema } from "../../types/types";
-import { Button } from "../Button";
+import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 import MutedCard from "./MuteCard";
@@ -50,6 +50,9 @@ export default function LabelCard({
         <ThemedText className="text-base font-medium">
           {label.description}
         </ThemedText>
+      </ThemedView>
+      <ThemedView>
+        <RoundedButton icon="anchor"></RoundedButton>
       </ThemedView>
     </MutedCard>
   );
