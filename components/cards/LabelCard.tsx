@@ -42,7 +42,7 @@ export default function LabelCard({
     setIsEditing(true);
   }
 
-  const { handleMutationError, handleQueryError } = useServerErrorHandler();
+  const { handleMutationError } = useServerErrorHandler();
   const queryClient = useQueryClient();
   const editLabelMutation = useMutation({
     mutationFn: ({

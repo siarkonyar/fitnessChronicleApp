@@ -179,6 +179,28 @@ export const deleteLabel = async (id: string) => {
     throw new Error("Fitness log not found.");
   }
 
+  const dates: string[] = logDoc.data()?.dates || [];
+
+  if (dates.length > 0) {
+    const assignmentSnapshots = await Promise.all(
+      dates.map((date) =>
+        firestore()
+          .collection("users")
+          .doc(userId)
+          .collection("dayAssignments")
+          .where("date", "==", date)
+          .where("labelId", "==", id)
+          .get(),
+      ),
+    );
+
+    const deletePromises = assignmentSnapshots.flatMap((snapshot) =>
+      snapshot.docs.map((doc) => doc.ref.delete()),
+    );
+
+    await Promise.all(deletePromises);
+  }
+
   await logRef.delete();
 
   return {
