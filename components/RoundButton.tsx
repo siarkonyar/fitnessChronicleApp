@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
 import {
@@ -63,10 +64,10 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   primaryButton: {
-    backgroundColor: "#4CCC0040",
+    backgroundColor: `${Colors.light.accentBlue}40`,
   },
   primaryText: {
-    color: "#4CCC00", // white text
+    color: Colors.light.accentBlue, // white text
     fontWeight: "600",
   },
   dangerButton: {
