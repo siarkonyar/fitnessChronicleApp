@@ -185,6 +185,7 @@ export default function DateLabelAssignment({
                         label={item}
                         index={index}
                         key={index}
+                        editable
                         onPress={handleAsignLabelToDay}
                       />
                     ))}
