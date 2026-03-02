@@ -58,7 +58,6 @@ export default function AddLabelCard({
           value={description}
           onChangeText={setDescription}
           className="text-base font-medium flex-1 border-b border-gray-400"
-          autoFocus
         />
       </ThemedView>
     </MutedCard>
