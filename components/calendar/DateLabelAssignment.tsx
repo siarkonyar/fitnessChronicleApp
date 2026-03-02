@@ -234,13 +234,16 @@ export default function DateLabelAssignment({
                     ))}
                     {isAddingLabel ? (
                       <>
-                        <ThemedView>
-                          <AddLabelCard
-                            label={label}
-                            description={description}
-                            setLabel={setLabel}
-                            setDescription={setDescription}
-                          />
+                        <ThemedView className="flex-row gap-2 items-center">
+                          <ThemedView className="flex-1">
+                            <AddLabelCard
+                              label={label}
+                              description={description}
+                              setLabel={setLabel}
+                              setDescription={setDescription}
+                            />
+                          </ThemedView>
+
                           <RoundedButton
                             icon="plus"
                             onPress={handleAddLabel}
