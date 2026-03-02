@@ -2,17 +2,17 @@ import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme.web";
-import { Feather, Ionicons } from "@expo/vector-icons";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
-import { Keyboard, Pressable, Text, TouchableOpacity } from "react-native";
+import { Keyboard, Text, TouchableOpacity } from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 import Card from "../Card";
 import HorizontalWheelPicker from "../HorizontalWheelPicker";
+import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 
 type Props = {
@@ -27,7 +27,7 @@ type Props = {
   onValueChange: (id: number, newValue: string) => void;
   onSetTypeChange: (
     id: number,
-    newSetType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr"
+    newSetType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr",
   ) => void;
   onRemove: (id: number) => void;
   onCopy: (id: number) => void;
@@ -61,7 +61,7 @@ export const AddSetCard: React.FC<Props> = ({
       "15-20",
       "20+",
     ],
-    []
+    [],
   );
 
   // Bottom sheet ref
@@ -169,7 +169,7 @@ export const AddSetCard: React.FC<Props> = ({
   };
 
   const handleSetTypeSelect = (
-    selectedType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr"
+    selectedType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr",
   ) => {
     onSetTypeChange(id, selectedType);
     bottomSheetModalRef.current?.dismiss();
@@ -200,7 +200,7 @@ export const AddSetCard: React.FC<Props> = ({
         pressBehavior="close"
       />
     ),
-    []
+    [],
   );
 
   return (
@@ -289,18 +289,8 @@ export const AddSetCard: React.FC<Props> = ({
               </ThemedView>
             </ThemedView>
             <ThemedView className="flex-col items-center gap-2">
-              <Pressable
-                onPress={() => onCopy(id)}
-                className="bg-blue-600/70 p-2 rounded-full ml-2 active:opacity-100"
-              >
-                <Feather name="copy" size={20} color="#F2F2F7" />
-              </Pressable>
-              <Pressable
-                onPress={() => onRemove(id)}
-                className="bg-red-500/90 p-2 rounded-full ml-2 active:opacity-100"
-              >
-                <Ionicons name="close" size={20} color="#F2F2F7" />
-              </Pressable>
+              <RoundedButton icon="copy" onPress={() => onCopy(id)} />
+              <RoundedButton type="red" icon="x" onPress={() => onRemove(id)} />
             </ThemedView>
           </ThemedView>
         </Card>
