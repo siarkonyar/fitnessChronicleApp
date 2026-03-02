@@ -258,6 +258,7 @@ export default function DateLabelAssignment({
 
                           <RoundedButton
                             icon="plus"
+                            type="success"
                             onPress={handleAddLabel}
                             disabled={isAdding}
                           />

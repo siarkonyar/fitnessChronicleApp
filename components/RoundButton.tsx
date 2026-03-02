@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 export type RoundedButtonProps = Omit<PressableProps, "children"> & {
-  type?: "default" | "red";
+  type?: "default" | "danger" | "success";
   textStyle?: TextStyle;
   icon: keyof typeof Feather.glyphMap;
   onPress?: (id: string) => void;
@@ -30,7 +30,8 @@ export function RoundedButton({
       style={[
         styles.baseButton,
         type === "default" && styles.primaryButton,
-        type === "red" && styles.dangerButton,
+        type === "danger" && styles.dangerButton,
+        type === "success" && styles.successButton,
         style as ViewStyle,
       ]}
       className="bg-blue-600/70 p-2 rounded-full ml-2 active:opacity-70"
@@ -39,11 +40,11 @@ export function RoundedButton({
       <Feather
         name={icon}
         size={20}
-        color={type === "default" ? "#4CCC00" : "#FF0000"}
         style={[
           styles.baseText,
           type === "default" && styles.primaryText,
-          type === "red" && styles.dangerText,
+          type === "danger" && styles.dangerText,
+          type === "success" && styles.successText,
           textStyle,
         ]}
       />
@@ -70,11 +71,18 @@ const styles = StyleSheet.create({
     color: Colors.light.accentBlue, // white text
     fontWeight: "600",
   },
+  successText: {
+    color: Colors.light.success, // white text
+    fontWeight: "600",
+  },
+  successButton: {
+    backgroundColor: `${Colors.light.success}40`, // light red background
+  },
   dangerButton: {
-    backgroundColor: "#FF000040", // light red background
+    backgroundColor: `${Colors.light.danger}40`, // light red background
   },
   dangerText: {
-    color: "#FF0000", // solid red text
+    color: Colors.light.danger, // solid red text
     fontWeight: "600",
   },
 });
