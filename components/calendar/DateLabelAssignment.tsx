@@ -3,6 +3,7 @@ import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
+  addLabel,
   asignLabelToDay,
   deleteAssignment,
   getAllLabels,
@@ -48,8 +49,45 @@ export default function DateLabelAssignment({
   const [isAddingLabel, setIsAddingLabel] = useState(false);
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
 
   type LabelWithID = z.infer<typeof LabelWithIdSchema>;
+  const addLabelMutation = useMutation({
+    mutationFn: addLabel,
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.all,
+      });
+    },
+  });
+
+  const canSubmit =
+    label.trim().length > 0 && description.trim().length > 0 && !isAdding;
+
+  async function handleAddLabel() {
+    if (!canSubmit) return;
+    try {
+      setIsAdding(true);
+      await addLabelMutation.mutateAsync({
+        label: label.trim(),
+        description: description.trim(),
+        dates: [] as string[],
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsAdding(false);
+      setIsAddingLabel(false);
+    }
+  }
+
+  async function handleAddLabelPress() {
+    if (isAddingLabel) return;
+    setIsAddingLabel(true);
+  }
 
   const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.labelAssignments.byDate(selectedDate),
@@ -203,7 +241,11 @@ export default function DateLabelAssignment({
                             setLabel={setLabel}
                             setDescription={setDescription}
                           />
-                          <RoundedButton icon="plus" onPress={}/>
+                          <RoundedButton
+                            icon="plus"
+                            onPress={handleAddLabel}
+                            disabled={isAdding}
+                          />
                         </ThemedView>
                       </>
                     ) : null}
@@ -227,11 +269,16 @@ export default function DateLabelAssignment({
                     <ThemedText className="text-sm text-center opacity-50 mb-2">
                       Please add some labels first
                     </ThemedText>
-                    <Button className="mt-1" onPress={() => {}}>
-                      Add Labels
-                    </Button>
                   </View>
                 )}
+
+                <Button
+                  className="mb-2"
+                  disabled={isAddingLabel}
+                  onPress={handleAddLabelPress}
+                >
+                  Add Labels
+                </Button>
 
                 <Button
                   type="danger"
