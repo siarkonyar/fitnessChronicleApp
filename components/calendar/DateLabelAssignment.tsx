@@ -50,6 +50,7 @@ export default function DateLabelAssignment({
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [isLabelEmpty, setIsLabelEmpty] = useState(false);
 
   type LabelWithID = z.infer<typeof LabelWithIdSchema>;
   const addLabelMutation = useMutation({
@@ -68,6 +69,10 @@ export default function DateLabelAssignment({
     label.trim().length > 0 && description.trim().length > 0 && !isAdding;
 
   async function handleAddLabel() {
+    if (label === "" || description === "") {
+      setIsLabelEmpty(true);
+      return;
+    }
     if (!canSubmit) return;
     try {
       setIsAdding(true);
@@ -81,6 +86,8 @@ export default function DateLabelAssignment({
     } finally {
       setIsAdding(false);
       setIsAddingLabel(false);
+      setLabel("");
+      setDescription("");
     }
   }
 
@@ -176,6 +183,11 @@ export default function DateLabelAssignment({
     );
   }
 
+  async function handleCloseModal() {
+    setIsLabelSelectionOpen(false);
+    setIsAddingLabel(false);
+  }
+
   return (
     <>
       <ThemedView className="flex-row px-4 justify-center items-center w-9/12">
@@ -252,6 +264,16 @@ export default function DateLabelAssignment({
                         </ThemedView>
                       </>
                     ) : null}
+                    {isLabelEmpty ? (
+                      <Text
+                        className="text-xs"
+                        style={{
+                          color: Colors[theme].danger,
+                        }}
+                      >
+                        Label or the description is empty!
+                      </Text>
+                    ) : null}
                     {data && (
                       <Button
                         type="danger"
@@ -283,10 +305,7 @@ export default function DateLabelAssignment({
                   Add Labels
                 </Button>
 
-                <Button
-                  type="danger"
-                  onPress={() => setIsLabelSelectionOpen(false)}
-                >
+                <Button type="danger" onPress={handleCloseModal}>
                   Cancel
                 </Button>
               </View>
