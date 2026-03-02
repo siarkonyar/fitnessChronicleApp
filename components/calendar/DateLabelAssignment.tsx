@@ -10,8 +10,7 @@ import {
 } from "@/lib/firebase/label";
 import { LabelSchema, LabelWithIdSchema } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { router } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -22,8 +21,10 @@ import {
 import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
-import { ThemedView } from "../ThemedView";
+import AddLabelCard from "../cards/AddLabelCard";
 import LabelCard from "../cards/LabelCard";
+import { RoundedButton } from "../RoundButton";
+import { ThemedView } from "../ThemedView";
 
 // Represents an label assignment joined with its label data
 export type DateLabelAssignmentWithLabel = {
@@ -41,6 +42,12 @@ export default function DateLabelAssignment({
   const theme = useColorScheme() ?? "light";
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const queryClient = useQueryClient();
+
+  const [isLabelSelectionOpen, setIsLabelSelectionOpen] = React.useState(false);
+  const [isAssigningLabel, setIsAssigningLabel] = React.useState(false);
+  const [isAddingLabel, setIsAddingLabel] = useState(false);
+  const [label, setLabel] = useState("");
+  const [description, setDescription] = useState("");
 
   type LabelWithID = z.infer<typeof LabelWithIdSchema>;
 
@@ -81,8 +88,6 @@ export default function DateLabelAssignment({
     queryKey: queryKeys.labels.all,
     queryFn: () => getAllLabels(),
   });
-  const [isLabelSelectionOpen, setIsLabelSelectionOpen] = React.useState(false);
-  const [isAssigningLabel, setIsAssigningLabel] = React.useState(false);
 
   useEffect(() => {
     if (error) {
@@ -189,6 +194,19 @@ export default function DateLabelAssignment({
                         onPress={handleAsignLabelToDay}
                       />
                     ))}
+                    {isAddingLabel ? (
+                      <>
+                        <ThemedView>
+                          <AddLabelCard
+                            label={label}
+                            description={description}
+                            setLabel={setLabel}
+                            setDescription={setDescription}
+                          />
+                          <RoundedButton icon="plus" onPress={}/>
+                        </ThemedView>
+                      </>
+                    ) : null}
                     {data && (
                       <Button
                         type="danger"
@@ -209,13 +227,7 @@ export default function DateLabelAssignment({
                     <ThemedText className="text-sm text-center opacity-50 mb-2">
                       Please add some labels first
                     </ThemedText>
-                    <Button
-                      className="mt-1"
-                      onPress={() => {
-                        setIsLabelSelectionOpen(false);
-                        router.push("/settings");
-                      }}
-                    >
+                    <Button className="mt-1" onPress={() => {}}>
                       Add Labels
                     </Button>
                   </View>
