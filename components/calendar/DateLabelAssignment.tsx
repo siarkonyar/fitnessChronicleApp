@@ -252,37 +252,6 @@ export default function DateLabelAssignment({
                           onPress={handleAsignLabelToDay}
                         />
                       ))}
-                      {isAddingLabel ? (
-                        <>
-                          <ThemedView className="flex-row gap-2 items-center">
-                            <ThemedView className="flex-1">
-                              <AddLabelCard
-                                label={label}
-                                description={description}
-                                setLabel={setLabel}
-                                setDescription={setDescription}
-                              />
-                            </ThemedView>
-
-                            <RoundedButton
-                              icon="plus"
-                              type="success"
-                              onPress={handleAddLabel}
-                              disabled={isAdding}
-                            />
-                          </ThemedView>
-                        </>
-                      ) : null}
-                      {isLabelEmpty ? (
-                        <Text
-                          className="text-xs"
-                          style={{
-                            color: Colors[theme].danger,
-                          }}
-                        >
-                          Label or the description is empty!
-                        </Text>
-                      ) : null}
                       {data && (
                         <Button
                           type="danger"
@@ -305,6 +274,38 @@ export default function DateLabelAssignment({
                       </ThemedText>
                     </View>
                   )}
+
+                  {isAddingLabel ? (
+                    <>
+                      <ThemedView className="flex-row gap-2 items-center mb-8">
+                        <ThemedView className="flex-1">
+                          <AddLabelCard
+                            label={label}
+                            description={description}
+                            setLabel={setLabel}
+                            setDescription={setDescription}
+                          />
+                        </ThemedView>
+
+                        <RoundedButton
+                          icon="plus"
+                          type="success"
+                          onPress={handleAddLabel}
+                          disabled={isAdding}
+                        />
+                      </ThemedView>
+                    </>
+                  ) : null}
+                  {isLabelEmpty ? (
+                    <Text
+                      className="text-xs"
+                      style={{
+                        color: Colors[theme].danger,
+                      }}
+                    >
+                      Label or the description is empty!
+                    </Text>
+                  ) : null}
 
                   <Button
                     className="mb-2"
