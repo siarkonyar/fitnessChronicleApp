@@ -96,6 +96,8 @@ export default function DateLabelAssignment({
   async function handleAddLabelPress() {
     if (isAddingLabel) return;
     setIsAddingLabel(true);
+    setLabel("");
+    setDescription("");
   }
 
   const { data, isLoading, error } = useQuery({

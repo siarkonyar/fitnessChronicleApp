@@ -118,6 +118,7 @@ export default function LabelCard({
             console.log(error);
           } finally {
             setIsDeleting(false);
+            setIsEditing(false);
           }
         },
       },
