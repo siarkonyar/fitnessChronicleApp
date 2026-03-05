@@ -247,7 +247,7 @@ export default function DateLabelAssignment({
                         <LabelCard
                           label={item}
                           index={index}
-                          key={index}
+                          key={item.id}
                           editable
                           onPress={handleAsignLabelToDay}
                         />

@@ -2,7 +2,7 @@ import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { deleteLabel, editLabel } from "@/lib/firebase/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, View } from "react-native";
 import { z } from "zod";
 import { LabelWithIdSchema } from "../../types/types";
@@ -31,6 +31,11 @@ export default function LabelCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [editedLabel, setEditedLabel] = useState(label.label);
   const [editedDescription, setEditedDescription] = useState(label.description);
+
+  useEffect(() => {
+    setEditedLabel(label.label);
+    setEditedDescription(label.description);
+  }, [label.label, label.description]);
 
   function handlePress() {
     if (!isEditing && onPress) {
@@ -189,7 +194,7 @@ export default function LabelCard({
             <>
               <RoundedButton icon="check" onPress={handleEditLabel} />
               <RoundedButton
-                type="red"
+                type="danger"
                 icon="delete"
                 onPress={handleDeleteLabel}
               />
