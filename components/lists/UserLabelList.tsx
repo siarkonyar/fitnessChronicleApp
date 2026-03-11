@@ -5,7 +5,7 @@ import { addLabel, getAllLabels } from "@/lib/firebase/label";
 import { LabelWithIdSchema } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, useColorScheme, View } from "react-native";
+import { Platform, ScrollView, Text, useColorScheme, View } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
@@ -97,7 +97,7 @@ export default function UserLabelList({
     if (error) {
       handleQueryError(error);
     }
-  }, [error, handleQueryError]);
+  }, [isLoading, labelsRaw, error, handleQueryError]);
 
   if (isLoading) {
     return (
@@ -111,8 +111,15 @@ export default function UserLabelList({
 
   return (
     <Card>
+      <ThemedText type="subtitle" className="text-center my-4">
+        Your Label Collection
+      </ThemedText>
       <ThemedView>
-        <ScrollView className="max-h-96">
+        <ScrollView
+          className="max-h-96"
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+        >
           <View className="p-6">
             {labels.length > 0 ? (
               <View className="flex-col gap-3 mb-6">
@@ -140,7 +147,7 @@ export default function UserLabelList({
 
             {isAddingLabel ? (
               <>
-                <ThemedView className="flex-row gap-2 items-center mb-8">
+                <ThemedView className="flex-row gap-2 items-center mb-2">
                   <ThemedView className="flex-1">
                     <AddLabelCard
                       label={label}
@@ -156,6 +163,12 @@ export default function UserLabelList({
                     onPress={handleAddLabel}
                     disabled={isAdding}
                   />
+
+                  <RoundedButton
+                    icon="x-octagon"
+                    type="danger"
+                    onPress={() => setIsAddingLabel(false)}
+                  />
                 </ThemedView>
               </>
             ) : null}
@@ -169,16 +182,15 @@ export default function UserLabelList({
                 Label or the description is empty!
               </Text>
             ) : null}
-
-            <Button
-              className="mb-2"
-              disabled={isAddingLabel}
-              onPress={handleAddLabelPress}
-            >
-              Add Labels
-            </Button>
           </View>
         </ScrollView>
+        <Button
+          className="my-2"
+          disabled={isAddingLabel}
+          onPress={handleAddLabelPress}
+        >
+          Add Labels
+        </Button>
       </ThemedView>
     </Card>
   );
