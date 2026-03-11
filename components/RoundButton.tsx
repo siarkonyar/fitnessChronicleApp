@@ -34,7 +34,7 @@ export function RoundedButton({
         type === "success" && styles.successButton,
         style as ViewStyle,
       ]}
-      className="bg-blue-600/70 p-2 rounded-full ml-2 active:opacity-70"
+      className="bg-blue-600/70 p-2 rounded-full ml-1 active:opacity-70"
       {...rest}
     >
       <Feather
