@@ -226,7 +226,7 @@ export default function DateLabelAssignment({
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
         >
-          <View className="flex-1 items-center justify-center px-4 bg-black/90 backdrop-blur-sm">
+          <View className="flex-1 items-center justify-center px-4 bg-black backdrop-blur-sm">
             {isAssigningLabel ? (
               <ActivityIndicator
                 size="large"
@@ -234,98 +234,99 @@ export default function DateLabelAssignment({
                 className="mb-4"
               />
             ) : (
-              <Card className="w-11/12 max-w-md mx-4 max-h-[70%]">
-                <ThemedView>
-                  <ScrollView>
-                    <View className="p-6">
-                      <ThemedText className="text-2xl font-bold mb-2 text-center">
-                        Choose What You Hit!
-                      </ThemedText>
-                      <ThemedText className="text-sm opacity-70 text-center mb-6">
-                        {selectedDate}
-                      </ThemedText>
+              <ThemedView className="w-11/12 max-w-md mx-4">
+                <ThemedText className="text-2xl font-bold mb-2 text-center">
+                  Choose What You Hit!
+                </ThemedText>
+                <ThemedText className="text-sm opacity-70 text-center mb-6">
+                  {selectedDate}
+                </ThemedText>
+                <Card>
+                  <ThemedView>
+                    <ScrollView className="max-h-96">
+                      <View className="p-6">
+                        {labels.length > 0 ? (
+                          <View className="flex-col gap-3 mb-6">
+                            {labels.map((item, index) => (
+                              <LabelCard
+                                label={item}
+                                index={index}
+                                key={item.id}
+                                editable
+                                onPress={handleAsignLabelToDay}
+                              />
+                            ))}
+                          </View>
+                        ) : (
+                          <View className="items-center py-8">
+                            <Text className="text-4xl mb-3">😔</Text>
+                            <ThemedText className="text-center opacity-70 mb-2">
+                              No labels available
+                            </ThemedText>
+                            <ThemedText className="text-sm text-center opacity-50 mb-2">
+                              Please add some labels first
+                            </ThemedText>
+                          </View>
+                        )}
 
-                      {labels.length > 0 ? (
-                        <View className="flex-col gap-3 mb-6">
-                          {labels.map((item, index) => (
-                            <LabelCard
-                              label={item}
-                              index={index}
-                              key={item.id}
-                              editable
-                              onPress={handleAsignLabelToDay}
-                            />
-                          ))}
-                          {data && (
-                            <Button
-                              type="danger"
-                              onPress={async () => {
-                                handleDeleteAssignedLabel(selectedDate);
-                              }}
-                            >
-                              Remove Label Assignment
-                            </Button>
-                          )}
-                        </View>
-                      ) : (
-                        <View className="items-center py-8">
-                          <Text className="text-4xl mb-3">😔</Text>
-                          <ThemedText className="text-center opacity-70 mb-2">
-                            No labels available
-                          </ThemedText>
-                          <ThemedText className="text-sm text-center opacity-50 mb-2">
-                            Please add some labels first
-                          </ThemedText>
-                        </View>
-                      )}
+                        {isAddingLabel ? (
+                          <>
+                            <ThemedView className="flex-row gap-2 items-center mb-8">
+                              <ThemedView className="flex-1">
+                                <AddLabelCard
+                                  label={label}
+                                  description={description}
+                                  setLabel={setLabel}
+                                  setDescription={setDescription}
+                                />
+                              </ThemedView>
 
-                      {isAddingLabel ? (
-                        <>
-                          <ThemedView className="flex-row gap-2 items-center mb-8">
-                            <ThemedView className="flex-1">
-                              <AddLabelCard
-                                label={label}
-                                description={description}
-                                setLabel={setLabel}
-                                setDescription={setDescription}
+                              <RoundedButton
+                                icon="plus"
+                                type="success"
+                                onPress={handleAddLabel}
+                                disabled={isAdding}
                               />
                             </ThemedView>
+                          </>
+                        ) : null}
+                        {isLabelEmpty ? (
+                          <Text
+                            className="text-xs"
+                            style={{
+                              color: Colors[theme].danger,
+                            }}
+                          >
+                            Label or the description is empty!
+                          </Text>
+                        ) : null}
 
-                            <RoundedButton
-                              icon="plus"
-                              type="success"
-                              onPress={handleAddLabel}
-                              disabled={isAdding}
-                            />
-                          </ThemedView>
-                        </>
-                      ) : null}
-                      {isLabelEmpty ? (
-                        <Text
-                          className="text-xs"
-                          style={{
-                            color: Colors[theme].danger,
-                          }}
+                        <Button
+                          className="mb-2"
+                          disabled={isAddingLabel}
+                          onPress={handleAddLabelPress}
                         >
-                          Label or the description is empty!
-                        </Text>
-                      ) : null}
-
-                      <Button
-                        className="mb-2"
-                        disabled={isAddingLabel}
-                        onPress={handleAddLabelPress}
-                      >
-                        Add Labels
-                      </Button>
-
-                      <Button type="danger" onPress={handleCloseModal}>
-                        Cancel
-                      </Button>
-                    </View>
-                  </ScrollView>
-                </ThemedView>
-              </Card>
+                          Add Labels
+                        </Button>
+                      </View>
+                    </ScrollView>
+                  </ThemedView>
+                </Card>
+                {data && (
+                  <Button
+                    type="danger"
+                    onPress={async () => {
+                      handleDeleteAssignedLabel(selectedDate);
+                    }}
+                    className="mb-4"
+                  >
+                    Remove Label Assignment
+                  </Button>
+                )}
+                <Button type="danger" onPress={handleCloseModal}>
+                  Cancel
+                </Button>
+              </ThemedView>
             )}
           </View>
         </KeyboardAvoidingView>
