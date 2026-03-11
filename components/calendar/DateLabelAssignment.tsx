@@ -3,31 +3,24 @@ import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
-  addLabel,
   asignLabelToDay,
   deleteAssignment,
-  getAllLabels,
   getLabelAsignmentByDate,
 } from "@/lib/firebase/label";
-import { LabelSchema, LabelWithIdSchema } from "@/types/types";
+import { LabelSchema } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
-  ScrollView,
-  Text,
   useColorScheme,
   View,
 } from "react-native";
-import { z } from "zod";
 import { Button } from "../Button";
-import Card from "../Card";
-import AddLabelCard from "../cards/AddLabelCard";
 import LabelCard from "../cards/LabelCard";
-import { RoundedButton } from "../RoundButton";
+import UserLabelList from "../lists/UserLabelList";
 import { ThemedView } from "../ThemedView";
 
 // Represents an label assignment joined with its label data
@@ -49,57 +42,6 @@ export default function DateLabelAssignment({
 
   const [isLabelSelectionOpen, setIsLabelSelectionOpen] = React.useState(false);
   const [isAssigningLabel, setIsAssigningLabel] = React.useState(false);
-  const [isAddingLabel, setIsAddingLabel] = useState(false);
-  const [label, setLabel] = useState("");
-  const [description, setDescription] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
-  const [isLabelEmpty, setIsLabelEmpty] = useState(false);
-
-  type LabelWithID = z.infer<typeof LabelWithIdSchema>;
-  const addLabelMutation = useMutation({
-    mutationFn: addLabel,
-    onError: (error) => {
-      handleMutationError(error);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.labels.all,
-      });
-    },
-  });
-
-  const canSubmit =
-    label.trim().length > 0 && description.trim().length > 0 && !isAdding;
-
-  async function handleAddLabel() {
-    if (label === "" || description === "") {
-      setIsLabelEmpty(true);
-      return;
-    }
-    if (!canSubmit) return;
-    try {
-      setIsAdding(true);
-      await addLabelMutation.mutateAsync({
-        label: label.trim(),
-        description: description.trim(),
-        dates: [] as string[],
-      });
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setIsAdding(false);
-      setIsAddingLabel(false);
-      setLabel("");
-      setDescription("");
-    }
-  }
-
-  async function handleAddLabelPress() {
-    if (isAddingLabel) return;
-    setIsAddingLabel(true);
-    setLabel("");
-    setDescription("");
-  }
 
   const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.labelAssignments.byDate(selectedDate),
@@ -134,18 +76,12 @@ export default function DateLabelAssignment({
       });
     },
   });
-  const { data: labelsRaw, error: labelsRawError } = useQuery({
-    queryKey: queryKeys.labels.all,
-    queryFn: () => getAllLabels(),
-  });
 
   useEffect(() => {
     if (error) {
       handleQueryError(error);
-    } else if (labelsRawError) {
-      handleQueryError(labelsRawError);
     }
-  }, [error, labelsRawError, handleQueryError]);
+  }, [error, handleQueryError]);
 
   //TODO: after clicking on an label it shows the loading screen but right after that for a split second it shows the card again. it happens so fast but it is still annoying to see
   async function handleAsignLabelToDay(labelId: string) {
@@ -176,8 +112,6 @@ export default function DateLabelAssignment({
     }
   }
 
-  const labels: LabelWithID[] = labelsRaw as LabelWithID[];
-
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center py-8">
@@ -190,7 +124,6 @@ export default function DateLabelAssignment({
 
   async function handleCloseModal() {
     setIsLabelSelectionOpen(false);
-    setIsAddingLabel(false);
   }
 
   return (
@@ -241,77 +174,7 @@ export default function DateLabelAssignment({
                 <ThemedText className="text-sm opacity-70 text-center mb-6">
                   {selectedDate}
                 </ThemedText>
-                <Card>
-                  <ThemedView>
-                    <ScrollView className="max-h-96">
-                      <View className="p-6">
-                        {labels.length > 0 ? (
-                          <View className="flex-col gap-3 mb-6">
-                            {labels.map((item, index) => (
-                              <LabelCard
-                                label={item}
-                                index={index}
-                                key={item.id}
-                                editable
-                                onPress={handleAsignLabelToDay}
-                              />
-                            ))}
-                          </View>
-                        ) : (
-                          <View className="items-center py-8">
-                            <Text className="text-4xl mb-3">😔</Text>
-                            <ThemedText className="text-center opacity-70 mb-2">
-                              No labels available
-                            </ThemedText>
-                            <ThemedText className="text-sm text-center opacity-50 mb-2">
-                              Please add some labels first
-                            </ThemedText>
-                          </View>
-                        )}
-
-                        {isAddingLabel ? (
-                          <>
-                            <ThemedView className="flex-row gap-2 items-center mb-8">
-                              <ThemedView className="flex-1">
-                                <AddLabelCard
-                                  label={label}
-                                  description={description}
-                                  setLabel={setLabel}
-                                  setDescription={setDescription}
-                                />
-                              </ThemedView>
-
-                              <RoundedButton
-                                icon="plus"
-                                type="success"
-                                onPress={handleAddLabel}
-                                disabled={isAdding}
-                              />
-                            </ThemedView>
-                          </>
-                        ) : null}
-                        {isLabelEmpty ? (
-                          <Text
-                            className="text-xs"
-                            style={{
-                              color: Colors[theme].danger,
-                            }}
-                          >
-                            Label or the description is empty!
-                          </Text>
-                        ) : null}
-
-                        <Button
-                          className="mb-2"
-                          disabled={isAddingLabel}
-                          onPress={handleAddLabelPress}
-                        >
-                          Add Labels
-                        </Button>
-                      </View>
-                    </ScrollView>
-                  </ThemedView>
-                </Card>
+                <UserLabelList labelOnPress={handleAsignLabelToDay} />
                 {data && (
                   <Button
                     type="danger"

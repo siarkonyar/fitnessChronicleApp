@@ -1,20 +1,40 @@
+import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { getAllLabels } from "@/lib/firebase/label";
+import { addLabel, getAllLabels } from "@/lib/firebase/label";
 import { LabelWithIdSchema } from "@/types/types";
-import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
-import React, { useEffect } from "react";
-import { Text, View } from "react-native";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
+import { ScrollView, Text, useColorScheme, View } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
-import { ThemedText } from "../ThemedText";
+import AddLabelCard from "../cards/AddLabelCard";
 import LabelCard from "../cards/LabelCard";
+import { RoundedButton } from "../RoundButton";
+import { ThemedText } from "../ThemedText";
+import { ThemedView } from "../ThemedView";
 
-export default function UserLabelList() {
+export default function UserLabelList({
+  labelOnPress,
+}: {
+  labelOnPress: (labelId: string) => void | Promise<void>;
+}) {
+  const theme = useColorScheme() ?? "light";
+
+  const [isAddingLabel, setIsAddingLabel] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isLabelEmpty, setIsLabelEmpty] = useState(false);
+  const [label, setLabel] = useState("");
+  const [description, setDescription] = useState("");
+
+  const { handleMutationError, handleQueryError } = useServerErrorHandler();
+  const queryClient = useQueryClient();
+
+  const canSubmit =
+    label.trim().length > 0 && description.trim().length > 0 && !isAdding;
+
   type labelScheme = z.infer<typeof LabelWithIdSchema>;
-  const { handleQueryError } = useServerErrorHandler();
   const {
     data: labelsRaw,
     isLoading,
@@ -27,6 +47,48 @@ export default function UserLabelList() {
   const labels: labelScheme[] = Array.isArray(labelsRaw)
     ? (labelsRaw as labelScheme[])
     : [];
+
+  const addLabelMutation = useMutation({
+    mutationFn: addLabel,
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.labels.all,
+      });
+    },
+  });
+
+  async function handleAddLabel() {
+    if (label === "" || description === "") {
+      setIsLabelEmpty(true);
+      return;
+    }
+    if (!canSubmit) return;
+    try {
+      setIsAdding(true);
+      await addLabelMutation.mutateAsync({
+        label: label.trim(),
+        description: description.trim(),
+        dates: [] as string[],
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsAdding(false);
+      setIsAddingLabel(false);
+      setLabel("");
+      setDescription("");
+    }
+  }
+
+  async function handleAddLabelPress() {
+    if (isAddingLabel) return;
+    setIsAddingLabel(true);
+    setLabel("");
+    setDescription("");
+  }
 
   useEffect(() => {
     console.log("Labels fetched:", labelsRaw);
@@ -49,30 +111,75 @@ export default function UserLabelList() {
 
   return (
     <Card>
-      <ThemedText className="text-xl font-bold mb-4 text-center">
-        Your Label Collection
-      </ThemedText>
+      <ThemedView>
+        <ScrollView className="max-h-96">
+          <View className="p-6">
+            {labels.length > 0 ? (
+              <View className="flex-col gap-3 mb-6">
+                {labels.map((item, index) => (
+                  <LabelCard
+                    label={item}
+                    index={index}
+                    key={item.id}
+                    editable
+                    onPress={labelOnPress}
+                  />
+                ))}
+              </View>
+            ) : (
+              <View className="items-center py-8">
+                <Text className="text-4xl mb-3">😔</Text>
+                <ThemedText className="text-center opacity-70 mb-2">
+                  No labels available
+                </ThemedText>
+                <ThemedText className="text-sm text-center opacity-50 mb-2">
+                  Please add some labels first
+                </ThemedText>
+              </View>
+            )}
 
-      {labels.length > 0 ? (
-        <View className="flex-col gap-3 mb-6">
-          {labels.map((item, index) => (
-            <LabelCard label={item} key={index} index={index} />
-          ))}
-        </View>
-      ) : (
-        <View className="items-center py-8 mb-6">
-          <Text className="text-5xl mb-3">📝</Text>
-          <ThemedText className="text-center opacity-70 mb-2 text-lg">
-            No label yet
-          </ThemedText>
-          <ThemedText className="text-sm text-center opacity-50">
-            Add your first label below to get started
-          </ThemedText>
-        </View>
-      )}
-      <Button onPress={() => router.push("/(screens)/addLabel")}>
-        + Add Label
-      </Button>
+            {isAddingLabel ? (
+              <>
+                <ThemedView className="flex-row gap-2 items-center mb-8">
+                  <ThemedView className="flex-1">
+                    <AddLabelCard
+                      label={label}
+                      description={description}
+                      setLabel={setLabel}
+                      setDescription={setDescription}
+                    />
+                  </ThemedView>
+
+                  <RoundedButton
+                    icon="plus"
+                    type="success"
+                    onPress={handleAddLabel}
+                    disabled={isAdding}
+                  />
+                </ThemedView>
+              </>
+            ) : null}
+            {isLabelEmpty ? (
+              <Text
+                className="text-xs"
+                style={{
+                  color: Colors[theme].danger,
+                }}
+              >
+                Label or the description is empty!
+              </Text>
+            ) : null}
+
+            <Button
+              className="mb-2"
+              disabled={isAddingLabel}
+              onPress={handleAddLabelPress}
+            >
+              Add Labels
+            </Button>
+          </View>
+        </ScrollView>
+      </ThemedView>
     </Card>
   );
 }
