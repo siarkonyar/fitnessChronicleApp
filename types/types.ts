@@ -77,6 +77,24 @@ export const DaySchema = z.object({
   createdAt: FirestoreTimestampSchema.optional(),
 });
 
+export const ProgramExerciseSchema = z.object({
+  activity: z.string().min(3).max(100),
+  notes: z.string().max(500).optional(),
+  sets: z.array(SetSchema), // Array of exercise sets
+  createdAt: FirestoreTimestampSchema.optional(),
+});
+
+export const WorkoutTemplateSchema = z.object({
+  labelId: z.string().min(1),
+  exercises: z.array(ProgramExerciseSchema),
+  createdAt: FirestoreTimestampSchema.optional(),
+});
+
+export const ProgramSchema = z.object({
+  name: z.string().min(1),
+  workouts: z.array(WorkoutTemplateSchema),
+});
+
 export const ExerciseNameListSchema = z.object({
   name: z.string(),
   createdAt: FirestoreTimestampSchema.optional(),
@@ -98,5 +116,9 @@ export const ExerciseLogWithIdSchema = ExerciseLogSchema.extend({
 });
 
 export const ExerciseNameListWithIdSchema = ExerciseNameListSchema.extend({
+  id: z.string(),
+});
+
+export const ProgramWithIdSchema = ProgramSchema.extend({
   id: z.string(),
 });
