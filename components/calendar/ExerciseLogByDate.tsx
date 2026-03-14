@@ -117,7 +117,10 @@ export default function ExerciseLogByDate({
           {formatDateAsString(selectedDate)}
         </ThemedText>
 
-        <DateLabelAssignment selectedDate={selectedDate} />
+        <DateLabelAssignment
+          selectedDate={selectedDate}
+          buttonText="Assign a Label to This Day"
+        />
         <ThemedText type="subtitle" className="my-8 text-center">
           Exercise Log
         </ThemedText>

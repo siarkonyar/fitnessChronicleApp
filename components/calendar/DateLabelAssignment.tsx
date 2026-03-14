@@ -32,8 +32,10 @@ export type DateLabelAssignmentWithLabel = {
 };
 
 export default function DateLabelAssignment({
+  buttonText,
   selectedDate,
 }: {
+  buttonText: string;
   selectedDate: string;
 }) {
   const theme = useColorScheme() ?? "light";
@@ -143,7 +145,7 @@ export default function DateLabelAssignment({
             onPress={() => setIsLabelSelectionOpen(true)}
             className="self-start"
           >
-            Assign a Label to This Day
+            {buttonText}
           </Button>
         )}
       </ThemedView>
