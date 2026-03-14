@@ -156,7 +156,7 @@ export default function HomeScreen() {
   return (
     <>
       <View
-        className="px-4 pb-3"
+        className="px-4 pb-3 flex-row justify-between"
         style={{
           paddingTop: insets.top,
         }}
