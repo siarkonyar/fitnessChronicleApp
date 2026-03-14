@@ -130,21 +130,17 @@ export default function DateLabelAssignment({
 
   return (
     <>
-      <ThemedView className="flex-row px-4 justify-center items-center w-9/12">
+      <ThemedView className="flex-row px-4 justify-center items-center">
         {data ? (
           <>
             <LabelCard
               label={data}
               index={0}
               onPress={() => setIsLabelSelectionOpen(true)}
-              className="self-start"
             />
           </>
         ) : (
-          <Button
-            onPress={() => setIsLabelSelectionOpen(true)}
-            className="self-start"
-          >
+          <Button onPress={() => setIsLabelSelectionOpen(true)}>
             {buttonText}
           </Button>
         )}

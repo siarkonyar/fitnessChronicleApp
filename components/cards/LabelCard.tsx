@@ -134,9 +134,11 @@ export default function LabelCard({
     <MutedCard
       key={label.id ?? `${label.label}-${index}`}
       onPress={handlePress}
-      className={`${className} flex items-center justify-between`}
+      className={`${className} items-center justify-between`}
     >
-      <ThemedView className="flex-row items-center flex-1 min-w-0 mr-2">
+      <ThemedView
+        className={`flex-row items-center ${editable ? "flex-1" : ""} min-w-0 mr-2`}
+      >
         <View className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full p-2 mr-4 shadow-sm justify-center items-center">
           {isEditing ? (
             <ThemedTextInput
@@ -183,7 +185,9 @@ export default function LabelCard({
             autoFocus
           />
         ) : (
-          <ThemedText className="text-base font-medium flex-1">
+          <ThemedText
+            className={`text-base font-medium ${editable ? "flex-1" : ""}`}
+          >
             {label.description}
           </ThemedText>
         )}

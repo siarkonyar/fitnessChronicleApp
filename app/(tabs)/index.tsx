@@ -241,7 +241,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <ThemedView className="items-center mb-6">
+      <ThemedView className="mb-6">
         <DateLabelAssignment selectedDate={today} buttonText="Today's Label" />
       </ThemedView>
     </>
