@@ -68,12 +68,12 @@ export default function GetExerciseCard({
             await deleteExerciseMutation.mutateAsync(exercise.id);
           },
         },
-      ]
+      ],
     );
   };
   return (
     <TouchableOpacity activeOpacity={1} className="w-full">
-      <Card className="shadow-md shadow-gray-900 p-3 rounded-lg mb-3 relative">
+      <Card className="shadow-md shadow-gray-900 px-3 py-6 rounded-lg mb-3 relative">
         {deletable && (
           <TouchableOpacity
             onPress={handleDeletion}
