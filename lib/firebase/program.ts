@@ -11,7 +11,11 @@ const GetCurrentUserId = () => {
 
 type WorkoutTemplate = z.infer<typeof WorkoutTemplateSchema>;
 
-export const addProgram = async (name: string, workouts: WorkoutTemplate[]) => {
+export const addProgram = async (
+  name: string,
+  programLabel: string,
+  workouts: WorkoutTemplate[],
+) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
@@ -21,6 +25,8 @@ export const addProgram = async (name: string, workouts: WorkoutTemplate[]) => {
     .collection("programLogs");
 
   const newLogRef = await exerciseLogRef.add({
+    name,
+    programLabel,
     ...workouts,
     createdAt: firestore.FieldValue.serverTimestamp(),
   });

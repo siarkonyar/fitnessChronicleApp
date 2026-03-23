@@ -92,6 +92,7 @@ export const WorkoutTemplateSchema = z.object({
 
 export const ProgramSchema = z.object({
   name: z.string().min(1),
+  programLabel: z.string().min(1).max(50),
   workouts: z.array(WorkoutTemplateSchema),
 });
 
