@@ -32,8 +32,10 @@ export type DateLabelAssignmentWithLabel = {
 };
 
 export default function DateLabelAssignment({
+  buttonText,
   selectedDate,
 }: {
+  buttonText: string;
   selectedDate: string;
 }) {
   const theme = useColorScheme() ?? "light";
@@ -128,22 +130,18 @@ export default function DateLabelAssignment({
 
   return (
     <>
-      <ThemedView className="flex-row px-4 justify-center items-center w-9/12">
+      <ThemedView className="flex-row px-4 justify-center items-center">
         {data ? (
           <>
             <LabelCard
               label={data}
               index={0}
               onPress={() => setIsLabelSelectionOpen(true)}
-              className="self-start"
             />
           </>
         ) : (
-          <Button
-            onPress={() => setIsLabelSelectionOpen(true)}
-            className="self-start"
-          >
-            Assign a Label to This Day
+          <Button onPress={() => setIsLabelSelectionOpen(true)}>
+            {buttonText}
           </Button>
         )}
       </ThemedView>

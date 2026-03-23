@@ -7,6 +7,8 @@ import { clearAllOfflineExercises, offlineData } from "@/lib/offlineStorage";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
+import DateLabelAssignment from "@/components/calendar/DateLabelAssignment";
+import { ThemedView } from "@/components/ThemedView";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
@@ -28,6 +30,7 @@ import {
 
 export default function HomeScreen() {
   const theme = useColorScheme() ?? "light";
+  const today = new Date().toLocaleDateString("en-CA");
   const insets = useSafeAreaInsets();
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const [refreshing, setRefreshing] = useState(false);
@@ -156,7 +159,7 @@ export default function HomeScreen() {
   return (
     <>
       <View
-        className="px-4 pb-3"
+        className="px-4 pb-3 flex-row justify-between"
         style={{
           paddingTop: insets.top,
         }}
@@ -237,6 +240,13 @@ export default function HomeScreen() {
           </View>
         </View>
       )}
+
+      <ThemedView className="mb-6">
+        <DateLabelAssignment
+          selectedDate={today}
+          buttonText="Assign Today's Label"
+        />
+      </ThemedView>
     </>
   );
 }
