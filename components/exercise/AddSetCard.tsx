@@ -74,44 +74,25 @@ export const AddSetCard: React.FC<Props> = ({
 
   // ...existing code...
 
-  const handleValueChange = (text: string) => {
-    // Allow only numbers and one decimal point
+  const validateInput = (text: string) => {
     const clean = text.replace(/[^0-9.,]/g, "");
-    // Ensure only one decimal point
     const parts = clean.split(/[.,]/);
-    if (parts.length > 2) {
-      return; // More than one decimal point, ignore
-    }
-    // Limit decimal places to 2
-    if (parts.length === 2 && parts[1].length > 2) {
-      return; // Too many decimal places, ignore
-    }
-    // Limit integer part to 3 digits
-    if (parts[0].length > 3) {
-      return; // Too many digits in integer part, ignore
-    }
+    if (parts.length > 2) return null;
+    if (parts.length === 2 && parts[1].length > 2) return null;
+    if (parts[0].length > 3) return null;
+    return clean;
+  };
 
-    onValueChange(id, clean || "0");
+  const handleValueChange = (text: string) => {
+    const clean = validateInput(text);
+    if (clean === null) return;
+    onValueChange(id, clean);
   };
 
   const handleRepsChange = (text: string) => {
-    // Allow only numbers and one decimal point
-    const clean = text.replace(/[^0-9.,]/g, "");
-    // Ensure only one decimal point
-    const parts = clean.split(/[.,]/);
-    if (parts.length > 2) {
-      return; // More than one decimal point, ignore
-    }
-    // Limit decimal places to 2
-    if (parts.length === 2 && parts[1].length > 2) {
-      return; // Too many decimal places, ignore
-    }
-    // Limit integer part to 3 digits
-    if (parts[0].length > 3) {
-      return; // Too many digits in integer part, ignore
-    }
-
-    onRepsChange(id, clean || "0");
+    const clean = validateInput(text);
+    if (clean === null) return;
+    onRepsChange(id, clean);
   };
 
   const setTypeDisplay = (type: string) => {
@@ -227,6 +208,7 @@ export const AddSetCard: React.FC<Props> = ({
                         value={reps}
                         onChangeText={handleRepsChange}
                         onFocus={() => onRepsChange(id, "")}
+                        onBlur={() => { if (!reps) onRepsChange(id, "0"); }}
                         keyboardType="decimal-pad"
                         returnKeyType="done"
                         blurOnSubmit
@@ -266,6 +248,7 @@ export const AddSetCard: React.FC<Props> = ({
                         value={value}
                         onChangeText={handleValueChange}
                         onFocus={() => onValueChange(id, "")}
+                        onBlur={() => { if (!value) onValueChange(id, "0"); }}
                         keyboardType="decimal-pad"
                         returnKeyType="done"
                         onSubmitEditing={() => Keyboard.dismiss()}
@@ -278,6 +261,7 @@ export const AddSetCard: React.FC<Props> = ({
                       value={value}
                       onChangeText={handleValueChange}
                       onFocus={() => onValueChange(id, "")}
+                      onBlur={() => { if (!value) onValueChange(id, "0"); }}
                       keyboardType="decimal-pad"
                       returnKeyType="done"
                       onSubmitEditing={() => Keyboard.dismiss()}
