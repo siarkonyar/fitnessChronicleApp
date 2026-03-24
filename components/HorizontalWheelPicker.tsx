@@ -34,44 +34,23 @@ const HorizontalWheelPicker: React.FC<Props> = ({
 
   // Use only the real items; padding is handled by contentContainerStyle
   const data = useMemo(() => items, [items]);
-  // On mount, reset selection to the first item regardless of incoming value
-  const didInitRef = useRef(false);
+  // Mirror SwiftUI's scrollPosition(id:) — scroll to the current value whenever
+  // it changes (including on first mount so preselected values are honoured).
+  const prevValueRef = useRef<string | null>(null);
   useEffect(() => {
-    if (didInitRef.current) return;
-    didInitRef.current = true;
-    if (items && items.length > 0) {
-      const first = items[0];
-      if (first !== value) {
-        // Inform parent so state stays in sync with the picker
-        onChange(first);
-      }
-      // Ensure list is positioned at the first item visually
-      requestAnimationFrame(() => {
-        try {
-          flatRef.current?.scrollToOffset({ offset: 0, animated: false });
-        } catch {}
-      });
-    }
-  }, [items, onChange, value]);
-
-  /* // Sync scroll when the value changes AFTER mount (but not on initial render)
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      return;
-    }
-    if (value && items.includes(value)) {
-      const index = items.indexOf(value);
-      requestAnimationFrame(() => {
-        try {
-          flatRef.current?.scrollToOffset({
-            offset: index * itemWidth,
-            animated: true,
-          });
-        } catch {}
-      });
-    }
-  }, [value, items, itemWidth]); */
+    const index = items.indexOf(value);
+    if (index === -1) return;
+    const animated = prevValueRef.current !== null;
+    prevValueRef.current = value;
+    requestAnimationFrame(() => {
+      try {
+        flatRef.current?.scrollToOffset({
+          offset: index * itemWidth,
+          animated,
+        });
+      } catch {}
+    });
+  }, [value, items, itemWidth]);
 
   return (
     <View
