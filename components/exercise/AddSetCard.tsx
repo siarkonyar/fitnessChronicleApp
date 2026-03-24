@@ -8,7 +8,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
-import { Keyboard, Text, TouchableOpacity } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Text, TouchableOpacity } from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 import Card from "../Card";
 import HorizontalWheelPicker from "../HorizontalWheelPicker";
@@ -465,7 +465,7 @@ export const AddSetCard: React.FC<Props> = ({
                   className="flex-1"
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
-                >
+                >zz
                   <ThemedText
                     style={{ color: Colors[theme].accentBlue }}
                     className="text-lg font-semibold"

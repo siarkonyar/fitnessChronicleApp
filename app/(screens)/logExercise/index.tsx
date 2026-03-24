@@ -18,7 +18,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "expo-checkbox";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { Platform, ScrollView, Text, TouchableOpacity } from "react-native";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   Easing,
@@ -74,7 +81,7 @@ export default function Index() {
   const prevLengthRef = useRef(sets.length);
 
   const handleMeasurementChange = (
-    newMeasurement: "kg" | "lbs" | "time" | "distance" | "steps"
+    newMeasurement: "kg" | "lbs" | "time" | "distance" | "steps",
   ) => {
     if (newMeasurement !== measurement) {
       setSets([]); // Reset sets only when measurement actually changes
@@ -93,31 +100,33 @@ export default function Index() {
   };
 
   const removeSet = (id: number) => {
+    Keyboard.dismiss();
     setSets((prev) => prev.filter((s) => s.id !== id));
   };
 
   const updateReps = (id: number, newReps: string) => {
     setSets((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, reps: newReps } : s))
+      prev.map((s) => (s.id === id ? { ...s, reps: newReps } : s)),
     );
   };
 
   const updateValue = (id: number, newValue: string) => {
     setSets((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, value: newValue } : s))
+      prev.map((s) => (s.id === id ? { ...s, value: newValue } : s)),
     );
   };
 
   const updateSetType = (
     id: number,
-    newSetType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr"
+    newSetType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr",
   ) => {
     setSets((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, setType: newSetType } : s))
+      prev.map((s) => (s.id === id ? { ...s, setType: newSetType } : s)),
     );
   };
 
   const copySet = (id: number) => {
+    Keyboard.dismiss();
     setSets((prev) => {
       const setToCopy = prev.find((s) => s.id === id);
       if (!setToCopy) return prev;
@@ -244,87 +253,93 @@ export default function Index() {
               <ExerciseNameInput title={title} setTitle={setTitle} />
             )}
           </ThemedView>
-          <ScrollView
-            ref={scrollRef}
-            className="flex-1 p-4"
-            nestedScrollEnabled
-            onContentSizeChange={() => {
-              /* if (sets.length > prevLengthRef.current) {
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={-50}
+          >
+            <ScrollView
+              ref={scrollRef}
+              className="flex-1 p-4"
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              onContentSizeChange={() => {
+                /* if (sets.length > prevLengthRef.current) {
                 scrollRef.current?.scrollToEnd({ animated: true });
               } */
-              prevLengthRef.current = sets.length;
-            }}
-          >
-            {/* Measurement Selector */}
-            <ThemedView className="mb-4">
-              <ThemedView className="flex-row space-x-2">
-                <TouchableOpacity
-                  key={1}
-                  activeOpacity={1}
-                  onPress={() => handleMeasurementChange("kg")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 6,
-                    paddingHorizontal: 16,
-                    borderWidth: 2,
-                    borderColor: Colors[theme].highlight,
-                    borderTopLeftRadius: 8,
-                    borderBottomLeftRadius: 8,
-                    backgroundColor:
-                      measurement === "kg"
-                        ? Colors[theme].highlight
-                        : "transparent",
-                  }}
-                >
-                  <ThemedText
+                prevLengthRef.current = sets.length;
+              }}
+            >
+              {/* Measurement Selector */}
+              <ThemedView className="mb-4">
+                <ThemedView className="flex-row space-x-2">
+                  <TouchableOpacity
+                    key={1}
+                    activeOpacity={1}
+                    onPress={() => handleMeasurementChange("kg")}
                     style={{
-                      textAlign: "center",
-                      fontWeight: "500",
-                      fontSize: 12,
-                      color:
+                      flex: 1,
+                      paddingVertical: 6,
+                      paddingHorizontal: 16,
+                      borderWidth: 2,
+                      borderColor: Colors[theme].highlight,
+                      borderTopLeftRadius: 8,
+                      borderBottomLeftRadius: 8,
+                      backgroundColor:
                         measurement === "kg"
-                          ? Colors[theme].background
-                          : Colors[theme].highlight,
+                          ? Colors[theme].highlight
+                          : "transparent",
                     }}
                   >
-                    Kg
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  key={2}
-                  activeOpacity={1}
-                  onPress={() => handleMeasurementChange("lbs")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 6,
-                    paddingHorizontal: 16,
-                    borderWidth: 2,
-                    borderColor: Colors[theme].highlight,
-                    /* borderRightWidth: 0,
-                    borderLeftWidth: 0, */
-                    borderTopRightRadius: 8,
-                    borderBottomRightRadius: 8,
-                    backgroundColor:
-                      measurement === "lbs"
-                        ? Colors[theme].highlight
-                        : "transparent",
-                  }}
-                >
-                  <ThemedText
+                    <ThemedText
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "500",
+                        fontSize: 12,
+                        color:
+                          measurement === "kg"
+                            ? Colors[theme].background
+                            : Colors[theme].highlight,
+                      }}
+                    >
+                      Kg
+                    </ThemedText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    key={2}
+                    activeOpacity={1}
+                    onPress={() => handleMeasurementChange("lbs")}
                     style={{
-                      textAlign: "center",
-                      fontWeight: "500",
-                      fontSize: 12,
-                      color:
+                      flex: 1,
+                      paddingVertical: 6,
+                      paddingHorizontal: 16,
+                      borderWidth: 2,
+                      borderColor: Colors[theme].highlight,
+                      /* borderRightWidth: 0,
+                    borderLeftWidth: 0, */
+                      borderTopRightRadius: 8,
+                      borderBottomRightRadius: 8,
+                      backgroundColor:
                         measurement === "lbs"
-                          ? Colors[theme].background
-                          : Colors[theme].highlight,
+                          ? Colors[theme].highlight
+                          : "transparent",
                     }}
                   >
-                    Lbs
-                  </ThemedText>
-                </TouchableOpacity>
-                {/* <TouchableOpacity
+                    <ThemedText
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "500",
+                        fontSize: 12,
+                        color:
+                          measurement === "lbs"
+                            ? Colors[theme].background
+                            : Colors[theme].highlight,
+                      }}
+                    >
+                      Lbs
+                    </ThemedText>
+                  </TouchableOpacity>
+                  {/* <TouchableOpacity
                   key={3}
                   activeOpacity={1}
                   onPress={() => handleMeasurementChange("time")}
@@ -421,117 +436,124 @@ export default function Index() {
                     Steps
                   </ThemedText>
                 </TouchableOpacity> */}
+                </ThemedView>
               </ThemedView>
-            </ThemedView>
-            <ThemedView className="mb-4 flex-row items-center justify-end">
-              <Checkbox
-                value={isRepsFixed}
-                onValueChange={(value) => {
-                  setIsRepsFixed(value);
-                  // Reset all reps to "1" when the toggle changes
-                  setSets((prev) => prev.map((s) => ({ ...s, reps: "1" })));
-                }}
-                color={Colors[theme].highlight}
-              />
-              <ThemedText
-                className="ml-2 text-sm"
-                lightColor={Colors[theme].mutedText}
-                darkColor={Colors[theme].mutedText}
-              >
-                fixed reps
-              </ThemedText>
-            </ThemedView>
-            <ThemedView className="w-full mb-8">
-              {sets.map((set, index) => {
-                // Calculate display index - only count normal sets
-                const displayIndex =
-                  sets.slice(0, index + 1).filter((s) => s.setType === "normal")
-                    .length - 1;
-
-                return (
-                  <Animated.View
-                    key={set.id}
-                    layout={LinearTransition}
-                    entering={FadeInUp.easing(Easing.out(Easing.cubic))}
-                  >
-                    <AddSetCard
-                      id={set.id}
-                      index={displayIndex}
-                      reps={set.reps}
-                      value={set.value}
-                      setType={set.setType}
-                      measurement={measurement}
-                      repType={isRepsFixed ? "fixed" : "range"}
-                      onRepsChange={updateReps}
-                      onValueChange={updateValue}
-                      onSetTypeChange={updateSetType}
-                      onRemove={removeSet}
-                      onCopy={copySet}
-                    />
-                  </Animated.View>
-                );
-              })}
-
-              <Animated.View
-                layout={LinearTransition}
-                className="flex-row items-start justify-between mt-2"
-              >
-                <Button onPress={addSet} className="mb-12">
-                  + Enter Set
-                </Button>
-              </Animated.View>
-              <Animated.View
-                layout={LinearTransition}
-                className="items-center justify-between mb-16"
-              >
-                <Button
-                  type="primary"
-                  onPress={logExercise}
-                  disabled={isLogging}
+              <ThemedView className="mb-4 flex-row items-center justify-end">
+                <Checkbox
+                  value={isRepsFixed}
+                  onValueChange={(value) => {
+                    setIsRepsFixed(value);
+                    // Reset all reps to "1" when the toggle changes
+                    setSets((prev) => prev.map((s) => ({ ...s, reps: "1" })));
+                  }}
+                  color={Colors[theme].highlight}
+                />
+                <ThemedText
+                  className="ml-2 text-sm"
+                  lightColor={Colors[theme].mutedText}
+                  darkColor={Colors[theme].mutedText}
                 >
-                  {isLogging ? "Logging Exercise..." : "Log Exercise"}
-                </Button>
-              </Animated.View>
-              {title.trim().length > 0 && (
+                  fixed reps
+                </ThemedText>
+              </ThemedView>
+              <ThemedView className="w-full mb-8">
+                {sets.map((set, index) => {
+                  // Calculate display index - only count normal sets
+                  const displayIndex =
+                    sets
+                      .slice(0, index + 1)
+                      .filter((s) => s.setType === "normal").length - 1;
+
+                  return (
+                    <Animated.View
+                      key={set.id}
+                      layout={LinearTransition}
+                      entering={FadeInUp.easing(Easing.out(Easing.cubic))}
+                    >
+                      <AddSetCard
+                        id={set.id}
+                        index={displayIndex}
+                        reps={set.reps}
+                        value={set.value}
+                        setType={set.setType}
+                        measurement={measurement}
+                        repType={isRepsFixed ? "fixed" : "range"}
+                        onRepsChange={updateReps}
+                        onValueChange={updateValue}
+                        onSetTypeChange={updateSetType}
+                        onRemove={removeSet}
+                        onCopy={copySet}
+                      />
+                    </Animated.View>
+                  );
+                })}
+
                 <Animated.View
                   layout={LinearTransition}
-                  className="items-center justify-between mt-2 mb-16"
+                  className="flex-row items-start justify-between mt-2"
                 >
-                  <ThemedText type="title" className="font-bold mb-8">
-                    Previous sessions
-                  </ThemedText>
-                  {isLoading ? (
-                    <ThemedText className="text-gray-500">
-                      Loading...
-                    </ThemedText>
-                  ) : error ? (
-                    <ThemedText className="text-gray-500">
-                      No previous exercise found
-                    </ThemedText>
-                  ) : sortedPreviousExercises.length > 0 ? (
-                    sortedPreviousExercises.slice(0, 4).map((exercise, idx) => (
-                      <React.Fragment key={exercise.id}>
-                        <ThemedView className="flex-col items-end w-full">
-                          <ThemedText
-                            lightColor={Colors.light.mutedText}
-                            darkColor={Colors.dark.mutedText}
-                            className="text-sm mb-2"
-                          >
-                            {formatDateAsString(exercise.date)}
-                          </ThemedText>
-                          <GetExerciseCard exercise={exercise} index={idx} />
-                        </ThemedView>
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <ThemedText className="text-gray-500">
-                      No previous exercise found
-                    </ThemedText>
-                  )}
+                  <Button onPress={addSet} className="mb-12">
+                    + Enter Set
+                  </Button>
                 </Animated.View>
-              )}
-            </ThemedView>
-          </ScrollView>
+                <Animated.View
+                  layout={LinearTransition}
+                  className="items-center justify-between mb-16"
+                >
+                  <Button
+                    type="primary"
+                    onPress={logExercise}
+                    disabled={isLogging}
+                  >
+                    {isLogging ? "Logging Exercise..." : "Log Exercise"}
+                  </Button>
+                </Animated.View>
+                {title.trim().length > 0 && (
+                  <Animated.View
+                    layout={LinearTransition}
+                    className="items-center justify-between mt-2 mb-16"
+                  >
+                    <ThemedText type="title" className="font-bold mb-8">
+                      Previous sessions
+                    </ThemedText>
+                    {isLoading ? (
+                      <ThemedText className="text-gray-500">
+                        Loading...
+                      </ThemedText>
+                    ) : error ? (
+                      <ThemedText className="text-gray-500">
+                        No previous exercise found
+                      </ThemedText>
+                    ) : sortedPreviousExercises.length > 0 ? (
+                      sortedPreviousExercises
+                        .slice(0, 4)
+                        .map((exercise, idx) => (
+                          <React.Fragment key={exercise.id}>
+                            <ThemedView className="flex-col items-end w-full">
+                              <ThemedText
+                                lightColor={Colors.light.mutedText}
+                                darkColor={Colors.dark.mutedText}
+                                className="text-sm mb-2"
+                              >
+                                {formatDateAsString(exercise.date)}
+                              </ThemedText>
+                              <GetExerciseCard
+                                exercise={exercise}
+                                index={idx}
+                              />
+                            </ThemedView>
+                          </React.Fragment>
+                        ))
+                    ) : (
+                      <ThemedText className="text-gray-500">
+                        No previous exercise found
+                      </ThemedText>
+                    )}
+                  </Animated.View>
+                )}
+              </ThemedView>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </ThemedView>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

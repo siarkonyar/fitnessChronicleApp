@@ -25,17 +25,12 @@ const HorizontalWheelPicker: React.FC<Props> = ({
 }) => {
   const theme = useColorScheme() ?? "light";
   const flatRef = useRef<FlatList<any>>(null);
-  // Measure actual container width instead of using window width so the
-  // selected item can be centered inside the card/container the picker lives in.
   const [containerWidth, setContainerWidth] = useState<number>(
     Dimensions.get("window").width
   );
   const sidePadding = Math.max(0, (containerWidth - itemWidth) / 2);
 
-  // Use only the real items; padding is handled by contentContainerStyle
   const data = useMemo(() => items, [items]);
-  // Mirror SwiftUI's scrollPosition(id:) — scroll to the current value whenever
-  // it changes (including on first mount so preselected values are honoured).
   const prevValueRef = useRef<string | null>(null);
   useEffect(() => {
     const index = items.indexOf(value);
@@ -101,6 +96,7 @@ const HorizontalWheelPicker: React.FC<Props> = ({
         ref={flatRef}
         horizontal
         showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         snapToInterval={itemWidth}
         snapToAlignment="center"
         decelerationRate="fast"
