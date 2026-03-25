@@ -102,7 +102,7 @@ export default function Index() {
 
   useEffect(() => {
     if (exercise) {
-      setTitle(exercise.activity);
+      setTitle(exercise.activity.toUpperCase());
       setSets(
         exercise.sets?.map((s) => ({
           id: Date.now() + Math.random(),
