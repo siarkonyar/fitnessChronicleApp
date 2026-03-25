@@ -17,7 +17,7 @@ import { ExerciseLogSchema, ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "expo-checkbox";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -44,7 +44,8 @@ import { AddSetCard } from "../../../components/exercise/AddSetCard";
 type ExerciseLogWithId = z.infer<typeof ExerciseLogWithIdSchema>;
 type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
 
-export default function Index(exerciseId: string) {
+export default function Index() {
+  const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const theme = useColorScheme() ?? "light";
