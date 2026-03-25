@@ -61,21 +61,23 @@ export default function ExerciseNameInput({
         : [];
 
       // Filter from master exercise names
-      const filtered = exerciseNames.filter((name) =>
-        name.toLowerCase().includes(title.toLowerCase())
-      ); // Take first 8 from master list
+      const filtered = exerciseNames
+        .filter((name) => name.toLowerCase().includes(title.toLowerCase()))
+        .sort((a, b) => a.length - b.length || a.localeCompare(b))
+        .slice(0, 8); // Take first 8 from master list
 
       // Filter from previous exercise names
       const previousExercisesNamesFiltered = previousExerciseNames
         .filter((name: string) =>
-          name.toLowerCase().includes(title.toLowerCase())
+          name.toLowerCase().includes(title.toLowerCase()),
         )
+        .sort((a, b) => a.length - b.length || a.localeCompare(b))
         .slice(0, 8); // Take first 8 from previous exercises
 
       setSuggestions(filtered);
       setSuggestionsFromPrevios(previousExercisesNamesFiltered);
       setShowSuggestions(
-        filtered.length > 0 || previousExercisesNamesFiltered.length > 0
+        filtered.length > 0 || previousExercisesNamesFiltered.length > 0,
       );
     } else {
       setSuggestions([]);
