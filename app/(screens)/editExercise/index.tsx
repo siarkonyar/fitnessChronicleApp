@@ -13,13 +13,14 @@ import {
   getExerciseLogById,
   getLatestExercisesByName,
 } from "@/lib/firebase/exercise";
-import { ExerciseLogWithIdSchema } from "@/types/types";
+import { ExerciseLogSchema, ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "expo-checkbox";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -33,13 +34,17 @@ import Animated, {
   FadeInUp,
   LinearTransition,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
-  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
+type ExerciseLogWithId = z.infer<typeof ExerciseLogWithIdSchema>;
+type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
 
-export default function Index(exercise: ExerciseLog) {
+export default function Index(exerciseId: string) {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const theme = useColorScheme() ?? "light";
@@ -47,8 +52,23 @@ export default function Index(exercise: ExerciseLog) {
   const topPadding = Platform.OS === "android" ? 64 : 2 * insets.top;
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
 
+  const {
+    data: exercise,
+    isLoading: isExerciseLogLoading,
+    error: getExerciseLog,
+  } = useQuery({
+    queryFn: () => getExerciseLogById(exerciseId),
+    queryKey: queryKeys.exerciseLogs.byId(exerciseId),
+  });
+
+  useEffect(() => {
+    if (getExerciseLog) {
+      handleQueryError(getExerciseLog);
+    }
+  }, [getExerciseLog, handleQueryError]);
+
   const editExerciseLogMutation = useMutation({
-    mutationFn: (data: ExerciseLog) => editExerciseLog(exercise.id, data),
+    mutationFn: (data: ExerciseLog) => editExerciseLog(exerciseId, data),
     onError: (error) => {
       handleMutationError(error);
     },
@@ -63,7 +83,7 @@ export default function Index(exercise: ExerciseLog) {
   });
 
   const [titleError, setTitleError] = useState(false);
-  const [title, setTitle] = useState(exercise.activity);
+  const [title, setTitle] = useState(exercise?.activity);
   const [sets, setSets] = useState<
     {
       id: number;
@@ -72,19 +92,32 @@ export default function Index(exercise: ExerciseLog) {
       setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
     }[]
   >(
-    exercise.sets.map((s) => ({
+    exercise?.sets?.map((s) => ({
       id: Date.now() + Math.random(),
       reps: "reps" in s ? (s.reps ?? "1") : "1",
       value: s.value ?? "0",
-      setType: s.setType as "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr",
-    }))
+      setType: s.setType as
+        | "warmup"
+        | "normal"
+        | "failure"
+        | "drop"
+        | "pr"
+        | "failedpr",
+    })) ?? [],
   );
   const [isRepsFixed, setIsRepsFixed] = useState(false);
 
-  const [isLogging, setIsLogging] = useState(false);
+  const [isEditting, setIsEditting] = useState(false);
   const [measurement, setMeasurement] = useState<
     "kg" | "lbs" | "time" | "distance" | "steps"
-  >((exercise.sets[0]?.measure ?? "kg") as "kg" | "lbs" | "time" | "distance" | "steps");
+  >(
+    (exercise?.sets[0]?.measure ?? "kg") as
+      | "kg"
+      | "lbs"
+      | "time"
+      | "distance"
+      | "steps",
+  );
 
   // Track previous length
   const prevLengthRef = useRef(sets.length);
@@ -146,7 +179,7 @@ export default function Index(exercise: ExerciseLog) {
   };
 
   const logExercise = async () => {
-    if (!title.trim()) {
+    if (!title?.trim()) {
       setTitleError(true);
       console.warn("Please enter an exercise name");
       return;
@@ -158,7 +191,7 @@ export default function Index(exercise: ExerciseLog) {
     }
 
     try {
-      setIsLogging(true);
+      setIsEditting(true);
       const formattedSets = sets.map(({ value, reps, setType }) => {
         // Create the correct object structure based on measurement type
         switch (measurement) {
@@ -211,14 +244,14 @@ export default function Index(exercise: ExerciseLog) {
         sets: formattedSets,
       };
 
-      await addExerciseLogMutation.mutateAsync(payload);
+      await editExerciseLogMutation.mutateAsync(payload);
 
       console.log("Exercise logged successfully!", payload);
       router.push("/(tabs)");
 
       setTitle("");
       setSets([]);
-      setIsLogging(false);
+      setIsEditting(false);
     } catch (error) {
       console.error("Failed to log exercise:", error);
     }
@@ -229,13 +262,15 @@ export default function Index(exercise: ExerciseLog) {
     isLoading,
     error,
   } = useQuery({
-    queryKey: queryKeys.latestExercises.byName(title.trim().toLowerCase()),
-    queryFn: () => getLatestExercisesByName(title.trim().toLowerCase()),
-    enabled: title.trim().length > 0,
+    queryKey: queryKeys.latestExercises.byName(
+      title?.trim()?.toLowerCase() ?? "",
+    ),
+    queryFn: () => getLatestExercisesByName(title?.trim()?.toLowerCase() ?? ""),
+    enabled: !!title?.trim(),
   });
 
   const sortedPreviousExercises = React.useMemo(() => {
-    if (!previousExercises) return [] as ExerciseLog[];
+    if (!previousExercises) return [] as ExerciseLogWithId[];
     return [...previousExercises].sort((a, b) => b.date.localeCompare(a.date));
   }, [previousExercises]);
 
@@ -244,6 +279,21 @@ export default function Index(exercise: ExerciseLog) {
       handleQueryError(error);
     }
   }, [error, handleQueryError]);
+
+  if (isExerciseLogLoading) {
+    return (
+      <SafeAreaView
+        edges={["top"]}
+        className="flex-1 items-center justify-center"
+      >
+        <ActivityIndicator
+          size="large"
+          color={Colors[theme].highlight}
+          className="mb-4"
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -255,10 +305,10 @@ export default function Index(exercise: ExerciseLog) {
                 <Text className="text-red-500 mb-2">
                   Please enter an exercise name
                 </Text>
-                <ExerciseNameInput title={title} setTitle={setTitle} />
+                <ExerciseNameInput title={title ?? ""} setTitle={setTitle} />
               </>
             ) : (
-              <ExerciseNameInput title={title} setTitle={setTitle} />
+              <ExerciseNameInput title={title ?? ""} setTitle={setTitle} />
             )}
           </ThemedView>
           <KeyboardAvoidingView
@@ -511,12 +561,12 @@ export default function Index(exercise: ExerciseLog) {
                   <Button
                     type="primary"
                     onPress={logExercise}
-                    disabled={isLogging}
+                    disabled={isEditting}
                   >
-                    {isLogging ? "Logging Exercise..." : "Log Exercise"}
+                    {isEditting ? "Editting Exercise..." : "Edit Exercise"}
                   </Button>
                 </Animated.View>
-                {title.trim().length > 0 && (
+                {!!title?.trim() && (
                   <Animated.View
                     layout={LinearTransition}
                     className="items-center justify-between mt-2 mb-16"

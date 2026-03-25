@@ -7,6 +7,7 @@ import { deleteOfflineExercise } from "@/lib/offlineStorage";
 import { ExerciseLogWithIdSchema } from "@/types/types"; // path doğruysa sıkıntı yok
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
 import React from "react";
 import { Alert, Text, TouchableOpacity } from "react-native";
 import { z } from "zod";
@@ -72,7 +73,16 @@ export default function GetExerciseCard({
     );
   };
   return (
-    <TouchableOpacity activeOpacity={1} className="w-full">
+    <TouchableOpacity
+      onPress={() =>
+        router.push({
+          pathname: "/(screens)/editExercise",
+          params: { exerciseId: exercise.id },
+        })
+      }
+      activeOpacity={1}
+      className="w-full"
+    >
       <Card className="shadow-md shadow-gray-900 px-3 py-6 rounded-lg mb-3 relative">
         {deletable && (
           <TouchableOpacity
