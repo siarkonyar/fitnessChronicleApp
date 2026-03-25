@@ -84,7 +84,7 @@ export default function Index() {
   });
 
   const [titleError, setTitleError] = useState(false);
-  const [title, setTitle] = useState(exercise?.activity);
+  const [title, setTitle] = useState<string | undefined>(undefined);
   const [sets, setSets] = useState<
     {
       id: number;
@@ -92,33 +92,41 @@ export default function Index() {
       value: string;
       setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
     }[]
-  >(
-    exercise?.sets?.map((s) => ({
-      id: Date.now() + Math.random(),
-      reps: "reps" in s ? (s.reps ?? "1") : "1",
-      value: s.value ?? "0",
-      setType: s.setType as
-        | "warmup"
-        | "normal"
-        | "failure"
-        | "drop"
-        | "pr"
-        | "failedpr",
-    })) ?? [],
-  );
+  >([]);
   const [isRepsFixed, setIsRepsFixed] = useState(false);
 
   const [isEditting, setIsEditting] = useState(false);
   const [measurement, setMeasurement] = useState<
     "kg" | "lbs" | "time" | "distance" | "steps"
-  >(
-    (exercise?.sets[0]?.measure ?? "kg") as
-      | "kg"
-      | "lbs"
-      | "time"
-      | "distance"
-      | "steps",
-  );
+  >("kg");
+
+  useEffect(() => {
+    if (exercise) {
+      setTitle(exercise.activity);
+      setSets(
+        exercise.sets?.map((s) => ({
+          id: Date.now() + Math.random(),
+          reps: "reps" in s ? (s.reps ?? "1") : "1",
+          value: s.value ?? "0",
+          setType: s.setType as
+            | "warmup"
+            | "normal"
+            | "failure"
+            | "drop"
+            | "pr"
+            | "failedpr",
+        })) ?? [],
+      );
+      setMeasurement(
+        (exercise.sets[0]?.measure ?? "kg") as
+          | "kg"
+          | "lbs"
+          | "time"
+          | "distance"
+          | "steps",
+      );
+    }
+  }, [exercise]);
 
   // Track previous length
   const prevLengthRef = useRef(sets.length);
