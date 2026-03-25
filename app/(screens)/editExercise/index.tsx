@@ -9,7 +9,8 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { formatDateAsString } from "@/lib/dateUtils";
 import {
-  addExerciseLog,
+  editExerciseLog,
+  getExerciseLogById,
   getLatestExercisesByName,
 } from "@/lib/firebase/exercise";
 import { ExerciseLogWithIdSchema } from "@/types/types";
@@ -36,7 +37,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
-export default function Index() {
+  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
+
+export default function Index(exercise: ExerciseLog) {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const theme = useColorScheme() ?? "light";
@@ -44,13 +47,12 @@ export default function Index() {
   const topPadding = Platform.OS === "android" ? 64 : 2 * insets.top;
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
 
-  const addExerciseLogMutation = useMutation({
-    mutationFn: addExerciseLog,
+  const editExerciseLogMutation = useMutation({
+    mutationFn: (data: ExerciseLog) => editExerciseLog(exercise.id, data),
     onError: (error) => {
       handleMutationError(error);
     },
-    onSuccess: (data, variables) => {
-      // Invalidate queries to refetch data
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.exerciseLogs.byDate(variables.date),
       });
@@ -61,7 +63,7 @@ export default function Index() {
   });
 
   const [titleError, setTitleError] = useState(false);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(exercise.activity);
   const [sets, setSets] = useState<
     {
       id: number;
@@ -69,13 +71,20 @@ export default function Index() {
       value: string;
       setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
     }[]
-  >([]);
+  >(
+    exercise.sets.map((s) => ({
+      id: Date.now() + Math.random(),
+      reps: "reps" in s ? (s.reps ?? "1") : "1",
+      value: s.value ?? "0",
+      setType: s.setType as "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr",
+    }))
+  );
   const [isRepsFixed, setIsRepsFixed] = useState(false);
 
   const [isLogging, setIsLogging] = useState(false);
   const [measurement, setMeasurement] = useState<
     "kg" | "lbs" | "time" | "distance" | "steps"
-  >("kg");
+  >((exercise.sets[0]?.measure ?? "kg") as "kg" | "lbs" | "time" | "distance" | "steps");
 
   // Track previous length
   const prevLengthRef = useRef(sets.length);
@@ -215,7 +224,6 @@ export default function Index() {
     }
   };
 
-  type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
   const {
     data: previousExercises,
     isLoading,
