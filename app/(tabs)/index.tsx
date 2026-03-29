@@ -4,7 +4,7 @@ import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { clearAllOfflineExercises, offlineData } from "@/lib/offlineStorage";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import DateLabelAssignment from "@/components/calendar/DateLabelAssignment";
@@ -39,13 +39,6 @@ export default function HomeScreen() {
   const lastSyncAttempt = useRef<number>(0);
   const queryClient = useQueryClient();
 
-  // Function to reset sync state (can be called when user manually retries)
-  const resetSyncState = () => {
-    hasAttemptedSync.current = false;
-    setIsSyncing(false);
-    lastSyncAttempt.current = 0;
-  };
-
   const syncMutation = useMutation({
     mutationFn: syncOfflineExercises,
     onError: (error) => {
@@ -61,6 +54,7 @@ export default function HomeScreen() {
       });
     },
   });
+
   const {
     data: logs,
     isLoading,
@@ -78,59 +72,53 @@ export default function HomeScreen() {
     }
   }, [error, handleQueryError]);
 
+  const syncExercises = async () => {
+    // Prevent multiple sync attempts within a short time window (5 seconds)
+    const now = Date.now();
+    if (
+      isSyncing ||
+      (hasAttemptedSync.current && now - lastSyncAttempt.current < 5000)
+    ) {
+      return;
+    }
+
+    try {
+      const offlineDataString = await offlineData();
+      if (offlineDataString && offlineDataString !== "[]") {
+        hasAttemptedSync.current = true;
+        lastSyncAttempt.current = now;
+        setIsSyncing(true);
+
+        const offlineExercises = JSON.parse(offlineDataString);
+
+        // Transform offline exercises to match ExerciseLogSchema
+        const exercises = offlineExercises.map((offlineExercise: any) => {
+          const exercise: any = {
+            date: offlineExercise.date,
+            activity: offlineExercise.activity,
+            sets: offlineExercise.sets,
+          };
+
+          return exercise;
+        });
+
+        await syncMutation.mutateAsync(exercises);
+        await clearAllOfflineExercises();
+      }
+    } catch (error) {
+      console.log(error);
+      setIsSyncing(false);
+    }
+  };
+
+  const syncExercisesCallBack = useCallback(syncExercises, [
+    isSyncing,
+    syncMutation,
+  ]);
+
   useEffect(() => {
-    const syncOfflineExercises = async () => {
-      // Prevent multiple sync attempts within a short time window (5 seconds)
-      const now = Date.now();
-      if (
-        isSyncing ||
-        (hasAttemptedSync.current && now - lastSyncAttempt.current < 5000)
-      ) {
-        return;
-      }
-
-      try {
-        const offlineDataString = await offlineData();
-        if (offlineDataString && offlineDataString !== "[]") {
-          hasAttemptedSync.current = true;
-          lastSyncAttempt.current = now;
-          setIsSyncing(true);
-
-          const offlineExercises = JSON.parse(offlineDataString);
-
-          // Transform offline exercises to match ExerciseLogSchema
-          const exercises = offlineExercises.map((offlineExercise: any) => {
-            const exercise: any = {
-              date: offlineExercise.date,
-              activity: offlineExercise.activity,
-              sets: offlineExercise.sets,
-            };
-
-            return exercise;
-          });
-
-          await syncMutation.mutateAsync(exercises);
-          await clearAllOfflineExercises();
-        }
-      } catch (error) {
-        console.log(error);
-        setIsSyncing(false);
-      }
-    };
-
-    syncOfflineExercises();
-  }, [syncMutation, isSyncing]);
-
-  // Reset sync state when user navigates back to this screen (e.g., after retry)
-  useFocusEffect(
-    useCallback(() => {
-      // Only reset sync state if we haven't attempted sync recently (within 10 seconds)
-      const now = Date.now();
-      if (!isSyncing && now - lastSyncAttempt.current > 10000) {
-        resetSyncState();
-      }
-    }, [isSyncing]),
-  );
+    syncExercisesCallBack();
+  }, [syncExercisesCallBack]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -241,7 +229,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <ThemedView className="mb-6">
+      <ThemedView className="my-4">
         <DateLabelAssignment
           selectedDate={today}
           buttonText="Assign Today's Label"

@@ -221,7 +221,7 @@ export const getLatestExercisesByName = async (name: string) => {
     ExerciseLogWithIdSchema.parse({
       id: doc.id,
       ...doc.data(),
-    })
+    }),
   );
 
   return logs;
@@ -276,7 +276,7 @@ export const syncOfflineExercises = async (exerciseLogs: ExerciseLog[]) => {
     ExerciseLogWithIdSchema.parse({
       id: doc.id,
       ...doc.data(),
-    })
+    }),
   );
 
   if (
