@@ -32,6 +32,7 @@ export default function ExerciseNameInput({
     string[]
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const queryClient = useQueryClient();
   const { handleMutationError } = useServerErrorHandler();
@@ -61,28 +62,31 @@ export default function ExerciseNameInput({
         : [];
 
       // Filter from master exercise names
-      const filtered = exerciseNames.filter((name) =>
-        name.toLowerCase().includes(title.toLowerCase())
-      ); // Take first 8 from master list
+      const filtered = exerciseNames
+        .filter((name) => name.toLowerCase().includes(title.toLowerCase()))
+        .sort((a, b) => a.length - b.length || a.localeCompare(b))
+        .slice(0, 8); // Take first 8 from master list
 
       // Filter from previous exercise names
       const previousExercisesNamesFiltered = previousExerciseNames
         .filter((name: string) =>
-          name.toLowerCase().includes(title.toLowerCase())
+          name.toLowerCase().includes(title.toLowerCase()),
         )
+        .sort((a, b) => a.length - b.length || a.localeCompare(b))
         .slice(0, 8); // Take first 8 from previous exercises
 
       setSuggestions(filtered);
       setSuggestionsFromPrevios(previousExercisesNamesFiltered);
       setShowSuggestions(
-        filtered.length > 0 || previousExercisesNamesFiltered.length > 0
+        isInputFocused &&
+          (filtered.length > 0 || previousExercisesNamesFiltered.length > 0),
       );
     } else {
       setSuggestions([]);
       setSuggestionsFromPrevios([]);
       setShowSuggestions(false);
     }
-  }, [title, data]);
+  }, [title, data, isInputFocused]);
 
   const handleSuggestionPress = (suggestion: string) => {
     setTitle(suggestion.toUpperCase());
@@ -91,6 +95,7 @@ export default function ExerciseNameInput({
   };
 
   const handleInputFocus = () => {
+    setIsInputFocused(true);
     if (
       title.trim().length > 0 &&
       (suggestions.length > 0 || suggestionsFromPrevios.length > 0)
@@ -100,6 +105,7 @@ export default function ExerciseNameInput({
   };
 
   const handleInputBlur = () => {
+    setIsInputFocused(false);
     // Delay hiding suggestions to allow for touch events
     setTimeout(() => setShowSuggestions(false), 150);
   };
@@ -128,6 +134,7 @@ export default function ExerciseNameInput({
         value={title}
         onChangeText={setTitle}
         onFocus={handleInputFocus}
+        autoFocus={false}
         onBlur={handleInputBlur}
         className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg w-full text-3xl"
         placeholder="Enter exercise name..."

@@ -95,7 +95,7 @@ export default function App() {
     } else {
       router.replace("/signin");
     }
-  }, [isAuthenticated, isOnline]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
