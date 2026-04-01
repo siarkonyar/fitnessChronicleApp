@@ -18,9 +18,9 @@ export const updateStreak = async (date: Date) => {
   const currentWeek = getISOWeek(date);
   const prevWeek = getPreviousWeek(currentWeek);
 
-  if (lastLoggedWeek === currentWeek || lastLoggedWeek === prevWeek) return;
-
   if (lastLoggedWeek !== currentWeek && lastLoggedWeek !== prevWeek) {
     await userRef.set({ streakWeeks: 0 }, { merge: true });
+  } else {
+    return;
   }
 };
