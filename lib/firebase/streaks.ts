@@ -13,7 +13,7 @@ export const updateStreak = async (date: Date) => {
   const userRef = firestore().collection("users").doc(userId);
   const userDoc = await userRef.get();
 
-  const { streakWeeks = 0, lastLoggedWeek = "" } = userDoc.data() ?? {};
+  const { lastLoggedWeek = "" } = userDoc.data() ?? {};
 
   const currentWeek = getISOWeek(date);
   const prevWeek = getPreviousWeek(currentWeek);

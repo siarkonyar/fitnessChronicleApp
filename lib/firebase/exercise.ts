@@ -6,6 +6,7 @@ import {
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
+import { getISOWeek, getPreviousWeek } from "../dateUtils";
 
 const GetCurrentUserId = () => {
   const user = auth().currentUser;
@@ -20,15 +21,29 @@ export const addExerciseLog = async (exerciseLog: ExerciseLog) => {
   if (!userId) throw new Error("User not authenticated");
   const exerciseName = exerciseLog.activity;
 
-  const exerciseLogRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs");
+  const userRef = firestore().collection("users").doc(userId);
+  const userDoc = await userRef.get();
+
+  const exerciseLogRef = userRef.collection("fitnessLogs");
+
+  const { streakWeeks = 0, lastLoggedWeek = "" } = userDoc.data() ?? {};
 
   const newLogRef = await exerciseLogRef.add({
     ...exerciseLog,
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
+
+  const currentWeek = getISOWeek(new Date());
+
+  if (lastLoggedWeek !== currentWeek) {
+    const prevWeek = getPreviousWeek(currentWeek);
+    const newStreak = lastLoggedWeek === prevWeek ? streakWeeks + 1 : 1;
+
+    await userRef.set(
+      { streakWeeks: newStreak, lastLoggedWeek: currentWeek },
+      { merge: true },
+    );
+  }
 
   const namesRef = firestore()
     .collection("users")
