@@ -322,6 +322,23 @@ export const syncOfflineExercises = async (exerciseLogs: ExerciseLog[]) => {
 
   await batch.commit();
 
+  const userRef = firestore().collection("users").doc(userId);
+  const userDoc = await userRef.get();
+
+  const { streakWeeks = 0, lastLoggedWeek = "" } = userDoc.data() ?? {};
+
+  const currentWeek = getISOWeek(new Date());
+
+  if (lastLoggedWeek !== currentWeek) {
+    const prevWeek = getPreviousWeek(currentWeek);
+    const newStreak = lastLoggedWeek === prevWeek ? streakWeeks + 1 : 1;
+
+    await userRef.set(
+      { streakWeeks: newStreak, lastLoggedWeek: currentWeek },
+      { merge: true },
+    );
+  }
+
   // Handle exercise names
   const namesRef = firestore()
     .collection("users")
