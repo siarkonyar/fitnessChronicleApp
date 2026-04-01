@@ -1,6 +1,6 @@
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
-import { getPreviousWeek } from "../dateUtils";
+import { getISOWeek, getPreviousWeek } from "../dateUtils";
 
 const GetCurrentUserId = () => {
   const user = auth().currentUser;
@@ -8,35 +8,19 @@ const GetCurrentUserId = () => {
   return user.uid;
 };
 
-export const updateStreak = async (currentWeek: string) => {
+export const updateStreak = async (date: Date) => {
   const userId = GetCurrentUserId();
   const userRef = firestore().collection("users").doc(userId);
   const userDoc = await userRef.get();
 
   const { streakWeeks = 0, lastLoggedWeek = "" } = userDoc.data() ?? {};
 
-  if (lastLoggedWeek === currentWeek) return;
-
+  const currentWeek = getISOWeek(date);
   const prevWeek = getPreviousWeek(currentWeek);
-  const newStreak = lastLoggedWeek === prevWeek ? streakWeeks + 1 : 1;
 
-  await userRef.set(
-    { streakWeeks: newStreak, lastLoggedWeek: currentWeek },
-    { merge: true },
-  );
-};
+  if (lastLoggedWeek === currentWeek || lastLoggedWeek === prevWeek) return;
 
-export const resetStreak = async () => {
-  const userId = GetCurrentUserId();
-  if (!userId) throw new Error("User not authenticated");
-
-  const newLogRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("labels")
-    .doc();
-  await newLogRef.set({
-    ...label,
-    createdAt: firestore.FieldValue.serverTimestamp(),
-  });
+  if (lastLoggedWeek !== currentWeek && lastLoggedWeek !== prevWeek) {
+    await userRef.set({ streakWeeks: 0 }, { merge: true });
+  }
 };
