@@ -1,13 +1,13 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { Stack, useNavigation } from "expo-router";
+import { Slot, useNavigation } from "expo-router";
 import React from "react";
 import { View } from "react-native";
 
 export default function EditExerciseLayout() {
   const theme = useColorScheme() ?? "light";
-
   const navigation = useNavigation();
+
   React.useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: "Edit Exercise",
@@ -18,20 +18,6 @@ export default function EditExerciseLayout() {
       ),
     });
   }, [theme, navigation]);
-  return (
-    <Stack
-      screenOptions={{
-        headerTransparent: true,
-        headerStyle: { backgroundColor: "transparent" },
-        contentStyle: { backgroundColor: "transparent" },
-        headerShown: false,
-        headerLargeTitle: true,
-        headerLargeStyle: { backgroundColor: "transparent" },
-        headerLargeTitleShadowVisible: false,
-        headerBackVisible: true,
-      }}
-    >
-      <Stack.Screen name="index" options={{}} />
-    </Stack>
-  );
+
+  return <Slot />;
 }
