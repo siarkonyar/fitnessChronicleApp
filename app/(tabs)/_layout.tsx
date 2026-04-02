@@ -15,10 +15,26 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
         headerShown: false,
-        // Use a solid background to match app theme; remove blur which appeared gray
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
           backgroundColor: Colors[colorScheme].tabBackGround,
-          borderTopColor: "transparent",
+          borderTopColor: Colors[colorScheme].cardBorderColor,
+          borderTopWidth: 1,
+          height: 74,
+          paddingTop: 10,
+          paddingBottom: 12,
+          shadowColor: Colors[colorScheme].background,
+          shadowOpacity: 0.16,
+          shadowRadius: 18,
+          shadowOffset: {
+            width: 0,
+            height: -6,
+          },
+          elevation: 18,
+        },
+        tabBarShowLabel: false,
+        tabBarItemStyle: {
+          marginTop: 4,
         },
         tabBarButton: (props) => <HapticTab {...props} />,
       }}

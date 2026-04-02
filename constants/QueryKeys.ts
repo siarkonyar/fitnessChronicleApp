@@ -3,8 +3,7 @@ export const queryKeys = {
   exerciseLogs: {
     all: ["exerciseLogs"] as const,
     byDate: (date: string) => [...queryKeys.exerciseLogs.all, date] as const,
-    byMonth: (month: string) =>
-      [...queryKeys.exerciseLogs.all, month] as const,
+    byMonth: (month: string) => [...queryKeys.exerciseLogs.all, month] as const,
     byId: (id: string) => [...queryKeys.exerciseLogs.all, id] as const,
   },
 
@@ -32,5 +31,11 @@ export const queryKeys = {
   // Exercise Names
   exerciseNames: {
     all: ["exerciseNames"] as const,
+  },
+
+  //streak
+  streak: {
+    all: ["streak"] as const,
+    byUser: (userId: string) => [...queryKeys.streak.all, userId] as const,
   },
 } as const;

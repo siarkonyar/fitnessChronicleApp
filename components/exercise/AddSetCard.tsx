@@ -8,7 +8,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
-import { Keyboard, KeyboardAvoidingView, Text, TouchableOpacity } from "react-native";
+import { Keyboard, Text, TouchableOpacity } from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 import Card from "../Card";
 import HorizontalWheelPicker from "../HorizontalWheelPicker";
@@ -208,7 +208,9 @@ export const AddSetCard: React.FC<Props> = ({
                         value={reps}
                         onChangeText={handleRepsChange}
                         onFocus={() => onRepsChange(id, "")}
-                        onBlur={() => { if (!reps) onRepsChange(id, "0"); }}
+                        onBlur={() => {
+                          if (!reps) onRepsChange(id, "0");
+                        }}
                         keyboardType="decimal-pad"
                         returnKeyType="done"
                         blurOnSubmit
@@ -248,7 +250,9 @@ export const AddSetCard: React.FC<Props> = ({
                         value={value}
                         onChangeText={handleValueChange}
                         onFocus={() => onValueChange(id, "")}
-                        onBlur={() => { if (!value) onValueChange(id, "0"); }}
+                        onBlur={() => {
+                          if (!value) onValueChange(id, "0");
+                        }}
                         keyboardType="decimal-pad"
                         returnKeyType="done"
                         onSubmitEditing={() => Keyboard.dismiss()}
@@ -261,7 +265,9 @@ export const AddSetCard: React.FC<Props> = ({
                       value={value}
                       onChangeText={handleValueChange}
                       onFocus={() => onValueChange(id, "")}
-                      onBlur={() => { if (!value) onValueChange(id, "0"); }}
+                      onBlur={() => {
+                        if (!value) onValueChange(id, "0");
+                      }}
                       keyboardType="decimal-pad"
                       returnKeyType="done"
                       onSubmitEditing={() => Keyboard.dismiss()}
@@ -449,7 +455,8 @@ export const AddSetCard: React.FC<Props> = ({
                   className="flex-1"
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
-                >zz
+                >
+                  zz
                   <ThemedText
                     style={{ color: Colors[theme].accentBlue }}
                     className="text-lg font-semibold"

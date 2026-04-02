@@ -116,9 +116,7 @@ export default function ExerciseNameInput({
 
   const handleSuggestionDeletion = (suggestion: string) => {
     try {
-      // Optimistically update UI
       setSuggestionsFromPrevios((prev) => prev.filter((n) => n !== suggestion));
-      // Trigger mutation - cache will be invalidated in onSuccess
       deleteExerciseNameMutation.mutate(suggestion);
     } catch (error) {
       console.log(error);

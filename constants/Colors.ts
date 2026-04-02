@@ -9,7 +9,7 @@ const tintColorDark = "#FF4500";
 export const Colors = {
   light: {
     text: "#11181C",
-    background: "#F2F2F7",
+    background: "#F6F1EA",
     tint: tintColorLight,
     icon: "#687076",
     tabIconDefault: "#687076",
@@ -19,8 +19,9 @@ export const Colors = {
     // Additions
     // Matches React Navigation DefaultTheme card color
     secondary: "#FF8C00",
-    tabBackGround: "#FFFFFF",
+    tabBackGround: "#FFF8F1",
     cardBackground: "#FFFFFF",
+    cardBorderColor: "#FF450029",
     inputBackground: "#EDEFF2",
     input: "#FFFFFF",
     separator: "#FFC099",
@@ -30,12 +31,12 @@ export const Colors = {
     success: "#22C55E", // Tailwind green-500
     warning: "#FACC15", // Tailwind yellow-400
     danger: "#EF4444", // Tailwind red-500
-    elevation: "#FBFBFD",
+    elevation: "#FFFDF9",
     transparent: "FFFFFF00",
   },
   dark: {
     text: "#ECEDEE",
-    background: "#000000",
+    background: "#08090C",
     tint: tintColorDark,
     icon: "#9BA1A6",
     tabIconDefault: "#9BA1A6",
@@ -45,8 +46,9 @@ export const Colors = {
     // Additions
     // Matches React Navigation DarkTheme card color
     secondary: "#FF8C00",
-    tabBackGround: "#121212",
-    cardBackground: "#1A1A1A",
+    tabBackGround: "#111114",
+    cardBackground: "#17171C",
+    cardBorderColor: "#FFFFFF14",
     inputBackground: "#2C2C2E",
     input: "#1F2937", // gray-800 equivalent
     separator: "#6B2A10",
@@ -56,7 +58,7 @@ export const Colors = {
     success: "#22C55E",
     warning: "#FACC15",
     danger: "#EF4444",
-    elevation: "#121212",
+    elevation: "#141419",
     transparent: "FFFFFF00",
   },
 };

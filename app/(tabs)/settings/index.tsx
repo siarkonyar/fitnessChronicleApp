@@ -1,6 +1,7 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import UserLabelList from "@/components/lists/UserLabelList";
+import StreakTracker from "@/components/streak/StreakTracker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
@@ -81,15 +82,17 @@ export default function Settings() {
         <View className="items-center mb-4" style={{ marginTop: 24 }}>
           <ThemedView style={{ position: "absolute", top: -24, zIndex: 10 }}>
             {user?.photoURL ? (
-              <Image
-                source={{ uri: user.photoURL }}
-                className="w-24 h-24 rounded-full"
-                style={{
-                  borderWidth: 3,
-                  borderColor: Colors[theme].highlight,
-                  backgroundColor: Colors[theme].transparent,
-                }}
-              />
+              <ThemedView>
+                <Image
+                  source={{ uri: user.photoURL }}
+                  className="w-24 h-24 rounded-full"
+                  style={{
+                    borderWidth: 3,
+                    borderColor: Colors[theme].highlight,
+                    backgroundColor: Colors[theme].transparent,
+                  }}
+                />
+              </ThemedView>
             ) : (
               <View
                 className="w-24 h-24 rounded-full items-center justify-center"
@@ -125,7 +128,10 @@ export default function Settings() {
             )}
           </View>
         </Card>
-        <UserLabelList />
+
+        <StreakTracker />
+
+        <UserLabelList labelOnPress={() => {}} />
 
         <View className="mb-4">
           <Card className="flex-row justify-between">

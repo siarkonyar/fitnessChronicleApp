@@ -11,7 +11,8 @@ import {
   getExerciseLogsByMonth,
 } from "@/lib/firebase/exercise";
 import { getAllLabels, getAllLabelsFromMonth } from "@/lib/firebase/label";
-import { useQueryClient } from "@tanstack/react-query";
+import { updateStreak } from "@/lib/firebase/streaks";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useCallback, useEffect } from "react";
 import { useColorScheme, View } from "react-native";
@@ -28,7 +29,9 @@ export default function App() {
   const { isAuthenticated, authLoading } = useAuth();
   const { handleQueryError } = useServerErrorHandler();
   const { isOnline } = useConnectivity();
+
   const queryClient = useQueryClient();
+  const { handleMutationError } = useServerErrorHandler();
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.96);
@@ -37,6 +40,18 @@ export default function App() {
     opacity: opacity.value,
     transform: [{ scale: scale.value }],
   }));
+
+  const updateStreakMutation = useMutation({
+    mutationFn: updateStreak,
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.exerciseNames.all,
+      });
+    },
+  });
 
   useEffect(() => {
     opacity.value = withTiming(1, {
@@ -115,6 +130,15 @@ export default function App() {
 
     return () => clearTimeout(timeoutId);
   }, [isAuthenticated, navigateAfterFade, opacity]);
+
+  useEffect(() => {
+    try {
+      updateStreakMutation.mutate(new Date());
+    } catch (error) {
+      console.log(error);
+    }
+  }, [updateStreakMutation]);
+
   return (
     <>
       <View

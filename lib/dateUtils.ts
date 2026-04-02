@@ -1,13 +1,3 @@
-/**
- * Utility functions for date formatting and manipulation
- */
-
-/**
- * Formats a date string to a human-readable format with ordinal suffix
- * @param dateString - Date string in ISO format (e.g., "2024-01-15")
- * @returns Formatted date string (e.g., "15th of January")
- */
-
 export const getTodayString = (): string => {
   return new Date().toLocaleDateString("en-CA");
 };
@@ -43,7 +33,28 @@ export const formatDateAsString = (dateString: string): string => {
   return `${day}${getOrdinalSuffix(day)} of ${month} ${year}`;
 };
 
-/**
- * Gets today's date in YYYY-MM-DD format
- * @returns Today's date as string (e.g., "2024-01-15")
- */
+export const getISOWeek = (date: Date): string => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7)); // nearest Thursday
+  const yearStart = new Date(d.getFullYear(), 0, 4); // Jan 4 is always in week 1
+  const week = Math.ceil(
+    ((d.getTime() - yearStart.getTime()) / 86400000 +
+      ((yearStart.getDay() + 6) % 7) +
+      1) /
+      7,
+  );
+  return `${d.getFullYear()}-W${String(week).padStart(2, "0")}`;
+};
+
+export const getPreviousWeek = (isoWeek: string): string => {
+  const [year, week] = isoWeek.split("-W").map(Number);
+
+  if (week > 1) {
+    return `${year}-W${String(week - 1).padStart(2, "0")}`;
+  }
+
+  // Week 1 → last week of previous year (either W52 or W53)
+  const lastWeekOfPrevYear = getISOWeek(new Date(year - 1, 11, 28)); // Dec 28 is always in the last week
+  return lastWeekOfPrevYear;
+};
