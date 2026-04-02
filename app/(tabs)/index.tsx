@@ -1,21 +1,22 @@
 import { Button } from "@/components/Button";
+import DateLabelAssignment from "@/components/calendar/DateLabelAssignment";
+import Card from "@/components/Card";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
+import StreakTracker from "@/components/streak/StreakTracker";
 import { ThemedText } from "@/components/ThemedText";
-import { Colors } from "@/constants/Colors";
-import { clearAllOfflineExercises, offlineData } from "@/lib/offlineStorage";
-import { router } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-
-import DateLabelAssignment from "@/components/calendar/DateLabelAssignment";
 import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
   getExerciseLogByDate,
   syncOfflineExercises,
 } from "@/lib/firebase/exercise";
+import { clearAllOfflineExercises, offlineData } from "@/lib/offlineStorage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -31,6 +32,11 @@ import {
 export default function HomeScreen() {
   const theme = useColorScheme() ?? "light";
   const today = new Date().toLocaleDateString("en-CA");
+  const readableDate = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
   const insets = useSafeAreaInsets();
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const [refreshing, setRefreshing] = useState(false);
@@ -134,6 +140,7 @@ export default function HomeScreen() {
       <SafeAreaView
         edges={["top"]}
         className="flex-1 items-center justify-center"
+        style={{ backgroundColor: Colors[theme].background }}
       >
         <ActivityIndicator
           size="large"
@@ -145,96 +152,118 @@ export default function HomeScreen() {
   }
 
   return (
-    <>
-      <View
-        className="px-4 pb-3 flex-row justify-between"
-        style={{
-          paddingTop: insets.top,
-        }}
-      >
-        <View className="flex-row items-center">
-          <MyIcon size={32} color={Colors[theme].highlight} />
-          <ThemedText
-            lightColor={Colors[theme].highlight}
-            darkColor={Colors[theme].highlight}
-            type="title"
-            className="ml-1"
-            //style={{ fontWeight: "normal", fontFamily: "BebasNeue" }}
-          >
-            ercule
-          </ThemedText>
+    <SafeAreaView
+      edges={["top"]}
+      className="flex-1"
+      style={{ backgroundColor: Colors[theme].background }}
+    >
+      <View className="px-4 pt-2">
+        <View
+          className="mb-2 flex-row items-center justify-between"
+          style={{ paddingTop: insets.top > 0 ? 0 : 12 }}
+        >
+          <View className="flex-1 pr-4">
+            <View className="flex-row items-center">
+              <MyIcon size={32} color={Colors[theme].highlight} />
+              <ThemedText
+                lightColor={Colors[theme].highlight}
+                darkColor={Colors[theme].highlight}
+                type="title"
+                className="ml-1"
+              >
+                ercule
+              </ThemedText>
+            </View>
+            <ThemedText className="mt-1 text-base opacity-70">
+              {readableDate}
+            </ThemedText>
+          </View>
         </View>
       </View>
 
-      {logs && logs.length > 0 ? (
-        <ScrollView
-          className="w-full px-4 py-6"
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[Colors[theme].highlight]} // Android
-              tintColor={Colors[theme].highlight} // iOS
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 140 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors[theme].highlight]}
+            tintColor={Colors[theme].highlight}
+          />
+        }
+      >
+        <View className="px-4 pt-2">
+          <Card className="mb-4">
+            <View
+              pointerEvents="none"
+              className="absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-10"
+              style={{ backgroundColor: Colors[theme].highlight }}
             />
-          }
-        >
-          <ThemedText type="subtitle" className="mb-4 text-center">
-            Todays Exercise Log
-          </ThemedText>
-          {isSyncing && (
-            <View className="mb-4 flex-row items-center justify-center">
-              <ActivityIndicator
-                size="small"
-                color={Colors[theme].highlight}
-                className="mr-2"
-              />
-              <ThemedText className="text-sm text-gray-600">
-                Syncing offline exercises...
-              </ThemedText>
+            <View
+              pointerEvents="none"
+              className="absolute -left-14 -bottom-14 h-32 w-32 rounded-full opacity-10"
+              style={{ backgroundColor: Colors[theme].secondary }}
+            />
+            <ThemedText type="label">Training dashboard</ThemedText>
+            <ThemedText type="subtitle" className="mt-2 mb-8">
+              Log the work. Keep the rhythm.
+            </ThemedText>
+            {logs && logs.length > 0 ? (
+              <ThemedView>
+                {isSyncing && (
+                  <View className="mb-4 flex-row items-center justify-center">
+                    <ActivityIndicator
+                      size="small"
+                      color={Colors[theme].highlight}
+                      className="mr-2"
+                    />
+                    <ThemedText className="text-sm opacity-70">
+                      Syncing offline exercises...
+                    </ThemedText>
+                  </View>
+                )}
+                {logs
+                  .sort(
+                    (a, b) =>
+                      (a.createdAt?.getTime() ?? 0) -
+                      (b.createdAt?.getTime() ?? 0),
+                  )
+                  .map((log, index) => (
+                    <GetExerciseCard
+                      key={index}
+                      exercise={log}
+                      index={index}
+                      deletable
+                    />
+                  ))}
+              </ThemedView>
+            ) : (
+              <></>
+            )}
+            <View className="mt-4 flex-row items-center gap-3">
+              <View className="flex-1">
+                <Button type="primary" onPress={handleNavigateToExercise}>
+                  Log Exercise
+                </Button>
+              </View>
             </View>
-          )}
-          {logs
-            .sort(
-              (a, b) =>
-                (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
-            )
-            .map((log, index) => (
-              <GetExerciseCard
-                key={index}
-                exercise={log}
-                index={index}
-                deletable
-              />
-            ))}
+          </Card>
 
-          <Button onPress={handleNavigateToExercise} className="mt-4 mb-8">
-            Log Exercise
-          </Button>
-        </ScrollView>
-      ) : (
-        <View className="flex-1 justify-center px-6">
-          <View className="items-center mb-6">
-            <ThemedText className="text-xl font-semibold text-center mb-2">
-              Ready to Get Moving?
-            </ThemedText>
-            <ThemedText className="text-base text-center text-gray-600 leading-relaxed">
-              Seems like you haven&apos;t started working out yet. It&apos;s the
-              perfect time to start your first exercise!
-            </ThemedText>
-          </View>
+          <StreakTracker />
 
-          <View className="items-center">
-            <Button onPress={handleNavigateToExercise}>Log Exercise</Button>
-          </View>
+          <Card className="mt-4">
+            <ThemedText type="label">Label</ThemedText>
+            <ThemedText type="subtitle" className="mb-4">
+              Today&apos;s label
+            </ThemedText>
+            <DateLabelAssignment
+              selectedDate={today}
+              buttonText="Assign Today's Label"
+            />
+          </Card>
         </View>
-      )}
-
-      <ThemedView className="my-4">
-        <DateLabelAssignment
-          selectedDate={today}
-          buttonText="Assign Today's Label"
-        />
-      </ThemedView>
-    </>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

@@ -10,8 +10,8 @@ export default function AddLabelLayout() {
   const navigation = useNavigation();
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: "Delete Account", // Sayfa başlığı (back yanındaki)
-      headerBackTitle: "Back", // Geri butonu yazısı
+      headerTitle: "Delete Account",
+      headerBackTitle: "Back",
       headerTintColor: Colors[theme].background,
       headerBackground: () => (
         <View style={{ flex: 1, backgroundColor: Colors[theme].highlight }} />

@@ -1,8 +1,10 @@
+import { Colors } from "@/constants/Colors";
 import React, { ReactNode } from "react";
 import {
   Pressable,
   StyleSheet,
   Text,
+  useColorScheme,
   type PressableProps,
   type TextStyle,
   type ViewStyle,
@@ -21,13 +23,24 @@ export function Button({
   children,
   ...rest
 }: ButtonProps) {
+  const theme = useColorScheme() ?? "light";
+
   return (
     <Pressable
       style={[
         styles.baseButton,
-        type === "default" && styles.defaultButton,
-        type === "danger" && styles.dangerButton,
-        type === "primary" && styles.primaryButton,
+        type === "default" && {
+          backgroundColor: Colors[theme].cardBackground,
+          borderColor: Colors[theme].cardBorderColor,
+        },
+        type === "danger" && {
+          backgroundColor: Colors[theme].danger,
+          borderColor: Colors[theme].danger,
+        },
+        type === "primary" && {
+          backgroundColor: Colors[theme].highlight,
+          borderColor: Colors[theme].highlight,
+        },
         style as ViewStyle,
       ]}
       className="active:opacity-70"
@@ -36,9 +49,11 @@ export function Button({
       <Text
         style={[
           styles.baseText,
-          type === "default" && styles.default,
-          type === "danger" && styles.dangerText,
-          type === "primary" && styles.primaryText,
+          type === "default" && {
+            color: Colors[theme].highlight,
+          },
+          type === "danger" && styles.inverseText,
+          type === "primary" && styles.inverseText,
           textStyle,
         ]}
       >
@@ -50,44 +65,28 @@ export function Button({
 
 const styles = StyleSheet.create({
   baseButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
+    minHeight: 48,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  pressed: {
-    opacity: 0.7,
+    shadowColor: "#000000",
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    elevation: 4,
   },
   baseText: {
-    // default text color fallback
-    color: "#000",
-  },
-  defaultButton: {
-    backgroundColor: "#FF8C0040",
-  },
-  default: {
     fontSize: 16,
     lineHeight: 24,
-    color: "#FF8C00",
     fontWeight: "600",
   },
-  primaryButton: {
-    backgroundColor: "#4CCC0040", 
-  },
-  primaryText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#4CCC00", // white text
-    fontWeight: "600",
-  },
-  dangerButton: {
-    backgroundColor: "#FF000040", // light red background
-  },
-  dangerText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#FF0000", // solid red text
-    fontWeight: "600",
+  inverseText: {
+    color: "#FFFFFF",
   },
 });

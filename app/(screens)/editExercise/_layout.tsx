@@ -10,8 +10,8 @@ export default function EditExerciseLayout() {
   const navigation = useNavigation();
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: "Edit Exercise", // Sayfa başlığı (back yanındaki)
-      headerBackTitle: "Back", // Geri butonu yazısı
+      headerTitle: "Edit Exercise",
+      headerBackTitle: "Back",
       headerTintColor: Colors[theme].background,
       headerBackground: () => (
         <View style={{ flex: 1, backgroundColor: Colors[theme].highlight }} />

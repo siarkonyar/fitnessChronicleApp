@@ -44,7 +44,7 @@ export default function AuthButtons() {
       // Sign-in the user with the credential
       const userCredential = await signInWithCredential(
         getAuth(),
-        googleCredential
+        googleCredential,
       );
 
       return userCredential;
@@ -58,6 +58,7 @@ export default function AuthButtons() {
 
   async function onAppleButtonPress() {
     try {
+      setLoading(true);
       // Start the sign-in request
       const appleAuthRequestResponse = await appleAuth.performRequest({
         requestedOperation: appleAuth.Operation.LOGIN,
@@ -75,10 +76,8 @@ export default function AuthButtons() {
       const { identityToken, nonce } = appleAuthRequestResponse;
       const appleCredential = AppleAuthProvider.credential(
         identityToken,
-        nonce
+        nonce,
       );
-
-      setLoading(false);
 
       // Sign the user in with the credential
       return signInWithCredential(getAuth(), appleCredential);
@@ -98,7 +97,6 @@ export default function AuthButtons() {
         <Pressable
           disabled={loading}
           onPress={() => {
-            setLoading(true);
             onAppleButtonPress();
           }}
           style={{ opacity: loading ? 0.7 : 1 }}
