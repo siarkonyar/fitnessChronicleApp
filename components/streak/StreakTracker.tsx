@@ -1,6 +1,11 @@
 import TextPill from "@/components/TextPill";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
+import { useAuth } from "@/context/AuthContext";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { getStreak } from "@/lib/firebase/streaks";
 import { FontAwesome6 } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import { useColorScheme, View } from "react-native";
 import Card from "../Card";
@@ -9,7 +14,19 @@ import { ThemedView } from "../ThemedView";
 
 export default function StreakTracker() {
   const theme = useColorScheme() ?? "dark";
-  const streakValue: number = 4;
+  const { handleQueryError } = useServerErrorHandler();
+  const user = useAuth();
+
+  const userId = user.user?.uid;
+
+  const { data: streakValue = 0, error } = useQuery({
+    queryKey: queryKeys.streak.byUser(userId ?? ""),
+    queryFn: () => getStreak(), // getStreak expects 0 args
+    enabled: !!userId,
+  });
+
+  if (error) handleQueryError(error);
+
   const clampedValue = Math.min(Math.max(streakValue, 0), 4);
 
   const renderDots = () => {
@@ -49,4 +66,7 @@ export default function StreakTracker() {
       </ThemedView>
     </Card>
   );
+}
+function GetCurrentUserId() {
+  throw new Error("Function not implemented.");
 }

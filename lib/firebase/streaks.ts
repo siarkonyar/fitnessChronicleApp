@@ -10,6 +10,9 @@ const GetCurrentUserId = () => {
 
 export const updateStreak = async (date: Date) => {
   const userId = GetCurrentUserId();
+
+  if (!userId) throw new Error("User not authenticated");
+
   const userRef = firestore().collection("users").doc(userId);
   const userDoc = await userRef.get();
 
@@ -23,4 +26,18 @@ export const updateStreak = async (date: Date) => {
   } else {
     return;
   }
+};
+
+export const getStreak = async (): Promise<number> => {
+  const userId = GetCurrentUserId();
+
+  if (!userId) throw new Error("User not authenticated");
+
+  const userRef = firestore().collection("users").doc(userId);
+  const userDoc = await userRef.get();
+
+  if (!userDoc.exists) return 0;
+
+  const streakWeeks = userDoc.get("streakWeeks");
+  return typeof streakWeeks === "number" ? streakWeeks : 0;
 };
