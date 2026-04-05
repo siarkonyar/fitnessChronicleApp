@@ -111,7 +111,7 @@ export const getWeightByDate = async (date: string): Promise<Weight[]> => {
   });
 };
 
-export const getWeightByMonth = async (month: string): Promise<Weight[]> => {
+export const getWeightsByMonth = async (month: string): Promise<Weight[]> => {
   const userId = GetCurrentUserId();
 
   if (!userId) throw new Error("User not authenticated");
@@ -122,6 +122,34 @@ export const getWeightByMonth = async (month: string): Promise<Weight[]> => {
   const lastDay = new Date(year, monthNum, 0).getDate();
 
   const endDate = `${month}-${lastDay.toString().padStart(2, "0")}`;
+
+  const snapshot = await firestore()
+    .collection("users")
+    .doc(userId)
+    .collection("fitnessLogs")
+    .where("date", ">=", startDate)
+    .where("date", "<=", endDate)
+    .get();
+
+  return snapshot.docs.map((doc) => {
+    return WeightWithIdSchema.parse({
+      id: doc.id,
+      ...doc.data(),
+    });
+  });
+};
+
+export const getWeightsByYear = async (year: string): Promise<Weight[]> => {
+  const userId = GetCurrentUserId();
+
+  if (!userId) throw new Error("User not authenticated");
+
+  if (!/^\d{4}$/.test(year)) {
+    throw new Error("Year must be in YYYY format");
+  }
+
+  const startDate = `${year}-01-01`;
+  const endDate = `${year}-12-31`;
 
   const snapshot = await firestore()
     .collection("users")

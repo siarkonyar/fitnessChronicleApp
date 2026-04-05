@@ -12,7 +12,7 @@ import Card from "../Card";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 
-export default function StreakTracker() {
+export default function StreakDisplay() {
   const theme = useColorScheme() ?? "dark";
   const { handleQueryError } = useServerErrorHandler();
   const user = useAuth();

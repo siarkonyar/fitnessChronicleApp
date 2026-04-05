@@ -103,6 +103,7 @@ export const ExerciseNameListSchema = z.object({
 
 export const WeightSchema = z.object({
   weight: z.number(),
+  date: z.string(),
   createdAt: FirestoreTimestampSchema.optional(),
 });
 

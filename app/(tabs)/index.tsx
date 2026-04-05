@@ -1,9 +1,9 @@
 import { Button } from "@/components/Button";
 import DateLabelAssignment from "@/components/calendar/DateLabelAssignment";
 import Card from "@/components/Card";
+import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
-import StreakTracker from "@/components/streak/StreakTracker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
@@ -250,7 +250,7 @@ export default function HomeScreen() {
             </View>
           </Card>
 
-          <StreakTracker />
+          <StreakDisplay />
 
           <Card className="mt-4">
             <ThemedText type="label">Label</ThemedText>

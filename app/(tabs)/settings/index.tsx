@@ -1,7 +1,7 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
+import StreakDisplay from "@/components/display/StreakDisplay";
 import UserLabelList from "@/components/lists/UserLabelList";
-import StreakTracker from "@/components/streak/StreakTracker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
@@ -129,7 +129,7 @@ export default function Settings() {
           </View>
         </Card>
 
-        <StreakTracker />
+        <StreakDisplay />
 
         <UserLabelList labelOnPress={() => {}} />
 
