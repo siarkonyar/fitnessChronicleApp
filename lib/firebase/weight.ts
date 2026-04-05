@@ -3,7 +3,7 @@ import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
 import { WeightSchema, WeightWithIdSchema } from "../../types/types";
 
-type Weight = z.infer<typeof WeightSchema>;
+type WeightWithId = z.infer<typeof WeightWithIdSchema>;
 
 const GetCurrentUserId = () => {
   const user = auth().currentUser;
@@ -72,7 +72,7 @@ export const getIfTodayLogged = async (): Promise<boolean> => {
   }
 };
 
-export const getWeights = async (): Promise<Weight[]> => {
+export const getWeights = async (): Promise<WeightWithId[]> => {
   const userId = GetCurrentUserId();
 
   if (!userId) throw new Error("User not authenticated");
@@ -91,7 +91,7 @@ export const getWeights = async (): Promise<Weight[]> => {
   });
 };
 
-export const getWeightByDate = async (date: string): Promise<Weight[]> => {
+export const getWeightByDate = async (date: string): Promise<WeightWithId[]> => {
   const userId = GetCurrentUserId();
 
   if (!userId) throw new Error("User not authenticated");
