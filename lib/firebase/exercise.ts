@@ -94,12 +94,9 @@ export const getExerciseLogsByMonth = async (month: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  // Get start date of the month: "2025-08-01"
   const startDate = `${month}-01`;
 
-  // Calculate last day of the month:
   const [year, monthNum] = month.split("-").map(Number);
-  // JS months are 0-based, so subtract 1, then create a date for the next month day 0 which is last day of the previous month
   const lastDay = new Date(year, monthNum, 0).getDate();
 
   const endDate = `${month}-${lastDay.toString().padStart(2, "0")}`; // e.g. "2025-08-31"

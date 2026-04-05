@@ -103,7 +103,8 @@ export const ExerciseNameListSchema = z.object({
 
 export const WeightSchema = z.object({
   weight: z.number(),
-})
+  createdAt: FirestoreTimestampSchema.optional(),
+});
 
 // Zod schema for emoji assignments with an ID (when reading from DB)
 export const LabelWithIdSchema = LabelSchema.extend({
