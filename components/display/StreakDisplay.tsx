@@ -20,7 +20,7 @@ export default function StreakDisplay() {
   const userId = user.user?.uid;
 
   const { data: streakValue = 0, error } = useQuery({
-    queryKey: queryKeys.streak.byUser(userId ?? ""),
+    queryKey: queryKeys.streak.all,
     queryFn: () => getStreak(), // getStreak expects 0 args
     enabled: !!userId,
   });

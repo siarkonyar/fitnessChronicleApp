@@ -35,7 +35,10 @@ export const queryKeys = {
 
   //streak
   streak: {
-    all: ["streak"] as const,
-    byUser: (userId: string) => [...queryKeys.streak.all, userId] as const,
+    all: ["streakWeeks"] as const,
+  },
+
+  weightLogs: {
+    all: ["weightLogs"] as const,
   },
 } as const;

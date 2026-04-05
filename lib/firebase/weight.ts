@@ -25,7 +25,7 @@ export const addWeightLog = async (weight: number) => {
   const weighRef = firestore()
     .collection("users")
     .doc(userId)
-    .collection("exerciseNames");
+    .collection("weightLogs");
 
   const existingLogSnapshot = await weighRef
     .where("createdAt", ">=", firestore.Timestamp.fromDate(startOfDay))
@@ -57,7 +57,7 @@ export const getIfTodayLogged = async (): Promise<boolean> => {
   const weighRef = firestore()
     .collection("users")
     .doc(userId)
-    .collection("exerciseNames");
+    .collection("weightLogs");
 
   const existingLogSnapshot = await weighRef
     .where("createdAt", ">=", firestore.Timestamp.fromDate(startOfDay))
@@ -80,7 +80,7 @@ export const getWeights = async (): Promise<Weight[]> => {
   const weighRef = firestore()
     .collection("users")
     .doc(userId)
-    .collection("exerciseNames");
+    .collection("weightLogs");
 
   const snapshot = await weighRef.get();
   return snapshot.docs.map((doc) => {
@@ -99,7 +99,7 @@ export const getWeightByDate = async (date: string): Promise<Weight[]> => {
   const weighRef = firestore()
     .collection("users")
     .doc(userId)
-    .collection("exerciseNames")
+    .collection("weightLogs")
     .where("date", "==", date);
 
   const snapshot = await weighRef.get();
@@ -111,35 +111,7 @@ export const getWeightByDate = async (date: string): Promise<Weight[]> => {
   });
 };
 
-export const getWeightsByMonth = async (month: string): Promise<Weight[]> => {
-  const userId = GetCurrentUserId();
-
-  if (!userId) throw new Error("User not authenticated");
-
-  const startDate = `${month}-01`;
-
-  const [year, monthNum] = month.split("-").map(Number);
-  const lastDay = new Date(year, monthNum, 0).getDate();
-
-  const endDate = `${month}-${lastDay.toString().padStart(2, "0")}`;
-
-  const snapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .where("date", ">=", startDate)
-    .where("date", "<=", endDate)
-    .get();
-
-  return snapshot.docs.map((doc) => {
-    return WeightWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
-    });
-  });
-};
-
-export const getWeightsByYear = async (year: string): Promise<Weight[]> => {
+/* export const getWeightsByYear = async (year: string): Promise<Weight[]> => {
   const userId = GetCurrentUserId();
 
   if (!userId) throw new Error("User not authenticated");
@@ -165,4 +137,4 @@ export const getWeightsByYear = async (year: string): Promise<Weight[]> => {
       ...doc.data(),
     });
   });
-};
+}; */

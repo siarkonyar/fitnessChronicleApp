@@ -1,9 +1,8 @@
-import TextPill from "@/components/TextPill";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { getStreak } from "@/lib/firebase/streaks";
+import { getWeights } from "@/lib/firebase/weight";
 import { useQuery } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { TouchableOpacity, useColorScheme } from "react-native";
@@ -24,8 +23,8 @@ export default function WeightDisplay() {
   const userId = user.user?.uid;
 
   const { data, error } = useQuery({
-    queryKey: queryKeys.streak.byUser(userId ?? ""),
-    queryFn: () => getStreak(),
+    queryKey: queryKeys.weightLogs.all,
+    queryFn: () => getWeights(),
     enabled: !!userId,
   });
 
