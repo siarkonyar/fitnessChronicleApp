@@ -67,6 +67,3 @@ export default function StreakTracker() {
     </Card>
   );
 }
-function GetCurrentUserId() {
-  throw new Error("Function not implemented.");
-}
