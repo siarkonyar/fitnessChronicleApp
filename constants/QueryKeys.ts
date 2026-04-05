@@ -40,5 +40,6 @@ export const queryKeys = {
 
   weightLogs: {
     all: ["weightLogs"] as const,
+    todayStatus: (today: string) => [today] as const,
   },
 } as const;

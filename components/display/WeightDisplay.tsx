@@ -3,15 +3,24 @@ import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { getTodayString } from "@/lib/dateUtils";
-import { getWeights } from "@/lib/firebase/weight";
+import { getIfTodayLogged, getWeights } from "@/lib/firebase/weight";
 import { WeightWithIdSchema } from "@/types/types";
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
-import { TouchableOpacity, useColorScheme } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from "react-native";
 import { z } from "zod";
+import { Button } from "../Button";
 import Card from "../Card";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
+import WeightEntryModal from "../modals/WeightEntryModal";
 
 type WeightWithId = z.infer<typeof WeightWithIdSchema>;
 
@@ -44,6 +53,7 @@ export default function WeightDisplay() {
   const { handleQueryError } = useServerErrorHandler();
   const user = useAuth();
   const [timeFrame, setTimeFrame] = useState<"month" | "year">("month");
+  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
 
   const userId = user.user?.uid;
 
@@ -53,7 +63,18 @@ export default function WeightDisplay() {
     enabled: !!userId,
   });
 
-  if (error) handleQueryError(error);
+  const { data: ifTodayLogged, error: ifTodayLoggedError } = useQuery({
+    queryKey: queryKeys.weightLogs.todayStatus(getTodayString()),
+    queryFn: () => getIfTodayLogged(),
+    enabled: !!userId,
+  });
+
+  useEffect(() => {
+    if (error) {
+      handleQueryError(error);
+    }
+    if (ifTodayLoggedError) handleQueryError(ifTodayLoggedError);
+  }, [error, ifTodayLoggedError, handleQueryError]);
 
   const fromDate = getFromDate(timeFrame);
   const today = getTodayString();
@@ -72,6 +93,16 @@ export default function WeightDisplay() {
             From {fromDate}
           </ThemedText>
         </ThemedView>
+
+        <Button
+          type="primary"
+          disabled={ifTodayLogged}
+          onPress={() => setIsWeightModalOpen(true)}
+          style={{ minHeight: 36, paddingVertical: 8, paddingHorizontal: 12 }}
+          textStyle={{ fontSize: 12, lineHeight: 16 }}
+        >
+          Log Weight
+        </Button>
       </ThemedView>
 
       <ThemedView className="mb-4">
@@ -138,6 +169,28 @@ export default function WeightDisplay() {
 
         <WeightList logs={filtered} />
       </ThemedView>
+
+      <Modal
+        visible={isWeightModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsWeightModalOpen(false)}
+      >
+        <KeyboardAvoidingView
+          keyboardVerticalOffset={-90}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+        >
+          <View className="flex-1 items-center justify-center px-4 bg-black backdrop-blur-sm">
+            <ThemedView className="w-11/12 max-w-md mx-4">
+              <WeightEntryModal
+                onLogged={() => setIsWeightModalOpen(false)}
+                onCancel={() => setIsWeightModalOpen(false)}
+              />
+            </ThemedView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </Card>
   );
 }

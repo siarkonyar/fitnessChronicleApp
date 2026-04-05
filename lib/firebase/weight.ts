@@ -2,6 +2,7 @@ import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
 import { WeightSchema, WeightWithIdSchema } from "../../types/types";
+import { getTodayString } from "../dateUtils";
 
 type WeightWithId = z.infer<typeof WeightWithIdSchema>;
 
@@ -39,6 +40,7 @@ export const addWeightLog = async (weight: number) => {
 
   await weighRef.add({
     weight,
+    date: getTodayString(),
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
 };
