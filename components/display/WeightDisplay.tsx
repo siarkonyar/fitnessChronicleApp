@@ -168,8 +168,8 @@ export default function WeightDisplay() {
 
         <Button
           type="primary"
-          /*           disabled={ifTodayLogged}
-           */ onPress={() => setIsWeightModalOpen(true)}
+          disabled={ifTodayLogged}
+          onPress={() => setIsWeightModalOpen(true)}
           style={{ minHeight: 36, paddingVertical: 8, paddingHorizontal: 12 }}
           textStyle={{ fontSize: 12, lineHeight: 16 }}
         >

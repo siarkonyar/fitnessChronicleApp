@@ -1,10 +1,11 @@
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { formatDateAsString, getTodayString } from "@/lib/dateUtils";
+import { getUserSettings } from "@/lib/firebase/user";
 import { deleteWeightLogById } from "@/lib/firebase/weight";
 import { WeightWithIdSchema } from "@/types/types";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect } from "react";
 import { Alert, Platform, ScrollView } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
@@ -23,11 +24,24 @@ export default function WeightListModal({
   weightLogs: WeightLog[];
   onCancel?: () => void;
 }) {
-  const { handleMutationError } = useServerErrorHandler();
+  const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const queryClient = useQueryClient();
   const sortedLogs = [...weightLogs]
     .sort((a, b) => b.date.localeCompare(a.date))
     .reverse();
+
+  const { data: userSettings, error: userSettingsError } = useQuery({
+    queryKey: queryKeys.userSettings.all,
+    queryFn: getUserSettings,
+  });
+
+  useEffect(() => {
+    if (userSettingsError) {
+      handleQueryError(userSettingsError);
+    }
+  }, [userSettingsError, handleQueryError]);
+
+  const weightMeasure = userSettings?.measure ?? "kg";
 
   const deleteWeightLogMutation = useMutation({
     mutationFn: deleteWeightLogById,
@@ -85,7 +99,9 @@ export default function WeightListModal({
                   className={`items-center justify-between mb-2`}
                 >
                   <ThemedText>{formatDateAsString(log.date)}</ThemedText>
-                  <ThemedText>{log.weight} kg</ThemedText>
+                  <ThemedText>
+                    {log.weight} {weightMeasure}
+                  </ThemedText>
                   <RoundedButton
                     type="danger"
                     icon="delete"
