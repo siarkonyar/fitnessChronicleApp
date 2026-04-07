@@ -72,15 +72,15 @@ export const LabelSchema = z.object({
 });
 
 export const DaySchema = z.object({
-  date: z.string().date(), // ISO 8601 date string
-  labelId: z.string().min(1), // Reference to emoji ID instead of full object
+  date: z.string().date(),
+  labelId: z.string().min(1),
   createdAt: FirestoreTimestampSchema.optional(),
 });
 
 export const ProgramExerciseSchema = z.object({
   activity: z.string().min(3).max(100),
   notes: z.string().max(500).optional(),
-  sets: z.array(SetSchema), // Array of exercise sets
+  sets: z.array(SetSchema),
   createdAt: FirestoreTimestampSchema.optional(),
 });
 

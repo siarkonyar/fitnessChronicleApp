@@ -61,7 +61,16 @@ export const deleteWeightLogById = async (id: string) => {
   return doc.delete();
 };
 
-export const updateWeightMeasure = async (measure: WeightMeasure) => {
+export const getWeightMeasure = async (measure: WeightMeasure) => {
+  const userId = GetCurrentUserId();
+
+  if (!userId) throw new Error("User not authenticated");
+
+  const doc = await firestore().collection("users").doc(userId).get();
+  return doc.data()?.measure as WeightMeasure | undefined;
+};
+
+export const updateMasure = async (measure: WeightMeasure) => {
   const userId = GetCurrentUserId();
 
   if (!userId) throw new Error("User not authenticated");
@@ -73,8 +82,6 @@ export const updateWeightMeasure = async (measure: WeightMeasure) => {
     { merge: true },
   );
 };
-
-export const updateMasure = updateWeightMeasure;
 
 export const getIfTodayLogged = async (): Promise<boolean> => {
   const userId = GetCurrentUserId();
