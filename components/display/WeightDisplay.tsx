@@ -15,6 +15,7 @@ import {
   View,
   useColorScheme,
 } from "react-native";
+import { LineChart, lineDataItem } from "react-native-gifted-charts";
 import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
@@ -33,17 +34,73 @@ function getFromDate(timeFrame: "month" | "year"): string {
 }
 
 function WeightList({ logs }: { logs: WeightWithId[] }) {
+  const theme = useColorScheme() ?? "dark";
+  const palette = Colors[theme];
+  const [chartWidth, setChartWidth] = useState(0);
   const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+
   if (sorted.length === 0)
-    return <ThemedText className="opacity-60 text-sm">No data</ThemedText>;
+    return <ThemedText className="opacity-60">No data</ThemedText>;
+
+  const minWeight = Math.min(...sorted.map((log) => log.weight));
+  const maxWeight = Math.max(...sorted.map((log) => log.weight));
+  const range = Math.max(maxWeight - minWeight, 1);
+  const yAxisPadding = Math.max(Math.ceil(range * 0.2), 2);
+  const stepSize = 2;
+  const noOfSections = 4;
+  const rawOffset = Math.max(Math.floor(minWeight - yAxisPadding), 0);
+  const yAxisOffset = Math.floor(rawOffset / stepSize) * stepSize;
+  const spacing = chartWidth > 0 && sorted.length > 1 ? (chartWidth - 44) / sorted.length : 24;
+  const initialSpacing = spacing / 2;
+
+  const chartData: lineDataItem[] = sorted.map((log) => ({
+    value: log.weight,
+  }));
+
   return (
-    <ThemedView className="gap-1">
-      {sorted.map((log) => (
-        <ThemedView key={log.id} className="flex-row justify-between">
-          <ThemedText className="text-sm opacity-60">{log.date}</ThemedText>
-          <ThemedText className="text-sm">{log.weight} kg</ThemedText>
-        </ThemedView>
-      ))}
+    <ThemedView
+      className="mt-4"
+      style={{ backgroundColor: palette.transparent }}
+      onLayout={(e) => setChartWidth(e.nativeEvent.layout.width)}
+    >
+      {chartWidth > 0 && (
+        <LineChart
+          width={chartWidth - 44}
+          isAnimated
+          animateOnDataChange
+          animationDuration={500}
+          onDataChangeAnimationDuration={350}
+          areaChart
+          thickness={2.5}
+          color={palette.highlight}
+          data={chartData}
+          noOfSections={noOfSections}
+          stepValue={stepSize}
+          yAxisOffset={yAxisOffset}
+          maxValue={
+            Math.ceil((maxWeight + yAxisPadding - yAxisOffset) / stepSize) *
+            stepSize
+          }
+          yAxisTextStyle={{ color: palette.mutedText, fontSize: 11 }}
+          yAxisColor={palette.cardBorderColor}
+          xAxisColor={palette.cardBorderColor}
+          hideDataPoints
+          startFillColor={palette.highlight}
+          endFillColor={palette.highlight}
+          startOpacity={0.2}
+          endOpacity={0.02}
+          spacing={spacing}
+          initialSpacing={initialSpacing}
+          backgroundColor={palette.cardBackground}
+          rulesColor={palette.cardBorderColor}
+          rulesType="solid"
+          xAxisLabelTextStyle={{ color: palette.mutedText, fontSize: 10 }}
+          adjustToWidth
+          yAxisLabelWidth={44}
+          xAxisThickness={1}
+          yAxisThickness={1}
+        />
+      )}
     </ThemedView>
   );
 }
@@ -105,7 +162,7 @@ export default function WeightDisplay() {
         </Button>
       </ThemedView>
 
-      <ThemedView className="mb-4">
+      <ThemedView className="">
         <ThemedView className="flex-row space-x-2 mb-4">
           <TouchableOpacity
             activeOpacity={1}

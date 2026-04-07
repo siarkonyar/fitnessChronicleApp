@@ -1,7 +1,7 @@
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
-import { WeightSchema, WeightWithIdSchema } from "../../types/types";
+import { WeightWithIdSchema } from "../../types/types";
 import { getTodayString } from "../dateUtils";
 
 type WeightWithId = z.infer<typeof WeightWithIdSchema>;
@@ -93,7 +93,9 @@ export const getWeights = async (): Promise<WeightWithId[]> => {
   });
 };
 
-export const getWeightByDate = async (date: string): Promise<WeightWithId[]> => {
+export const getWeightByDate = async (
+  date: string,
+): Promise<WeightWithId[]> => {
   const userId = GetCurrentUserId();
 
   if (!userId) throw new Error("User not authenticated");
