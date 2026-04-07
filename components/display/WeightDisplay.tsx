@@ -38,11 +38,7 @@ function WeightGraph({ logs }: { logs: WeightWithId[] }) {
   const theme = useColorScheme() ?? "dark";
   const palette = Colors[theme];
   const [chartWidth, setChartWidth] = useState(0);
-  const sorted = [...logs].sort((a, b) => {
-    const aTime = a.createdAt?.getTime() ?? new Date(a.date).getTime() ?? 0;
-    const bTime = b.createdAt?.getTime() ?? new Date(b.date).getTime() ?? 0;
-    return aTime - bTime;
-  });
+  const sorted = [...logs].sort((a, b) => b.date.localeCompare(a.date));
   const canAnimate = sorted.length > 1;
 
   if (sorted.length === 0)

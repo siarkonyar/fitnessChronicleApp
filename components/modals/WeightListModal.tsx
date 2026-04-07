@@ -26,11 +26,7 @@ export default function WeightListModal({
   const { handleMutationError } = useServerErrorHandler();
   const queryClient = useQueryClient();
   const sortedLogs = [...weightLogs]
-    .sort((a, b) => {
-      const aTime = a.createdAt?.getTime() ?? new Date(a.date).getTime() ?? 0;
-      const bTime = b.createdAt?.getTime() ?? new Date(b.date).getTime() ?? 0;
-      return bTime - aTime;
-    })
+    .sort((a, b) => b.date.localeCompare(a.date))
     .reverse();
 
   const deleteWeightLogMutation = useMutation({
