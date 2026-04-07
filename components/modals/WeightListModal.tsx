@@ -13,7 +13,7 @@ import { ThemedView } from "../ThemedView";
 
 type WeightLog = z.infer<typeof WeightWithIdSchema>;
 
-export default function WeightList({
+export default function WeightListModal({
   weightLogs,
   onCancel,
 }: {

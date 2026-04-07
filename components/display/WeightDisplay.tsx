@@ -22,6 +22,7 @@ import Card from "../Card";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 import WeightEntryModal from "../modals/WeightEntryModal";
+import WeightListModal from "../modals/WeightListModal";
 
 type WeightWithId = z.infer<typeof WeightWithIdSchema>;
 
@@ -114,6 +115,7 @@ export default function WeightDisplay() {
   const user = useAuth();
   const [timeFrame, setTimeFrame] = useState<"month" | "year">("month");
   const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
+  const [isWeightListModalOpen, setIsWeightListModalOpen] = useState(false);
 
   const userId = user.user?.uid;
 
@@ -228,6 +230,10 @@ export default function WeightDisplay() {
         </ThemedView>
 
         <WeightList logs={filtered} />
+
+        <Button onPress={() => setIsWeightListModalOpen(true)}>
+          Veiw Weight List
+        </Button>
       </ThemedView>
 
       <Modal
@@ -246,6 +252,28 @@ export default function WeightDisplay() {
               <WeightEntryModal
                 onLogged={() => setIsWeightModalOpen(false)}
                 onCancel={() => setIsWeightModalOpen(false)}
+              />
+            </ThemedView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      <Modal
+        visible={isWeightListModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsWeightModalOpen(false)}
+      >
+        <KeyboardAvoidingView
+          keyboardVerticalOffset={-90}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+        >
+          <View className="flex-1 items-center justify-center px-4 bg-black backdrop-blur-sm">
+            <ThemedView className="w-11/12 max-w-md mx-4">
+              <WeightListModal
+                weightLogs={filtered}
+                onCancel={() => setIsWeightListModalOpen(false)}
               />
             </ThemedView>
           </View>
