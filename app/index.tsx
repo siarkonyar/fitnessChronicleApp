@@ -27,11 +27,10 @@ import Animated, {
 export default function App() {
   const theme = useColorScheme() ?? "light";
   const { isAuthenticated, authLoading } = useAuth();
-  const { handleQueryError } = useServerErrorHandler();
+  const { handleQueryError, handleMutationError } = useServerErrorHandler();
   const { isOnline } = useConnectivity();
 
   const queryClient = useQueryClient();
-  const { handleMutationError } = useServerErrorHandler();
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.96);

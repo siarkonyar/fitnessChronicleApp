@@ -1,10 +1,12 @@
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
+import { useAuth } from "@/context/AuthContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { getTodayString } from "@/lib/dateUtils";
+import { getUserSettings } from "@/lib/firebase/user";
 import { addWeightLog } from "@/lib/firebase/weight";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
 import { Keyboard, useColorScheme } from "react-native";
 import { Button } from "../Button";
 import Card from "../Card";
@@ -21,10 +23,11 @@ export default function WeightEntryModal({
   onLogged,
   onCancel,
 }: WeightEntryModalProps) {
+  const { user } = useAuth();
   const theme = useColorScheme() ?? "light";
   const palette = Colors[theme];
   const [weight, setWeight] = useState("");
-  const { handleMutationError } = useServerErrorHandler();
+  const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const queryClient = useQueryClient();
 
   const normalizeWeightInput = (value: string) => value.replace(/,/g, ".");
@@ -46,6 +49,20 @@ export default function WeightEntryModal({
       onLogged?.();
     },
   });
+
+  const { data: userSettings, error: userSettingsError } = useQuery({
+    queryKey: queryKeys.userSettings.all,
+    queryFn: getUserSettings,
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (userSettingsError) {
+      handleQueryError(userSettingsError);
+    }
+  }, [userSettingsError, handleQueryError]);
+
+  const weightMeasure = userSettings?.measure ?? "kg";
 
   const handleLogWeight = async () => {
     const parsedWeight = Number(normalizeWeightInput(weight.trim()));
@@ -95,7 +112,7 @@ export default function WeightEntryModal({
           lightColor={palette.mutedText}
           darkColor={palette.mutedText}
         >
-          kg
+          {weightMeasure}
         </ThemedText>
       </ThemedView>
 

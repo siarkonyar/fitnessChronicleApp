@@ -38,6 +38,10 @@ export const queryKeys = {
     all: ["streakWeeks"] as const,
   },
 
+  userSettings: {
+    all: ["userSettings"] as const,
+  },
+
   weightLogs: {
     all: ["weightLogs"] as const,
     todayStatus: (today: string) => [today] as const,
