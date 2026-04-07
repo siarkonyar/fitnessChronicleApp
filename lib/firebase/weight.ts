@@ -45,6 +45,25 @@ export const addWeightLog = async (weight: number) => {
   });
 };
 
+export const deleteWeightLogById = async (id: string) => {
+  const userId = GetCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const doc = firestore()
+    .collection("users")
+    .doc(userId)
+    .collection("weightLogs")
+    .doc(id);
+
+  const weightDoc = await doc.get();
+
+  if (!weightDoc.exists) {
+    throw new Error("Weight log not found.");
+  }
+
+  return doc.delete();
+};
+
 export const getIfTodayLogged = async (): Promise<boolean> => {
   const userId = GetCurrentUserId();
 

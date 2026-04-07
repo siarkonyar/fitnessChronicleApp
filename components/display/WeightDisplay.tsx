@@ -50,7 +50,10 @@ function WeightList({ logs }: { logs: WeightWithId[] }) {
   const noOfSections = 4;
   const rawOffset = Math.max(Math.floor(minWeight - yAxisPadding), 0);
   const yAxisOffset = Math.floor(rawOffset / stepSize) * stepSize;
-  const spacing = chartWidth > 0 && sorted.length > 1 ? (chartWidth - 44) / sorted.length : 24;
+  const spacing =
+    chartWidth > 0 && sorted.length > 1
+      ? (chartWidth - 44) / sorted.length
+      : 24;
   const initialSpacing = spacing / 2;
 
   const chartData: lineDataItem[] = sorted.map((log) => ({
