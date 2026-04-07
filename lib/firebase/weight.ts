@@ -34,9 +34,9 @@ export const addWeightLog = async (weight: number) => {
     .limit(1)
     .get();
 
-  if (!existingLogSnapshot.empty) {
+  /* if (!existingLogSnapshot.empty) {
     throw new Error("A weight log already exists for today");
-  }
+  } */
 
   await weighRef.add({
     weight,

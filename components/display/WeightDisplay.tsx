@@ -34,14 +34,23 @@ function getFromDate(timeFrame: "month" | "year"): string {
   return d.toLocaleDateString("en-CA");
 }
 
-function WeightList({ logs }: { logs: WeightWithId[] }) {
+function WeightGraph({ logs }: { logs: WeightWithId[] }) {
   const theme = useColorScheme() ?? "dark";
   const palette = Colors[theme];
   const [chartWidth, setChartWidth] = useState(0);
-  const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+  const sorted = [...logs].sort((a, b) => {
+    const aTime = a.createdAt?.getTime() ?? new Date(a.date).getTime() ?? 0;
+    const bTime = b.createdAt?.getTime() ?? new Date(b.date).getTime() ?? 0;
+    return aTime - bTime;
+  });
+  const canAnimate = sorted.length > 1;
 
   if (sorted.length === 0)
-    return <ThemedText className="opacity-60">No data</ThemedText>;
+    return (
+      <ThemedView className="w-full my-12 justify-center items-center">
+        <ThemedText className="opacity-60">No data</ThemedText>
+      </ThemedView>
+    );
 
   const minWeight = Math.min(...sorted.map((log) => log.weight));
   const maxWeight = Math.max(...sorted.map((log) => log.weight));
@@ -55,7 +64,8 @@ function WeightList({ logs }: { logs: WeightWithId[] }) {
     chartWidth > 0 && sorted.length > 1
       ? (chartWidth - 44) / sorted.length
       : 24;
-  const initialSpacing = spacing / 2;
+  const initialSpacing =
+    sorted.length === 1 ? (chartWidth - 44) / 2 : spacing / 2;
 
   const chartData: lineDataItem[] = sorted.map((log) => ({
     value: log.weight,
@@ -69,9 +79,10 @@ function WeightList({ logs }: { logs: WeightWithId[] }) {
     >
       {chartWidth > 0 && (
         <LineChart
+          key={"weight-" + sorted.length}
           width={chartWidth - 44}
-          isAnimated
-          animateOnDataChange
+          isAnimated={canAnimate}
+          animateOnDataChange={canAnimate}
           animationDuration={500}
           onDataChangeAnimationDuration={350}
           areaChart
@@ -88,7 +99,8 @@ function WeightList({ logs }: { logs: WeightWithId[] }) {
           yAxisTextStyle={{ color: palette.mutedText, fontSize: 11 }}
           yAxisColor={palette.cardBorderColor}
           xAxisColor={palette.cardBorderColor}
-          hideDataPoints
+          dataPointsColor={palette.highlight}
+          dataPointsRadius={4}
           startFillColor={palette.highlight}
           endFillColor={palette.highlight}
           startOpacity={0.2}
@@ -125,6 +137,8 @@ export default function WeightDisplay() {
     enabled: !!userId,
   });
 
+  const hasData = !data?.length;
+
   const { data: ifTodayLogged, error: ifTodayLoggedError } = useQuery({
     queryKey: queryKeys.weightLogs.todayStatus(getTodayString()),
     queryFn: () => getIfTodayLogged(),
@@ -158,8 +172,8 @@ export default function WeightDisplay() {
 
         <Button
           type="primary"
-          disabled={ifTodayLogged}
-          onPress={() => setIsWeightModalOpen(true)}
+          /*           disabled={ifTodayLogged}
+           */ onPress={() => setIsWeightModalOpen(true)}
           style={{ minHeight: 36, paddingVertical: 8, paddingHorizontal: 12 }}
           textStyle={{ fontSize: 12, lineHeight: 16 }}
         >
@@ -229,9 +243,12 @@ export default function WeightDisplay() {
           </TouchableOpacity>
         </ThemedView>
 
-        <WeightList logs={filtered} />
+        <WeightGraph logs={filtered} />
 
-        <Button onPress={() => setIsWeightListModalOpen(true)}>
+        <Button
+          onPress={() => setIsWeightListModalOpen(true)}
+          disabled={hasData}
+        >
           Veiw Weight List
         </Button>
       </ThemedView>
