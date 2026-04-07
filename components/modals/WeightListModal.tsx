@@ -5,7 +5,7 @@ import { deleteWeightLogById } from "@/lib/firebase/weight";
 import { WeightWithIdSchema } from "@/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React from "react";
-import { Alert } from "react-native";
+import { Alert, Platform, ScrollView } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
@@ -70,22 +70,28 @@ export default function WeightListModal({
         {weightLogs.length === 0 ? (
           <ThemedText className="opacity-60">No weight logs</ThemedText>
         ) : (
-          weightLogs.reverse().map((log) => (
-            <ThemedView key={log.id}>
-              <MutedCard
-                key={log.id}
-                className={`items-center justify-between mb-2`}
-              >
-                <ThemedText>{formatDateAsString(log.date)}</ThemedText>
-                <ThemedText>{log.weight} kg</ThemedText>
-                <RoundedButton
-                  type="danger"
-                  icon="delete"
-                  onPress={() => handleDeleteWeight(log.id)}
-                />
-              </MutedCard>
-            </ThemedView>
-          ))
+          <ScrollView
+            className="max-h-96"
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+          >
+            {weightLogs.reverse().map((log) => (
+              <ThemedView key={log.id}>
+                <MutedCard
+                  key={log.id}
+                  className={`items-center justify-between mb-2`}
+                >
+                  <ThemedText>{formatDateAsString(log.date)}</ThemedText>
+                  <ThemedText>{log.weight} kg</ThemedText>
+                  <RoundedButton
+                    type="danger"
+                    icon="delete"
+                    onPress={() => handleDeleteWeight(log.id)}
+                  />
+                </MutedCard>
+              </ThemedView>
+            ))}
+          </ScrollView>
         )}
       </Card>
       <Button type="danger" onPress={onCancel}>
