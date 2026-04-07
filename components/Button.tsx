@@ -21,6 +21,7 @@ export function Button({
   type = "default",
   textStyle,
   children,
+  disabled = false,
   ...rest
 }: ButtonProps) {
   const theme = useColorScheme() ?? "light";
@@ -41,9 +42,11 @@ export function Button({
           backgroundColor: Colors[theme].highlight,
           borderColor: Colors[theme].highlight,
         },
+        disabled && styles.disabledButton,
         style as ViewStyle,
       ]}
       className="active:opacity-70"
+      disabled={disabled}
       {...rest}
     >
       <Text
@@ -88,5 +91,8 @@ const styles = StyleSheet.create({
   },
   inverseText: {
     color: "#FFFFFF",
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });

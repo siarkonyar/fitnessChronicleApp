@@ -12,7 +12,7 @@ import Card from "../Card";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 
-export default function StreakTracker() {
+export default function StreakDisplay() {
   const theme = useColorScheme() ?? "dark";
   const { handleQueryError } = useServerErrorHandler();
   const user = useAuth();
@@ -20,7 +20,7 @@ export default function StreakTracker() {
   const userId = user.user?.uid;
 
   const { data: streakValue = 0, error } = useQuery({
-    queryKey: queryKeys.streak.byUser(userId ?? ""),
+    queryKey: queryKeys.streak.all,
     queryFn: () => getStreak(), // getStreak expects 0 args
     enabled: !!userId,
   });
@@ -66,7 +66,4 @@ export default function StreakTracker() {
       </ThemedView>
     </Card>
   );
-}
-function GetCurrentUserId() {
-  throw new Error("Function not implemented.");
 }
