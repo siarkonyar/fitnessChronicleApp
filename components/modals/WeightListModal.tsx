@@ -1,13 +1,16 @@
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { getTodayString } from "@/lib/dateUtils";
+import { formatDateAsString, getTodayString } from "@/lib/dateUtils";
 import { deleteWeightLogById } from "@/lib/firebase/weight";
 import { WeightWithIdSchema } from "@/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React from "react";
+import { Alert } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
+import MutedCard from "../cards/MuteCard";
+import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 
@@ -20,7 +23,7 @@ export default function WeightListModal({
   weightLogs: WeightLog[];
   onCancel?: () => void;
 }) {
-  const { handleMutationError, handleQueryError } = useServerErrorHandler();
+  const { handleMutationError } = useServerErrorHandler();
   const queryClient = useQueryClient();
 
   const deleteWeightLogMutation = useMutation({
@@ -40,7 +43,25 @@ export default function WeightListModal({
   });
 
   const handleDeleteWeight = async (id: string) => {
-    await deleteWeightLogMutation.mutateAsync(id);
+    if (!id) return;
+    Alert.alert(
+      "Delete Label",
+      "Are you sure you want to delete this weight log?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteWeightLogMutation.mutateAsync(id);
+            } catch (error) {
+              console.log(error);
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -49,20 +70,20 @@ export default function WeightListModal({
         {weightLogs.length === 0 ? (
           <ThemedText className="opacity-60">No weight logs</ThemedText>
         ) : (
-          weightLogs.map((log) => (
-            <ThemedView
-              key={log.id}
-              className="flex-row items-center justify-between py-2 border-b"
-            >
-              <ThemedText>{log.date}</ThemedText>
-              <ThemedText>{log.weight} kg</ThemedText>
-              <Button
-                type="danger"
-                onPress={() => handleDeleteWeight(log.id)}
-                disabled={deleteWeightLogMutation.isPending}
+          weightLogs.reverse().map((log) => (
+            <ThemedView key={log.id}>
+              <MutedCard
+                key={log.id}
+                className={`items-center justify-between mb-2`}
               >
-                Delete
-              </Button>
+                <ThemedText>{formatDateAsString(log.date)}</ThemedText>
+                <ThemedText>{log.weight} kg</ThemedText>
+                <RoundedButton
+                  type="danger"
+                  icon="delete"
+                  onPress={() => handleDeleteWeight(log.id)}
+                />
+              </MutedCard>
             </ThemedView>
           ))
         )}

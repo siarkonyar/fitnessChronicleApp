@@ -152,7 +152,7 @@ export default function WeightDisplay() {
             WEIGHT
           </ThemedText>
           <ThemedText type="subtitle" className="mt-1">
-            From {fromDate}
+            Progress Overview
           </ThemedText>
         </ThemedView>
 
