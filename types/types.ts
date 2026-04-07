@@ -102,6 +102,7 @@ export const ExerciseNameListSchema = z.object({
 });
 
 export const WeightSchema = z.object({
+  measure: z.enum(["kg", "lbs"]),
   weight: z.number(),
   date: z.string(),
   createdAt: FirestoreTimestampSchema.optional(),

@@ -64,6 +64,10 @@ export const deleteWeightLogById = async (id: string) => {
   return doc.delete();
 };
 
+export const updateWeightValues = async () => {
+  
+}
+
 export const getIfTodayLogged = async (): Promise<boolean> => {
   const userId = GetCurrentUserId();
 
