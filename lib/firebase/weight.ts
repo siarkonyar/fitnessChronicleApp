@@ -7,6 +7,24 @@ import { getTodayString } from "../dateUtils";
 type WeightWithId = z.infer<typeof WeightWithIdSchema>;
 type WeightMeasure = z.infer<typeof WeightMeasureSchema>;
 
+const KG_TO_LBS = 2.2046226218;
+
+const roundWeight = (value: number) => Math.round(value * 100) / 100;
+
+const convertWeightValue = (
+  value: number,
+  from: WeightMeasure,
+  to: WeightMeasure,
+) => {
+  if (from === to) return value;
+
+  if (from === "kg" && to === "lbs") {
+    return roundWeight(value * KG_TO_LBS);
+  }
+
+  return roundWeight(value / KG_TO_LBS);
+};
+
 const GetCurrentUserId = () => {
   const user = auth().currentUser;
   if (!user) throw new Error("User not authenticated");
@@ -17,6 +35,8 @@ export const addWeightLog = async (weight: number) => {
   const userId = GetCurrentUserId();
 
   if (!userId) throw new Error("User not authenticated");
+
+  const normalizedWeight = roundWeight(weight);
 
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
@@ -36,7 +56,7 @@ export const addWeightLog = async (weight: number) => {
     .get();
 
   await weighRef.add({
-    weight,
+    weight: normalizedWeight,
     date: getTodayString(),
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
@@ -70,18 +90,59 @@ export const getWeightMeasure = async (measure: WeightMeasure) => {
   return doc.data()?.measure as WeightMeasure | undefined;
 };
 
-export const updateMasure = async (measure: WeightMeasure) => {
+export const updateMeasure = async (measure: WeightMeasure) => {
   const userId = GetCurrentUserId();
 
   if (!userId) throw new Error("User not authenticated");
 
-  await firestore().collection("users").doc(userId).set(
+  const userRef = firestore().collection("users").doc(userId);
+  const userSnapshot = await userRef.get();
+  const currentMeasure =
+    (userSnapshot.data()?.measure as WeightMeasure | undefined) ?? "kg";
+
+  if (currentMeasure !== measure) {
+    const logsSnapshot = await userRef.collection("weightLogs").get();
+
+    if (!logsSnapshot.empty) {
+      let batch = firestore().batch();
+      let operationCount = 0;
+
+      for (const doc of logsSnapshot.docs) {
+        const currentWeight = doc.data()?.weight;
+
+        if (typeof currentWeight !== "number") continue;
+
+        const convertedWeight = convertWeightValue(
+          currentWeight,
+          currentMeasure,
+          measure,
+        );
+
+        batch.update(doc.ref, { weight: convertedWeight });
+        operationCount += 1;
+
+        if (operationCount === 450) {
+          await batch.commit();
+          batch = firestore().batch();
+          operationCount = 0;
+        }
+      }
+
+      if (operationCount > 0) {
+        await batch.commit();
+      }
+    }
+  }
+
+  await userRef.set(
     {
       measure,
     },
     { merge: true },
   );
 };
+
+export const updateMasure = updateMeasure;
 
 export const getIfTodayLogged = async (): Promise<boolean> => {
   const userId = GetCurrentUserId();
