@@ -11,11 +11,23 @@ const GetCurrentUserId = () => {
   return user.uid;
 };
 
-export const getUserSettings = async (measure: UserSettings) => {
+export const getUserSettings = async () => {
   const userId = GetCurrentUserId();
 
   if (!userId) throw new Error("User not authenticated");
 
-  const doc = await firestore().collection("users").doc(userId).get();
-  return doc.data() as UserSettings | undefined;
+  const userRef = firestore().collection("users").doc(userId);
+  const doc = await userRef.get();
+  const parsedSettings = UserSettingsSchema.safeParse(doc.data());
+
+  if (parsedSettings.success) {
+    return parsedSettings.data;
+  }
+
+  const defaultSettings: UserSettings = {
+    measure: "kg",
+  };
+
+  await userRef.set(defaultSettings, { merge: true });
+  return defaultSettings;
 };
