@@ -1,10 +1,11 @@
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
-import { WeightWithIdSchema } from "../../types/types";
+import { WeightMeasureSchema, WeightWithIdSchema } from "../../types/types";
 import { getTodayString } from "../dateUtils";
 
 type WeightWithId = z.infer<typeof WeightWithIdSchema>;
+type WeightMeasure = z.infer<typeof WeightMeasureSchema>;
 
 const GetCurrentUserId = () => {
   const user = auth().currentUser;
@@ -28,15 +29,11 @@ export const addWeightLog = async (weight: number) => {
     .doc(userId)
     .collection("weightLogs");
 
-  const existingLogSnapshot = await weighRef
+  await weighRef
     .where("createdAt", ">=", firestore.Timestamp.fromDate(startOfDay))
     .where("createdAt", "<", firestore.Timestamp.fromDate(startOfNextDay))
     .limit(1)
     .get();
-
-  /* if (!existingLogSnapshot.empty) {
-    throw new Error("A weight log already exists for today");
-  } */
 
   await weighRef.add({
     weight,
@@ -64,9 +61,20 @@ export const deleteWeightLogById = async (id: string) => {
   return doc.delete();
 };
 
-export const updateWeightValues = async () => {
-  
-}
+export const updateWeightMeasure = async (measure: WeightMeasure) => {
+  const userId = GetCurrentUserId();
+
+  if (!userId) throw new Error("User not authenticated");
+
+  await firestore().collection("users").doc(userId).set(
+    {
+      measure,
+    },
+    { merge: true },
+  );
+};
+
+export const updateMasure = updateWeightMeasure;
 
 export const getIfTodayLogged = async (): Promise<boolean> => {
   const userId = GetCurrentUserId();

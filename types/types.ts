@@ -101,24 +101,26 @@ export const ExerciseNameListSchema = z.object({
   createdAt: FirestoreTimestampSchema.optional(),
 });
 
+export const WeightMeasureSchema = z.enum(["kg", "lbs"]);
+
 export const WeightSchema = z.object({
-  measure: z.enum(["kg", "lbs"]),
   weight: z.number(),
   date: z.string(),
   createdAt: FirestoreTimestampSchema.optional(),
 });
 
-// Zod schema for emoji assignments with an ID (when reading from DB)
+export const UserSettingsSchema = z.object({
+  measure: WeightMeasureSchema,
+});
+
 export const LabelWithIdSchema = LabelSchema.extend({
   id: z.string(),
 });
 
-// Zod schema for day assignments with an ID (when reading from DB)
 export const DayWithIdSchema = DaySchema.extend({
   id: z.string(),
 });
 
-// Zod schema for a fitness log entry with an ID (when reading from DB)
 export const ExerciseLogWithIdSchema = ExerciseLogSchema.extend({
   id: z.string(),
 });
