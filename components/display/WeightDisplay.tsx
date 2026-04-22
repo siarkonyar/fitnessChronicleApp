@@ -63,9 +63,12 @@ function WeightGraph({ logs }: { logs: WeightWithId[] }) {
   const initialSpacing =
     sorted.length === 1 ? (chartWidth - 44) / 2 : spacing / 2;
 
-  const chartData: lineDataItem[] = sorted.map((log) => ({
-    value: log.weight,
-  }));
+  const chartData: lineDataItem[] = [...sorted]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((log) => ({
+      value: log.weight,
+      createdAt: log.createdAt,
+    }));
 
   return (
     <ThemedView
