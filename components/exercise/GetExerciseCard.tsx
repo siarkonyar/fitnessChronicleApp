@@ -21,6 +21,7 @@ type GetExerciseCardProps = {
   exercise: ExerciseLog;
   index?: number; // Optional index for styling or display purposes
   deletable?: boolean;
+  editable?: boolean;
   offline?: () => void;
 };
 
@@ -28,6 +29,7 @@ export default function GetExerciseCard({
   exercise,
   index,
   deletable,
+  editable,
   offline,
 }: GetExerciseCardProps) {
   const theme = useColorScheme() ?? "light";
@@ -73,25 +75,38 @@ export default function GetExerciseCard({
     );
   };
   return (
-    <TouchableOpacity
-      onPress={() =>
-        router.push({
-          pathname: "/(screens)/editExercise",
-          params: { exerciseId: exercise.id },
-        })
-      }
-      activeOpacity={1}
-      className="w-full"
-    >
-      <Card className="shadow-md shadow-gray-900 px-3 py-6 rounded-lg mb-3 relative">
-        {deletable && (
-          <TouchableOpacity
-            onPress={handleDeletion}
-            className="absolute top-2 right-2 z-10 items-center justify-center"
-          >
-            <Text className="text-red-600">Delete</Text>
-          </TouchableOpacity>
-        )}
+    <TouchableOpacity activeOpacity={1} className="w-full">
+      <Card className="shadow-md shadow-gray-900 px-3 pb-6 pt-8 rounded-lg mb-3 relative">
+        <ThemedView className="absolute top-0 right-2 z-10 flex-row items-center gap-3 m-0 p-0">
+          {editable && (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: "/(screens)/editExercise",
+                  params: { exerciseId: exercise.id },
+                })
+              }
+            >
+              <ThemedText
+                darkColor={Colors.dark.success}
+                lightColor={Colors.light.success}
+              >
+                Edit
+              </ThemedText>
+            </TouchableOpacity>
+          )}
+          {deletable && (
+            <TouchableOpacity onPress={handleDeletion}>
+              <ThemedText
+                darkColor={Colors.dark.danger}
+                lightColor={Colors.light.danger}
+              >
+                Delete
+              </ThemedText>
+            </TouchableOpacity>
+          )}
+        </ThemedView>
+
         <ThemedView className="absolute top-2 left-2 z-10 items-center justify-center">
           <Text className="text-sm text-gray-500">{index! + 1}.</Text>
         </ThemedView>

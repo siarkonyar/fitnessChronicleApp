@@ -194,7 +194,7 @@ export default function HomeScreen() {
         }
       >
         <View className="px-4 pt-2">
-          <Card className="mb-4">
+          <Card>
             <View
               pointerEvents="none"
               className="absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-10"
@@ -235,6 +235,7 @@ export default function HomeScreen() {
                       exercise={log}
                       index={index}
                       deletable
+                      editable
                     />
                   ))}
               </ThemedView>
@@ -252,7 +253,7 @@ export default function HomeScreen() {
 
           <StreakDisplay />
 
-          <Card className="mt-4">
+          <Card>
             <ThemedText type="label">Label</ThemedText>
             <ThemedText type="subtitle" className="mb-4">
               Today&apos;s label

@@ -17,6 +17,7 @@ Hercule helps you log workouts fast, review progress at a glance, and build cons
   - **Monthly markers**: Dates with activity are highlighted so you can spot streaks at a glance.
   - **Select a day**: Tap any date to see exactly what you did that day, with the same clean exercise + sets layout.
   - **Encouraging rest days**: No entry? You’ll see a friendly “rest day” message.
+  - **Label Dates**: Put labels on dates based on what you hit that day. for example "Push", "Pull", "Legs", etc. Also asign label emojis to see labels on calendar.
 - **Stay signed in and in control**:
   - **Personal account**: Sign up and sign in with email + password.
   - **One-tap sign out**: See which account you’re using and log out from Settings.
@@ -36,7 +37,7 @@ Hercule helps you log workouts fast, review progress at a glance, and build cons
   - Exercise name input with validation feedback.
   - Set composer with two quick pickers:
     - Reps ranges: 1, 2, 3-4, 5-6, 7-8, 9-10, 10-12, 12-15, 15-20, 20+
-    - Weight (kg): 0 to 200 in 5 kg steps
+    - Weight (kg): 0 to 200
   - Actions on each set: Copy, Remove.
   - Animated add/copy interactions and a single, clear action to save.
 
