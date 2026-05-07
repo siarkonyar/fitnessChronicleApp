@@ -7,7 +7,7 @@ import { getUserSettings } from "@/lib/firebase/user";
 import { addWeightLog } from "@/lib/firebase/weight";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { Keyboard, useColorScheme } from "react-native";
+import { Alert, Keyboard, useColorScheme } from "react-native";
 import { Button } from "../Button";
 import Card from "../Card";
 import { ThemedText } from "../ThemedText";
@@ -66,7 +66,10 @@ export default function WeightEntryModal({
 
   const handleLogWeight = async () => {
     const parsedWeight = Number(normalizeWeightInput(weight.trim()));
-    if (!Number.isFinite(parsedWeight)) return;
+    if (!Number.isFinite(parsedWeight) || Number(parsedWeight) <= 0) {
+      Alert.alert("Invalid Weight", "Please enter a valid weight.");
+      return;
+    }
     await addWeightLogMutation.mutateAsync(parsedWeight);
   };
 

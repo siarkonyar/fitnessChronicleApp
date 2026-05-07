@@ -26,9 +26,9 @@ export default function WeightListModal({
 }) {
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const queryClient = useQueryClient();
-  const sortedLogs = [...weightLogs]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .reverse();
+  const sortedLogs = [...weightLogs].sort((a, b) =>
+    b.date.localeCompare(a.date),
+  );
 
   const { data: userSettings, error: userSettingsError } = useQuery({
     queryKey: queryKeys.userSettings.all,
