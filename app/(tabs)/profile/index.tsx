@@ -113,8 +113,18 @@ export default function Profile() {
         </View>
 
         <Card className="mb-4">
+          <TouchableOpacity
+            onPress={() => router.push("/settings")}
+            style={{ position: "absolute", top: 12, right: 12, zIndex: 20 }}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+          >
+            <MaterialIcons
+              name="settings"
+              size={22}
+              color={Colors[theme].icon}
+            />
+          </TouchableOpacity>
           <View className="items-center py-4" style={{ paddingTop: 60 }}>
-            {/* User Info */}
             <ThemedText
               type="defaultSemiBold"
               className="text-lg mb-1 text-center"
