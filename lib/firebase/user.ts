@@ -1,20 +1,19 @@
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
-import { UserSettingsSchema } from "../../types/types";
+import { UserProfileSchema, UserSettingsSchema } from "../../types/types";
 
 type UserSettings = z.infer<typeof UserSettingsSchema>;
+type UserProfile = z.infer<typeof UserProfileSchema>;
 
-const GetCurrentUserId = () => {
+const getCurrentUserId = () => {
   const user = auth().currentUser;
   if (!user) throw new Error("User not authenticated");
   return user.uid;
 };
 
 export const getUserSettings = async () => {
-  const userId = GetCurrentUserId();
-
-  if (!userId) throw new Error("User not authenticated");
+  const userId = getCurrentUserId();
 
   const userRef = firestore().collection("users").doc(userId);
   const doc = await userRef.get();
@@ -30,4 +29,33 @@ export const getUserSettings = async () => {
 
   await userRef.set(defaultSettings, { merge: true });
   return defaultSettings;
+};
+
+export const getUserProfile = async (): Promise<UserProfile> => {
+  const userId = getCurrentUserId();
+
+  const doc = await firestore().collection("users").doc(userId).get();
+  const parsed = UserProfileSchema.safeParse(doc.data());
+
+  if (parsed.success) {
+    return parsed.data;
+  }
+
+  return {};
+};
+
+export const updateUserProfile = async (
+  updates: UserProfile,
+): Promise<void> => {
+  const userId = getCurrentUserId();
+
+  const sanitized: Record<string, unknown> = {};
+  if (updates.name !== undefined) sanitized.name = updates.name;
+  if (updates.birthday !== undefined) sanitized.birthday = updates.birthday;
+  if (updates.gender !== undefined) sanitized.gender = updates.gender;
+
+  await firestore()
+    .collection("users")
+    .doc(userId)
+    .set(sanitized, { merge: true });
 };

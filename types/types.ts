@@ -113,6 +113,19 @@ export const UserSettingsSchema = z.object({
   measure: WeightMeasureSchema,
 });
 
+export const GenderSchema = z.enum([
+  "male",
+  "female",
+  "non_binary",
+  "prefer_not_to_say",
+]);
+
+export const UserProfileSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  birthday: z.string().date().optional(),
+  gender: GenderSchema.optional(),
+});
+
 export const LabelWithIdSchema = LabelSchema.extend({
   id: z.string(),
 });
