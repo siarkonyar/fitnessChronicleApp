@@ -22,6 +22,7 @@ type GetExerciseCardProps = {
   index?: number; // Optional index for styling or display purposes
   deletable?: boolean;
   editable?: boolean;
+  copyable?: boolean;
   offline?: () => void;
 };
 
@@ -30,6 +31,7 @@ export default function GetExerciseCard({
   index,
   deletable,
   editable,
+  copyable,
   offline,
 }: GetExerciseCardProps) {
   const theme = useColorScheme() ?? "light";
@@ -49,6 +51,16 @@ export default function GetExerciseCard({
       });
     },
   });
+
+  const handleCopy = () => {
+    router.push({
+      pathname: "/(screens)/logExercise",
+      params: {
+        copyActivity: exercise.activity,
+        copySets: JSON.stringify(exercise.sets),
+      },
+    });
+  };
 
   const handleDeletion = async () => {
     Alert.alert(
@@ -75,40 +87,43 @@ export default function GetExerciseCard({
     );
   };
   return (
-    <TouchableOpacity activeOpacity={1} className="w-full">
-      <Card className="shadow-md shadow-gray-900 px-3 pb-6 pt-8 rounded-lg mb-3 relative">
-        <ThemedView className="absolute top-0 right-2 z-10 flex-row items-center gap-3 m-0 p-0">
-          {editable && (
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/(screens)/editExercise",
-                  params: { exerciseId: exercise.id },
-                })
-              }
-            >
-              <ThemedText
-                darkColor={Colors.dark.success}
-                lightColor={Colors.light.success}
-              >
-                Edit
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-          {deletable && (
-            <TouchableOpacity onPress={handleDeletion}>
-              <ThemedText
-                darkColor={Colors.dark.danger}
-                lightColor={Colors.light.danger}
-              >
-                Delete
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-        </ThemedView>
-
-        <ThemedView className="absolute top-2 left-2 z-10 items-center justify-center">
+    <TouchableOpacity
+      activeOpacity={copyable ? 0.7 : 1}
+      onPress={copyable ? handleCopy : undefined}
+      className="w-full"
+    >
+      <Card type="exercise">
+        <ThemedView className="flex-row z-10 items-center justify-between">
           <Text className="text-sm text-gray-500">{index! + 1}.</Text>
+          <ThemedView className="z-10 flex-row items-center gap-3 m-0 p-0">
+            {editable && (
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: "/(screens)/editExercise",
+                    params: { exerciseId: exercise.id },
+                  })
+                }
+              >
+                <ThemedText
+                  darkColor={Colors.dark.success}
+                  lightColor={Colors.light.success}
+                >
+                  Edit
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+            {deletable && (
+              <TouchableOpacity onPress={handleDeletion}>
+                <ThemedText
+                  darkColor={Colors.dark.danger}
+                  lightColor={Colors.light.danger}
+                >
+                  Delete
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          </ThemedView>
         </ThemedView>
         <ThemedView className="flex-col items-center justify-between w-full px-6 rounded-lg">
           <ThemedText className="text-xl font-bold shrink">
@@ -175,6 +190,16 @@ export default function GetExerciseCard({
         </ThemedView>
         {exercise.notes && exercise.notes.trim() ? (
           <ThemedText>{exercise.notes}</ThemedText>
+        ) : null}
+
+        {copyable ? (
+          <ThemedText
+            className="text-center mt-2"
+            lightColor={Colors.light.mutedText}
+            darkColor={Colors.dark.mutedText}
+          >
+            Tap to copy
+          </ThemedText>
         ) : null}
       </Card>
     </TouchableOpacity>

@@ -3,18 +3,27 @@ import { Colors } from "@/constants/Colors";
 import React from "react";
 import { StyleSheet, useColorScheme } from "react-native";
 
+type CardType = "default" | "exercise";
+
 type CardProps = React.PropsWithChildren<ThemedViewProps> & {
   className?: string;
+  type?: CardType;
 };
 
 export default function Card({
   children,
   className,
   style,
+  type = "default",
   ...otherProps
 }: CardProps) {
   const theme = useColorScheme() ?? "light";
   const palette = Colors[theme];
+
+  const classes =
+    type === "exercise"
+      ? "shadow-md shadow-gray-900 px-3 py-1 rounded-lg mb-3 relative"
+      : "px-4 py-4";
 
   return (
     <ThemedView
@@ -28,7 +37,7 @@ export default function Card({
         },
         style,
       ]}
-      className={`w-full mb-3 overflow-hidden rounded-3xl border px-4 py-4${className ? ` ${className}` : ""}`}
+      className={`w-full mb-3 overflow-hidden rounded-3xl border ${classes} ${className ? ` ${className}` : ""}`}
       {...otherProps}
     >
       {children}

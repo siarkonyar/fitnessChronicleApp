@@ -133,7 +133,12 @@ export default function ExerciseLogByDate({
                   (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
               )
               .map((log, index) => (
-                <GetExerciseCard key={index} exercise={log} index={index} />
+                <GetExerciseCard
+                  key={index}
+                  exercise={log}
+                  index={index}
+                  copyable
+                />
               ))}
           </ThemedView>
         ) : (

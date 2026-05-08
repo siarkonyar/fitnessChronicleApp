@@ -16,7 +16,7 @@ import { ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "expo-checkbox";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
@@ -43,6 +43,10 @@ export default function Index() {
   const queryClient = useQueryClient();
   const topPadding = Platform.OS === "android" ? 64 : 2 * insets.top;
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
+  const { copyActivity, copySets } = useLocalSearchParams<{
+    copyActivity?: string;
+    copySets?: string;
+  }>();
 
   const addExerciseLogMutation = useMutation({
     mutationFn: addExerciseLog,
@@ -61,7 +65,7 @@ export default function Index() {
   });
 
   const [titleError, setTitleError] = useState(false);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(copyActivity ?? "");
   const [sets, setSets] = useState<
     {
       id: number;
@@ -69,13 +73,48 @@ export default function Index() {
       value: string;
       setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
     }[]
-  >([]);
+  >(() => {
+    if (!copySets) return [];
+    try {
+      const parsed = JSON.parse(copySets) as {
+        measure: string;
+        setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
+        value?: string;
+        reps?: string;
+      }[];
+      return parsed.map((s, i) => ({
+        id: Date.now() + i,
+        reps: s.reps ?? "1",
+        value: s.value ?? "0",
+        setType: s.setType ?? "normal",
+      }));
+    } catch {
+      return [];
+    }
+  });
   const [isRepsFixed, setIsRepsFixed] = useState(false);
 
   const [isLogging, setIsLogging] = useState(false);
   const [measurement, setMeasurement] = useState<
     "kg" | "lbs" | "time" | "distance" | "steps"
-  >("kg");
+  >(() => {
+    if (!copySets) return "kg";
+    try {
+      const parsed = JSON.parse(copySets) as { measure: string }[];
+      const m = parsed[0]?.measure;
+      if (
+        m === "kg" ||
+        m === "lbs" ||
+        m === "time" ||
+        m === "distance" ||
+        m === "steps"
+      )
+        return m;
+    } catch {
+      // fall through
+    }
+    return "kg";
+  });
 
   // Track previous length
   const prevLengthRef = useRef(sets.length);
@@ -540,6 +579,7 @@ export default function Index() {
                               <GetExerciseCard
                                 exercise={exercise}
                                 index={idx}
+                                copyable
                               />
                             </ThemedView>
                           </React.Fragment>
