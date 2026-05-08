@@ -1,7 +1,6 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import StreakDisplay from "@/components/display/StreakDisplay";
-import WeightDisplay from "@/components/display/WeightDisplay";
 import UserLabelList from "@/components/lists/UserLabelList";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -24,7 +23,7 @@ import {
   View,
 } from "react-native";
 
-export default function Settings() {
+export default function Profile() {
   const [refreshing, setRefreshing] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const theme = useColorScheme() ?? "light";
@@ -132,11 +131,11 @@ export default function Settings() {
 
         <StreakDisplay />
 
-        <WeightDisplay />
+        {/* <WeightDisplay /> */}
 
         <UserLabelList labelOnPress={() => {}} />
 
-        <View className="mb-4">
+        <View>
           <Card className="flex-row justify-between">
             <ThemedText type="defaultSemiBold">Use Haptics</ThemedText>
             <Switch
@@ -152,7 +151,7 @@ export default function Settings() {
           </Card>
         </View>
 
-        <View className="mb-8 mt-12">
+        <View className="mb-8">
           {/* <ThemedText
             type="subtitle"
             className="mb-4"
