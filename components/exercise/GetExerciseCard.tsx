@@ -22,6 +22,7 @@ type GetExerciseCardProps = {
   index?: number; // Optional index for styling or display purposes
   deletable?: boolean;
   editable?: boolean;
+  copyable?: boolean;
   offline?: () => void;
 };
 
@@ -30,6 +31,7 @@ export default function GetExerciseCard({
   index,
   deletable,
   editable,
+  copyable,
   offline,
 }: GetExerciseCardProps) {
   const theme = useColorScheme() ?? "light";
@@ -49,6 +51,16 @@ export default function GetExerciseCard({
       });
     },
   });
+
+  const handleCopy = () => {
+    router.push({
+      pathname: "/(screens)/logExercise",
+      params: {
+        copyActivity: exercise.activity,
+        copySets: JSON.stringify(exercise.sets),
+      },
+    });
+  };
 
   const handleDeletion = async () => {
     Alert.alert(
@@ -75,7 +87,11 @@ export default function GetExerciseCard({
     );
   };
   return (
-    <TouchableOpacity activeOpacity={1} className="w-full">
+    <TouchableOpacity
+      activeOpacity={copyable ? 0.7 : 1}
+      onPress={copyable ? handleCopy : undefined}
+      className="w-full"
+    >
       <Card className="shadow-md shadow-gray-900 px-3 pb-6 pt-8 rounded-lg mb-3 relative">
         <ThemedView className="absolute top-0 right-2 z-10 flex-row items-center gap-3 m-0 p-0">
           {editable && (
