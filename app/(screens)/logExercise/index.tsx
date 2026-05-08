@@ -102,7 +102,14 @@ export default function Index() {
     try {
       const parsed = JSON.parse(copySets) as { measure: string }[];
       const m = parsed[0]?.measure;
-      if (m === "kg" || m === "lbs" || m === "time" || m === "distance" || m === "steps") return m;
+      if (
+        m === "kg" ||
+        m === "lbs" ||
+        m === "time" ||
+        m === "distance" ||
+        m === "steps"
+      )
+        return m;
     } catch {
       // fall through
     }
@@ -572,6 +579,7 @@ export default function Index() {
                               <GetExerciseCard
                                 exercise={exercise}
                                 index={idx}
+                                copyable
                               />
                             </ThemedView>
                           </React.Fragment>
