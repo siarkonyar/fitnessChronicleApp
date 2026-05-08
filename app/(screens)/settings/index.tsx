@@ -1,21 +1,44 @@
 import MutedCard from "@/components/cards/MuteCard";
+import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
 import { getUserProfile, updateUserProfile } from "@/lib/firebase/user";
-import { RoundedButton } from "@/components/RoundButton";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Platform,
   ScrollView,
+  TextInput,
   useColorScheme,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const CURRENT_YEAR = new Date().getFullYear();
+
+function validateBirthday(day: string, month: string, year: string): string | null {
+  if (!day || !month || !year) return "Please fill in all fields.";
+  const d = parseInt(day, 10);
+  const m = parseInt(month, 10);
+  const y = parseInt(year, 10);
+  if (isNaN(d) || d < 1 || d > 31) return "Day must be between 01 and 31.";
+  if (isNaN(m) || m < 1 || m > 12) return "Month must be between 01 and 12.";
+  if (isNaN(y) || y < 1900 || y > CURRENT_YEAR)
+    return `Year must be between 1900 and ${CURRENT_YEAR}.`;
+  const date = new Date(y, m - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d)
+    return "Invalid date.";
+  return null;
+}
+
+function formatDisplayBirthday(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-");
+  return `${day} / ${month} / ${year}`;
+}
 
 export default function Settings() {
   const theme = useColorScheme() ?? "light";
@@ -30,26 +53,63 @@ export default function Settings() {
   });
 
   const [name, setName] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+
+  const [birthDay, setBirthDay] = useState("");
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthYear, setBirthYear] = useState("");
+  const [isEditingBirthday, setIsEditingBirthday] = useState(false);
+  const [birthdayError, setBirthdayError] = useState<string | null>(null);
+
+  const monthRef = useRef<TextInput>(null);
+  const yearRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (profile?.name) setName(profile.name);
+    if (profile?.birthday) {
+      const [y, m, d] = profile.birthday.split("-");
+      setBirthDay(d);
+      setBirthMonth(m);
+      setBirthYear(y);
+    }
   }, [profile]);
 
-  const mutation = useMutation({
+  const nameMutation = useMutation({
     mutationFn: updateUserProfile,
     onSuccess: async () => {
       await refreshUser();
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-      setIsEditing(false);
+      setIsEditingName(false);
     },
     onError: () => {
       Alert.alert("Error", "Failed to save. Please try again.");
     },
   });
 
-  const handleSave = () => {
-    mutation.mutate({ name: name.trim() || undefined });
+  const birthdayMutation = useMutation({
+    mutationFn: updateUserProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      setIsEditingBirthday(false);
+      setBirthdayError(null);
+    },
+    onError: () => {
+      Alert.alert("Error", "Failed to save. Please try again.");
+    },
+  });
+
+  const handleSaveName = () => {
+    nameMutation.mutate({ name: name.trim() || undefined });
+  };
+
+  const handleSaveBirthday = () => {
+    const error = validateBirthday(birthDay, birthMonth, birthYear);
+    if (error) {
+      setBirthdayError(error);
+      return;
+    }
+    const isoDate = `${birthYear}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}`;
+    birthdayMutation.mutate({ birthday: isoDate });
   };
 
   if (isLoading) {
@@ -63,11 +123,12 @@ export default function Settings() {
   return (
     <ThemedView className="flex-1" style={{ paddingTop: topPadding }}>
       <ScrollView className="px-4 py-6" keyboardShouldPersistTaps="handled">
+
         <ThemedText type="defaultSemiBold" className="mb-2 ml-1">
           Name
         </ThemedText>
-        <MutedCard className="items-center justify-between">
-          {isEditing ? (
+        <MutedCard className="items-center justify-between mb-6">
+          {isEditingName ? (
             <ThemedTextInput
               value={name}
               onChangeText={setName}
@@ -80,24 +141,107 @@ export default function Settings() {
             />
           ) : (
             <ThemedText className="text-base font-medium flex-1">
-              {name || "No name set"}
+              {name || "Not set"}
             </ThemedText>
           )}
           <ThemedView className="flex-row">
-            {isEditing ? (
-              mutation.isPending ? (
+            {isEditingName ? (
+              nameMutation.isPending ? (
                 <ActivityIndicator
                   color={Colors[theme].accentBlue}
                   style={{ padding: 10 }}
                 />
               ) : (
-                <RoundedButton icon="check" onPress={handleSave} />
+                <RoundedButton icon="check" onPress={handleSaveName} />
               )
             ) : (
-              <RoundedButton icon="edit" onPress={() => setIsEditing(true)} />
+              <RoundedButton icon="edit" onPress={() => setIsEditingName(true)} />
             )}
           </ThemedView>
         </MutedCard>
+
+        <ThemedText type="defaultSemiBold" className="mb-2 ml-1">
+          Birthday
+        </ThemedText>
+        <MutedCard className="items-center justify-between mb-1">
+          {isEditingBirthday ? (
+            <ThemedView className="flex-row flex-1 items-center mr-2">
+              <ThemedTextInput
+                value={birthDay}
+                onChangeText={(text) => {
+                  const numeric = text.replace(/\D/g, "").slice(0, 2);
+                  setBirthDay(numeric);
+                  setBirthdayError(null);
+                  if (numeric.length === 2) monthRef.current?.focus();
+                }}
+                placeholder="DD"
+                placeholderTextColor={Colors[theme].mutedText}
+                className="text-base font-medium border-b border-gray-400 text-center"
+                style={{ width: 28 }}
+                keyboardType="number-pad"
+                maxLength={2}
+                autoFocus
+              />
+              <ThemedText className="text-base font-medium mx-2">/</ThemedText>
+              <ThemedTextInput
+                ref={monthRef}
+                value={birthMonth}
+                onChangeText={(text) => {
+                  const numeric = text.replace(/\D/g, "").slice(0, 2);
+                  setBirthMonth(numeric);
+                  setBirthdayError(null);
+                  if (numeric.length === 2) yearRef.current?.focus();
+                }}
+                placeholder="MM"
+                placeholderTextColor={Colors[theme].mutedText}
+                className="text-base font-medium border-b border-gray-400 text-center"
+                style={{ width: 28 }}
+                keyboardType="number-pad"
+                maxLength={2}
+              />
+              <ThemedText className="text-base font-medium mx-2">/</ThemedText>
+              <ThemedTextInput
+                ref={yearRef}
+                value={birthYear}
+                onChangeText={(text) => {
+                  const numeric = text.replace(/\D/g, "").slice(0, 4);
+                  setBirthYear(numeric);
+                  setBirthdayError(null);
+                }}
+                placeholder="YYYY"
+                placeholderTextColor={Colors[theme].mutedText}
+                className="text-base font-medium border-b border-gray-400 text-center"
+                style={{ width: 48 }}
+                keyboardType="number-pad"
+                maxLength={4}
+              />
+            </ThemedView>
+          ) : (
+            <ThemedText className="text-base font-medium flex-1">
+              {profile?.birthday ? formatDisplayBirthday(profile.birthday) : "Not set"}
+            </ThemedText>
+          )}
+          <ThemedView className="flex-row">
+            {isEditingBirthday ? (
+              birthdayMutation.isPending ? (
+                <ActivityIndicator
+                  color={Colors[theme].accentBlue}
+                  style={{ padding: 10 }}
+                />
+              ) : (
+                <RoundedButton icon="check" onPress={handleSaveBirthday} />
+              )
+            ) : (
+              <RoundedButton icon="edit" onPress={() => setIsEditingBirthday(true)} />
+            )}
+          </ThemedView>
+        </MutedCard>
+        {birthdayError && (
+          <ThemedText className="text-sm ml-1 mb-2" style={{ color: Colors[theme].danger }}>
+            {birthdayError}
+          </ThemedText>
+        )}
+
       </ScrollView>
     </ThemedView>
   );
