@@ -12,13 +12,18 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
 import { getUserProfile, updateUserProfile } from "@/lib/firebase/user";
+import { getHapticsEnabled, saveHapticsEnabled } from "@/lib/offlineStorage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
+import * as Updates from "expo-updates";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Platform,
   ScrollView,
+  Switch,
   TextInput,
   TouchableOpacity,
   useColorScheme,
@@ -87,6 +92,18 @@ export default function Settings() {
 
   const genderSheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => [], []);
+
+  const [hapticsEnabled, setHapticsEnabled] = useState(true);
+
+  useEffect(() => {
+    getHapticsEnabled().then(setHapticsEnabled);
+  }, []);
+
+  const handleHapticsToggle = async (value: boolean) => {
+    setHapticsEnabled(value);
+    await saveHapticsEnabled(value);
+    await Updates.reloadAsync();
+  };
 
   useEffect(() => {
     if (profile?.name) setName(profile.name);
@@ -304,6 +321,46 @@ export default function Settings() {
               <RoundedButton
                 icon="chevron-down"
                 onPress={() => genderSheetRef.current?.present()}
+              />
+            </MutedCard>
+
+            <ThemedText type="defaultSemiBold" className="mb-2 ml-1">
+              Preferences
+            </ThemedText>
+            <MutedCard className="items-center justify-between mb-6">
+              <ThemedText className="text-base font-medium flex-1">
+                Haptics
+              </ThemedText>
+              <Switch
+                value={hapticsEnabled}
+                onValueChange={handleHapticsToggle}
+                trackColor={{
+                  false: Colors[theme].background,
+                  true: Colors[theme].highlight,
+                }}
+                thumbColor={Colors[theme].background}
+                ios_backgroundColor={Colors[theme].background}
+              />
+            </MutedCard>
+
+            <ThemedText type="defaultSemiBold" className="mb-2 ml-1">
+              Account
+            </ThemedText>
+            <MutedCard
+              className="items-center justify-between mb-6"
+              onPress={() => router.push("/deleteAccount")}
+            >
+              <ThemedText
+                className="text-base font-medium flex-1"
+                lightColor={Colors[theme].danger}
+                darkColor={Colors[theme].danger}
+              >
+                Delete Account
+              </ThemedText>
+              <MaterialIcons
+                name="chevron-right"
+                size={24}
+                color={Colors[theme].danger}
               />
             </MutedCard>
 
