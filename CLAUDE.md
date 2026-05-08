@@ -80,3 +80,16 @@ Organized by domain: `exercise/`, `calendar/`, `cards/`, `display/`, `modals/`, 
 ### Styling
 
 NativeWind (Tailwind) for styling. Use `ThemedView`/`ThemedText` for theme-aware containers and text. Color scheme via `useColorScheme` hook.
+
+**CRITICAL — prefer `className` over `style` at all times.**
+
+- Always use NativeWind `className` for layout, spacing, colors, typography, borders, and shadows.
+- Only use the `style` prop when the value **cannot** be expressed as a Tailwind class — for example: dynamic numeric values computed at runtime (e.g. `paddingTop: topPadding`), `StyleSheet`-based shadow objects, or platform-specific values that have no Tailwind equivalent.
+- Never use `style` to set colors, font sizes, font weights, padding, margin, border radius, or flex properties that have a direct Tailwind class.
+
+**CRITICAL — always use colors from `constants/Colors.ts`.**
+
+- Never hardcode hex values, RGB, or Tailwind color classes (e.g. `text-red-500`, `bg-blue-600`) for app colors.
+- Always read the current theme with `const theme = useColorScheme() ?? "light"` and reference `Colors[theme].<token>` (e.g. `Colors[theme].highlight`, `Colors[theme].danger`).
+- Available tokens: `text`, `background`, `tint`, `icon`, `tabIconDefault`, `tabIconSelected`, `calendarMarker`, `secondary`, `tabBackGround`, `cardBackground`, `cardBorderColor`, `inputBackground`, `input`, `separator`, `mutedText`, `highlight`, `accentBlue`, `success`, `warning`, `danger`, `elevation`, `transparent`.
+- Tailwind color classes are only acceptable for structural grays with no semantic meaning (e.g. `border-gray-200/50`) when no `Colors` token applies.

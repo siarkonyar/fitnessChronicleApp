@@ -54,8 +54,15 @@ export const updateUserProfile = async (
   if (updates.birthday !== undefined) sanitized.birthday = updates.birthday;
   if (updates.gender !== undefined) sanitized.gender = updates.gender;
 
-  await firestore()
-    .collection("users")
-    .doc(userId)
-    .set(sanitized, { merge: true });
+  const promises: Promise<unknown>[] = [
+    firestore().collection("users").doc(userId).set(sanitized, { merge: true }),
+  ];
+
+  if (updates.name !== undefined) {
+    promises.push(
+      auth().currentUser!.updateProfile({ displayName: updates.name || null }),
+    );
+  }
+
+  await Promise.all(promises);
 };
