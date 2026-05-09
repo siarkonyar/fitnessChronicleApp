@@ -28,6 +28,8 @@ export const Colors = {
     mutedText: "#7C8289",
     highlight: "#FF4500",
     accentBlue: "#0D6EFD",
+    accentPurple: "#A855F7",
+    accentTeal: "#14B8A6",
     success: "#22C55E", // Tailwind green-500
     warning: "#FACC15", // Tailwind yellow-400
     danger: "#EF4444", // Tailwind red-500
@@ -55,6 +57,8 @@ export const Colors = {
     mutedText: "#9BA1A6",
     highlight: "#FF4500",
     accentBlue: "#0D6EFD",
+    accentPurple: "#A855F7",
+    accentTeal: "#14B8A6",
     success: "#22C55E",
     warning: "#FACC15",
     danger: "#EF4444",
