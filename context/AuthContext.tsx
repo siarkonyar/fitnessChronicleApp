@@ -15,7 +15,7 @@ interface AuthContextType {
   authLoading: boolean;
   signOut: () => Promise<void>;
   getIdToken: (forceRefresh?: boolean) => Promise<string | null>;
-
+  refreshUser: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
 
@@ -72,12 +72,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    const currentUser = getAuth().currentUser;
+    if (!currentUser) return;
+    await currentUser.reload();
+    setUser(getAuth().currentUser);
+  };
+
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     authLoading,
     signOut,
     getIdToken,
+    refreshUser,
     deleteAccount,
   };
 

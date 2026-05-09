@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { View, useColorScheme } from "react-native";
 
-export default function SettingsStackLayout() {
+export default function ProfileStackLayout() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
   return (
@@ -30,7 +30,7 @@ export default function SettingsStackLayout() {
           darkColor={Colors.dark.cardBackground}
           type="title"
         >
-          Settings
+          Profile
         </ThemedText>
       </View>
 

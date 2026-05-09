@@ -1,45 +1,57 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import StreakDisplay from "@/components/display/StreakDisplay";
-import WeightDisplay from "@/components/display/WeightDisplay";
 import UserLabelList from "@/components/lists/UserLabelList";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
-import { getHapticsEnabled, saveHapticsEnabled } from "@/lib/offlineStorage";
+import { getUserProfile } from "@/lib/firebase/user";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Image,
   RefreshControl,
   ScrollView,
-  Switch,
   TouchableOpacity,
   useColorScheme,
   View,
 } from "react-native";
 
-export default function Settings() {
+const GENDER_LABELS: Record<string, string> = {
+  male: "Male",
+  female: "Female",
+  non_binary: "Non-binary",
+  prefer_not_to_say: "Prefer not to say",
+};
+
+function genderLabel(value: string): string {
+  return GENDER_LABELS[value] ?? value;
+}
+
+function calculateAge(birthday: string): number {
+  const today = new Date();
+  const birth = new Date(birthday);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+export default function Profile() {
   const [refreshing, setRefreshing] = useState(false);
-  const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const theme = useColorScheme() ?? "light";
   const { signOut, user } = useAuth();
 
-  useEffect(() => {
-    getHapticsEnabled().then(setHapticsEnabled);
-  }, []);
-
-  const handleHapticsToggle = async (value: boolean) => {
-    setHapticsEnabled(value);
-    await saveHapticsEnabled(value);
-
-    await Updates.reloadAsync();
-  };
+  const { data: profile } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: getUserProfile,
+  });
 
   const handleSignout = async () => {
     try {
@@ -114,8 +126,18 @@ export default function Settings() {
         </View>
 
         <Card className="mb-4">
+          <TouchableOpacity
+            onPress={() => router.push("/settings")}
+            style={{ position: "absolute", top: 12, right: 12, zIndex: 20 }}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+          >
+            <MaterialIcons
+              name="settings"
+              size={22}
+              color={Colors[theme].icon}
+            />
+          </TouchableOpacity>
           <View className="items-center py-4" style={{ paddingTop: 60 }}>
-            {/* User Info */}
             <ThemedText
               type="defaultSemiBold"
               className="text-lg mb-1 text-center"
@@ -123,69 +145,58 @@ export default function Settings() {
               {user?.displayName || "User"}
             </ThemedText>
             {user?.email && (
-              <ThemedText className="text-sm mb-4 text-center opacity-70">
+              <ThemedText className="text-sm text-center opacity-70"
+                style={{ marginBottom: profile?.birthday || profile?.gender ? 10 : 16 }}
+              >
                 {user.email}
               </ThemedText>
+            )}
+            {(profile?.birthday || profile?.gender) && (
+              <View className="flex-row gap-2 justify-center mb-4">
+                {profile.birthday && (
+                  <View
+                    className="px-3 py-1 rounded-full"
+                    style={{ backgroundColor: Colors[theme].inputBackground }}
+                  >
+                    <ThemedText
+                      className="text-xs"
+                      lightColor={Colors.light.mutedText}
+                      darkColor={Colors.dark.mutedText}
+                    >
+                      {calculateAge(profile.birthday)} yrs
+                    </ThemedText>
+                  </View>
+                )}
+                {profile.gender && (
+                  <View
+                    className="px-3 py-1 rounded-full"
+                    style={{ backgroundColor: Colors[theme].inputBackground }}
+                  >
+                    <ThemedText
+                      className="text-xs"
+                      lightColor={Colors.light.mutedText}
+                      darkColor={Colors.dark.mutedText}
+                    >
+                      {genderLabel(profile.gender)}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
             )}
           </View>
         </Card>
 
         <StreakDisplay />
 
-        <WeightDisplay />
+        {/* <WeightDisplay /> */}
 
         <UserLabelList labelOnPress={() => {}} />
 
-        <View className="mb-4">
-          <Card className="flex-row justify-between">
-            <ThemedText type="defaultSemiBold">Use Haptics</ThemedText>
-            <Switch
-              value={hapticsEnabled}
-              onValueChange={handleHapticsToggle}
-              trackColor={{
-                false: Colors[theme].background,
-                true: Colors[theme].highlight,
-              }}
-              thumbColor={Colors[theme].background}
-              ios_backgroundColor={Colors[theme].background}
-            />
-          </Card>
-        </View>
-
-        <View className="mb-8 mt-12">
-          {/* <ThemedText
-            type="subtitle"
-            className="mb-4"
-            darkColor={Colors[theme].danger}
-            lightColor={Colors[theme].danger}
-          >
-            Danger Zone
-          </ThemedText> */}
+        <View className="mb-8">
           <View className="w-full mb-8">
             <Button type="danger" onPress={handleSignout}>
               Sign Out
             </Button>
-          </View>
-          <View className="w-full">
-            <Card>
-              <TouchableOpacity
-                className="flex-row justify-between"
-                onPress={() => router.push("/deleteAccount")}
-              >
-                <ThemedText
-                  type="defaultSemiBold"
-                  darkColor={Colors[theme].danger}
-                  lightColor={Colors[theme].danger}
-                >
-                  Delete Account
-                </ThemedText>
-                <MaterialIcons
-                  name="chevron-right"
-                  size={24}
-                  color={Colors[theme].danger}
-                />
-              </TouchableOpacity>
-            </Card>
           </View>
         </View>
       </ScrollView>
