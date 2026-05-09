@@ -23,7 +23,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   ScrollView,
   Switch,
   TextInput,
@@ -74,7 +73,6 @@ function genderLabel(value: string): string {
 export default function Settings() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
-  const topPadding = Platform.OS === "android" ? 64 : 2 * insets.top;
   const queryClient = useQueryClient();
   const { refreshUser } = useAuth();
 
@@ -206,7 +204,7 @@ export default function Settings() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
-        <ThemedView className="flex-1" style={{ paddingTop: topPadding }}>
+        <ThemedView className="flex-1">
           <ScrollView
             className="px-4"
             contentContainerStyle={{ paddingBottom: 48, paddingTop: 8 }}

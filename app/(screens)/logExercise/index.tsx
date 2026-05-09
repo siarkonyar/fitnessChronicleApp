@@ -32,16 +32,13 @@ import Animated, {
   FadeInUp,
   LinearTransition,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
 export default function Index() {
   const scrollRef = useRef<ScrollView>(null);
-  const insets = useSafeAreaInsets();
   const theme = useColorScheme() ?? "light";
   const queryClient = useQueryClient();
-  const topPadding = Platform.OS === "android" ? 64 : 2 * insets.top;
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
   const { copyActivity, copySets } = useLocalSearchParams<{
     copyActivity?: string;
@@ -279,7 +276,7 @@ export default function Index() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
-        <ThemedView className="flex-1" style={{ paddingTop: topPadding }}>
+        <ThemedView className="flex-1">
           <ThemedView className="px-4 my-4">
             {titleError ? (
               <>

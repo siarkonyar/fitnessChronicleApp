@@ -60,8 +60,6 @@ function AppSetup() {
 
 const SCREEN_OPTIONS = {
   animation: "none",
-  headerTransparent: true,
-  headerStyle: { backgroundColor: "transparent" },
   contentStyle: { backgroundColor: "transparent" },
 } as const;
 
@@ -70,10 +68,15 @@ const INDEX_OPTIONS = {
   headerLargeTitle: false,
   HeaderTitle: false,
   HeaderBackButton: false,
+  headerTransparent: true,
+  headerStyle: { backgroundColor: "transparent" },
 } as const;
+
 const SIGNIN_OPTIONS = {
   title: "",
   headerLargeTitle: false,
   HeaderTitle: false,
   headerBackButton: false,
+  headerTransparent: true,
+  headerStyle: { backgroundColor: "transparent" },
 } as const;

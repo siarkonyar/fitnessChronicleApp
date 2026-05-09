@@ -11,16 +11,12 @@ import * as Updates from "expo-updates";
 import React, { useState } from "react";
 import {
   Alert,
-  Platform,
   ScrollView,
   useColorScheme,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {
-  const insets = useSafeAreaInsets();
-  const topPadding = Platform.OS === "android" ? 64 : 2 * insets.top;
   const theme = useColorScheme() ?? "light";
   const { deleteAccount, user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -74,7 +70,7 @@ export default function Index() {
   };
 
   return (
-    <ThemedView className="flex-1" style={{ paddingTop: topPadding }}>
+    <ThemedView className="flex-1">
       <ScrollView className="flex-1 px-4 py-6">
         <View className="items-center justify-center mt-8 mb-6">
           <View

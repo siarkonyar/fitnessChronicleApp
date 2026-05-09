@@ -2,7 +2,6 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Slot, useNavigation } from "expo-router";
 import React from "react";
-import { View } from "react-native";
 
 export default function DeleteAccountLayout() {
   const theme = useColorScheme() ?? "light";
@@ -12,10 +11,9 @@ export default function DeleteAccountLayout() {
     navigation.setOptions({
       headerTitle: "Delete Account",
       headerBackTitle: "Back",
+      headerTransparent: false,
+      headerStyle: { backgroundColor: Colors[theme].highlight },
       headerTintColor: Colors[theme].background,
-      headerBackground: () => (
-        <View style={{ flex: 1, backgroundColor: Colors[theme].highlight }} />
-      ),
     });
   }, [theme, navigation]);
 
