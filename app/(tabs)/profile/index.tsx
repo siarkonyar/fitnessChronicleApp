@@ -6,8 +6,10 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
+import { getUserProfile } from "@/lib/firebase/user";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
 import React, { useState } from "react";
@@ -21,10 +23,35 @@ import {
   View,
 } from "react-native";
 
+const GENDER_LABELS: Record<string, string> = {
+  male: "Male",
+  female: "Female",
+  non_binary: "Non-binary",
+  prefer_not_to_say: "Prefer not to say",
+};
+
+function genderLabel(value: string): string {
+  return GENDER_LABELS[value] ?? value;
+}
+
+function calculateAge(birthday: string): number {
+  const today = new Date();
+  const birth = new Date(birthday);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
 export default function Profile() {
   const [refreshing, setRefreshing] = useState(false);
   const theme = useColorScheme() ?? "light";
   const { signOut, user } = useAuth();
+
+  const { data: profile } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: getUserProfile,
+  });
 
   const handleSignout = async () => {
     try {
@@ -118,9 +145,43 @@ export default function Profile() {
               {user?.displayName || "User"}
             </ThemedText>
             {user?.email && (
-              <ThemedText className="text-sm mb-4 text-center opacity-70">
+              <ThemedText className="text-sm text-center opacity-70"
+                style={{ marginBottom: profile?.birthday || profile?.gender ? 10 : 16 }}
+              >
                 {user.email}
               </ThemedText>
+            )}
+            {(profile?.birthday || profile?.gender) && (
+              <View className="flex-row gap-2 justify-center mb-4">
+                {profile.birthday && (
+                  <View
+                    className="px-3 py-1 rounded-full"
+                    style={{ backgroundColor: Colors[theme].inputBackground }}
+                  >
+                    <ThemedText
+                      className="text-xs"
+                      lightColor={Colors.light.mutedText}
+                      darkColor={Colors.dark.mutedText}
+                    >
+                      {calculateAge(profile.birthday)} yrs
+                    </ThemedText>
+                  </View>
+                )}
+                {profile.gender && (
+                  <View
+                    className="px-3 py-1 rounded-full"
+                    style={{ backgroundColor: Colors[theme].inputBackground }}
+                  >
+                    <ThemedText
+                      className="text-xs"
+                      lightColor={Colors.light.mutedText}
+                      darkColor={Colors.dark.mutedText}
+                    >
+                      {genderLabel(profile.gender)}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
             )}
           </View>
         </Card>
