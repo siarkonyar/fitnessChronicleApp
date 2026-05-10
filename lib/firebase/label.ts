@@ -1,4 +1,9 @@
-import { DaySchema, LabelSchema, LabelWithIdSchema } from "@/types/types";
+import {
+  DaySchema,
+  ExerciseLogWithIdSchema,
+  LabelSchema,
+  LabelWithIdSchema,
+} from "@/types/types";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
@@ -120,7 +125,7 @@ export const deleteLabel = async (id: string) => {
   const logDoc = await logRef.get();
 
   if (!logDoc.exists) {
-    throw new Error("Fitness log not found.");
+    throw new Error("Label not found.");
   }
 
   const dates: string[] = logDoc.data()?.dates || [];
@@ -352,4 +357,38 @@ export const deleteAssignment = async (date: string) => {
     date: date,
     message: "Label assignment deleted successfully!",
   };
+};
+
+export const getPrevExercisesFromLabel = async (label: Label) => {
+  const userId = GetCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const dates = label.dates ?? [];
+  if (dates.length === 0) {
+    return null;
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const mostRecentDate = [...dates]
+    .sort((a, b) => b.localeCompare(a))
+    .find((d) => d < today);
+
+  if (!mostRecentDate) {
+    return null;
+  }
+
+  const snapshot = await firestore()
+    .collection("users")
+    .doc(userId)
+    .collection("fitnessLogs")
+    .where("date", "==", mostRecentDate)
+    .get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  return snapshot.docs.map((doc) =>
+    ExerciseLogWithIdSchema.parse({ id: doc.id, ...doc.data() }),
+  );
 };

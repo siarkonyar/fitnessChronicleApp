@@ -1,9 +1,10 @@
+import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { deleteLabel, editLabel } from "@/lib/firebase/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { Alert, View } from "react-native";
+import { Alert, useColorScheme, View } from "react-native";
 import { z } from "zod";
 import { LabelWithIdSchema } from "../../types/types";
 import { RoundedButton } from "../RoundButton";
@@ -27,6 +28,7 @@ export default function LabelCard({
   onPress,
   className,
 }: LabelCardProps) {
+  const theme = useColorScheme() ?? "light";
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editedLabel, setEditedLabel] = useState(label.label);
@@ -139,7 +141,14 @@ export default function LabelCard({
       <ThemedView
         className={`flex-row items-center ${editable ? "flex-1" : ""} min-w-0 mr-2`}
       >
-        <View className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full p-2 mr-4 shadow-sm justify-center items-center">
+        <View
+          className="w-14 h-14 rounded-2xl mr-4 justify-center items-center"
+          style={{
+            backgroundColor: `${Colors[theme].highlight}18`,
+            borderWidth: 1,
+            borderColor: `${Colors[theme].highlight}30`,
+          }}
+        >
           {isEditing ? (
             <ThemedTextInput
               value={editedLabel}
@@ -162,16 +171,21 @@ export default function LabelCard({
               autoCapitalize="characters"
               style={{
                 fontWeight: "bold",
-                fontSize: 18,
+                fontSize: 22,
                 textAlign: "center",
                 textTransform: "uppercase",
+                color: Colors[theme].highlight,
               }}
               className="text-center"
             />
           ) : (
             <ThemedText
-              className="leading-7"
-              style={{ fontWeight: "bold", fontSize: 18 }}
+              style={{
+                fontSize: 24,
+                lineHeight: 28,
+                includeFontPadding: false,
+                textAlignVertical: "center",
+              }}
             >
               {label.label}
             </ThemedText>

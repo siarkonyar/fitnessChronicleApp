@@ -200,7 +200,9 @@ export default function GetExerciseCard({
           >
             Tap to copy
           </ThemedText>
-        ) : null}
+        ) : (
+          <ThemedText></ThemedText>
+        )}
       </Card>
     </TouchableOpacity>
   );

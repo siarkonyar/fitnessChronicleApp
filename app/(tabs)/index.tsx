@@ -1,6 +1,6 @@
 import { Button } from "@/components/Button";
-import DateLabelAssignment from "@/components/calendar/DateLabelAssignment";
 import Card from "@/components/Card";
+import TodayLabelCard from "@/components/cards/TodayLabelCard";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
@@ -253,16 +253,7 @@ export default function HomeScreen() {
 
           <StreakDisplay />
 
-          <Card>
-            <ThemedText type="label">Label</ThemedText>
-            <ThemedText type="subtitle" className="mb-4">
-              Today&apos;s label
-            </ThemedText>
-            <DateLabelAssignment
-              selectedDate={today}
-              buttonText="Assign Today's Label"
-            />
-          </Card>
+          <TodayLabelCard />
         </View>
       </ScrollView>
     </SafeAreaView>
