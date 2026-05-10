@@ -575,7 +575,7 @@ export default function Index() {
                     layout={LinearTransition}
                     className="items-center justify-between mt-2 mb-16"
                   >
-                    <ThemedText type="title" className="font-bold mb-8">
+                    <ThemedText type="subtitle" className="font-bold mb-8">
                       Previous sessions
                     </ThemedText>
                     {isLoading ? (
