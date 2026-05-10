@@ -9,12 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
 import React, { useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  useColorScheme,
-  View,
-} from "react-native";
+import { Alert, ScrollView, useColorScheme, View } from "react-native";
 
 export default function Index() {
   const theme = useColorScheme() ?? "light";
@@ -54,18 +49,18 @@ export default function Index() {
                 Alert.alert(
                   "Re-authentication Required",
                   "For security reasons, please sign out and sign in again before deleting your account.",
-                  [{ text: "OK" }]
+                  [{ text: "OK" }],
                 );
               } else {
                 Alert.alert(
                   "Error",
-                  "Failed to delete account. Please try again or contact support."
+                  "Failed to delete account. Please try again or contact support.",
                 );
               }
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -88,10 +83,7 @@ export default function Index() {
             />
           </View>
 
-          <ThemedText
-            type="title"
-            className="text-2xl font-bold mb-2 text-center"
-          >
+          <ThemedText type="title" className="font-bold mb-2 text-center">
             Delete Account
           </ThemedText>
           <ThemedText

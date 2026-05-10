@@ -113,7 +113,7 @@ export default function ExerciseLogByDate({
   return (
     <>
       <ThemedView className="flex-1 justify-center items-center my-8">
-        <ThemedText type="title" className="mb-8 text-center">
+        <ThemedText type="subtitle" className="mb-8 text-center">
           {formatDateAsString(selectedDate)}
         </ThemedText>
 

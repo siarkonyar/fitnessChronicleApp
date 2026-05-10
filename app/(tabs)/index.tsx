@@ -164,12 +164,12 @@ export default function HomeScreen() {
         >
           <View className="flex-1 pr-4">
             <View className="flex-row items-center">
-              <MyIcon size={32} color={Colors[theme].highlight} />
+              <MyIcon size={48} color={Colors[theme].highlight} />
               <ThemedText
                 lightColor={Colors[theme].highlight}
                 darkColor={Colors[theme].highlight}
                 type="title"
-                className="ml-1"
+                className="ml-1 pt-1"
               >
                 ercule
               </ThemedText>
