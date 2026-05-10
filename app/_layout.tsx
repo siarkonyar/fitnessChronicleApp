@@ -20,7 +20,13 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     BebasNeue: require("../assets/fonts/BebasNeue-Regular.ttf"),
-    Inter: require("../assets/fonts/Inter/static/Inter_18pt-Medium.ttf")
+    Inter: require("../assets/fonts/Inter/static/Inter_18pt-Medium.ttf"),
+    "Lora-Regular": require("../assets/fonts/Lora/static/Lora-Regular.ttf"),
+    "Lora-Medium": require("../assets/fonts/Lora/static/Lora-Medium.ttf"),
+    "Lora-SemiBold": require("../assets/fonts/Lora/static/Lora-SemiBold.ttf"),
+    "Lora-Bold": require("../assets/fonts/Lora/static/Lora-Bold.ttf"),
+    "Lora-Italic": require("../assets/fonts/Lora/static/Lora-Italic.ttf"),
+    "Lora-BoldItalic": require("../assets/fonts/Lora/static/Lora-BoldItalic.ttf"),
   });
 
   if (!loaded) {

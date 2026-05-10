@@ -8,6 +8,12 @@ module.exports = {
       fontFamily: {
         sans: ["Inter"],
         bebas: ["BebasNeue"],
+        lora: ["Lora-Regular"],
+        "lora-medium": ["Lora-Medium"],
+        "lora-semibold": ["Lora-SemiBold"],
+        "lora-bold": ["Lora-Bold"],
+        "lora-italic": ["Lora-Italic"],
+        "lora-bold-italic": ["Lora-BoldItalic"],
       },
     },
   },
