@@ -55,19 +55,21 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   title: {
-    fontSize: 36,
     fontFamily: "BebasNeue",
+    fontSize: 36,
     includeFontPadding: false,
   },
   subtitle: {
+    fontFamily: "Lora-Bold",
     fontSize: 20,
-    fontWeight: "bold",
   },
   link: {
+    fontSize: 16,
     lineHeight: 30,
     color: "#0a7ea4",
   },
   label: {
+    fontFamily: "Lora-Medium",
     textTransform: "uppercase",
     letterSpacing: 3.5,
     opacity: 0.6,
