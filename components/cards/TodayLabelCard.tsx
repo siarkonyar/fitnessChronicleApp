@@ -1,6 +1,7 @@
 import DateLabelAssignment from "@/components/calendar/DateLabelAssignment";
 import Card from "@/components/Card";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
+import TextPill from "@/components/TextPill";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
@@ -9,9 +10,8 @@ import {
   getLabelAsignmentByDate,
   getPrevExercisesFromLabel,
 } from "@/lib/firebase/label";
-import { useQuery } from "@tanstack/react-query";
-import TextPill from "@/components/TextPill";
 import { Feather } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 import { ActivityIndicator, useColorScheme, View } from "react-native";
 
@@ -64,14 +64,8 @@ export default function TodayLabelCard() {
 
           <View className="flex-row items-center justify-between mb-3">
             <View className="flex-row items-center gap-2">
-              <Feather
-                name="clock"
-                size={13}
-                color={Colors[theme].mutedText}
-              />
-              <ThemedText className="text-xs uppercase tracking-[0.35em] opacity-60">
-                Last Session
-              </ThemedText>
+              <Feather name="clock" size={13} color={Colors[theme].mutedText} />
+              <ThemedText type="label">Last Session</ThemedText>
             </View>
             {prevExercises && prevExercises.length > 0 && (
               <TextPill

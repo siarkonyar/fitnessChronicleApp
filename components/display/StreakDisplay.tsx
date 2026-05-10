@@ -48,9 +48,7 @@ export default function StreakDisplay() {
     <Card className="gap-4">
       <ThemedView className="flex-row items-center justify-between">
         <ThemedView>
-          <ThemedText className="text-xs uppercase tracking-[0.35em] opacity-60">
-            STREAK
-          </ThemedText>
+          <ThemedText type="label">STREAK</ThemedText>
           <ThemedText type="subtitle" className="mt-1">
             Keep it going
           </ThemedText>

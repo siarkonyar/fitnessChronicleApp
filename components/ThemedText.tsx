@@ -2,16 +2,19 @@ import { StyleSheet, Text, type TextProps } from "react-native";
 
 import { useThemeColor } from "@/hooks/useThemeColor";
 
+export type ThemedTextType =
+  | "default"
+  | "title"
+  | "defaultSemiBold"
+  | "subtitle"
+  | "link"
+  | "label";
+
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?:
-    | "default"
-    | "title"
-    | "defaultSemiBold"
-    | "subtitle"
-    | "link"
-    | "label";
+  type?: ThemedTextType;
+  className?: string;
 };
 
 export function ThemedText({
@@ -19,6 +22,7 @@ export function ThemedText({
   lightColor,
   darkColor,
   type = "default",
+  className = "",
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
@@ -35,7 +39,7 @@ export function ThemedText({
         type === "label" ? styles.label : undefined,
         style,
       ]}
-      className="py-1"
+      className={`${type !== "title" ? "py-1" : ""} ${className}`.trim()}
       {...rest}
     />
   );
@@ -48,13 +52,12 @@ const styles = StyleSheet.create({
   },
   defaultSemiBold: {
     fontSize: 16,
-    lineHeight: 24,
     fontWeight: "600",
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    lineHeight: 32,
+    fontSize: 36,
+    fontFamily: "BebasNeue",
+    includeFontPadding: false,
   },
   subtitle: {
     fontSize: 20,
@@ -62,7 +65,6 @@ const styles = StyleSheet.create({
   },
   link: {
     lineHeight: 30,
-    fontSize: 16,
     color: "#0a7ea4",
   },
   label: {
