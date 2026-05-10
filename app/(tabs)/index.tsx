@@ -251,9 +251,9 @@ export default function HomeScreen() {
             </View>
           </Card>
 
-          <StreakDisplay />
-
           <TodayLabelCard />
+
+          <StreakDisplay />
         </View>
       </ScrollView>
     </SafeAreaView>
