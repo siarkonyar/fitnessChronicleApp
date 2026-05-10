@@ -10,6 +10,8 @@ import {
   getPrevExercisesFromLabel,
 } from "@/lib/firebase/label";
 import { useQuery } from "@tanstack/react-query";
+import TextPill from "@/components/TextPill";
+import { Feather } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { ActivityIndicator, useColorScheme, View } from "react-native";
 
@@ -60,21 +62,24 @@ export default function TodayLabelCard() {
             }}
           />
 
-          <View className="flex-row items-baseline justify-between mb-3">
-            <ThemedText className="text-xs uppercase tracking-[0.35em] opacity-60">
-              Last Session
-            </ThemedText>
+          <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center gap-2">
+              <Feather
+                name="clock"
+                size={13}
+                color={Colors[theme].mutedText}
+              />
+              <ThemedText className="text-xs uppercase tracking-[0.35em] opacity-60">
+                Last Session
+              </ThemedText>
+            </View>
             {prevExercises && prevExercises.length > 0 && (
-              <ThemedText
-                className="text-xs opacity-50"
-                lightColor={Colors.light.mutedText}
-                darkColor={Colors.dark.mutedText}
-              >
-                {new Intl.DateTimeFormat("en-US", {
+              <TextPill
+                text={new Intl.DateTimeFormat("en-US", {
                   month: "short",
                   day: "numeric",
                 }).format(new Date(prevExercises[0].date + "T00:00:00"))}
-              </ThemedText>
+              />
             )}
           </View>
 
@@ -107,7 +112,7 @@ export default function TodayLabelCard() {
                 lightColor={Colors.light.mutedText}
                 darkColor={Colors.dark.mutedText}
               >
-                Log exercises and they'll show up here next time.
+                Log exercises and they&apos;ll show up here next time.
               </ThemedText>
             </View>
           )}
