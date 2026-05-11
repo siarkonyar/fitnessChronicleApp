@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 export type RoundedButtonProps = Omit<PressableProps, "children"> & {
-  type?: "default" | "danger" | "success";
+  type?: "default" | "blue" | "danger" | "success";
   textStyle?: TextStyle;
   icon: keyof typeof Feather.glyphMap;
   onPress?: (id: string) => void;
@@ -29,12 +29,13 @@ export function RoundedButton({
       onPress={onPress}
       style={[
         styles.baseButton,
-        type === "default" && styles.primaryButton,
+        type === "default" && styles.defaultButton,
+        type === "blue" && styles.blueButton,
         type === "danger" && styles.dangerButton,
         type === "success" && styles.successButton,
         style as ViewStyle,
       ]}
-      className="bg-blue-600/70 p-2 rounded-full ml-1 active:opacity-70"
+      className="p-2 rounded-full ml-1 active:opacity-70"
       {...rest}
     >
       <Feather
@@ -42,7 +43,8 @@ export function RoundedButton({
         size={20}
         style={[
           styles.baseText,
-          type === "default" && styles.primaryText,
+          type === "default" && styles.defaultText,
+          type === "blue" && styles.blueText,
           type === "danger" && styles.dangerText,
           type === "success" && styles.successText,
           textStyle,
@@ -57,32 +59,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  pressed: {
-    opacity: 0.7,
-  },
   baseText: {
-    // default text color fallback
     color: "#000",
   },
-  primaryButton: {
-    backgroundColor: `${Colors.light.accentBlue}40`,
+  defaultButton: {
+    backgroundColor: Colors.light.highlight,
   },
-  primaryText: {
-    color: Colors.light.accentBlue, // white text
+  defaultText: {
+    color: "#FFFFFF",
     fontWeight: "600",
   },
-  successText: {
-    color: Colors.light.success, // white text
+  blueButton: {
+    backgroundColor: `${Colors.light.accentBlue}40`,
+  },
+  blueText: {
+    color: Colors.light.accentBlue,
     fontWeight: "600",
   },
   successButton: {
-    backgroundColor: `${Colors.light.success}40`, // light red background
+    backgroundColor: `${Colors.light.success}40`,
+  },
+  successText: {
+    color: Colors.light.success,
+    fontWeight: "600",
   },
   dangerButton: {
-    backgroundColor: `${Colors.light.danger}40`, // light red background
+    backgroundColor: `${Colors.light.danger}40`,
   },
   dangerText: {
-    color: Colors.light.danger, // solid red text
+    color: Colors.light.danger,
     fontWeight: "600",
   },
 });

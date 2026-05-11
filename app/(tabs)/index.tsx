@@ -1,5 +1,6 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
+import { RoundedButton } from "@/components/RoundButton";
 import TodayLabelCard from "@/components/cards/TodayLabelCard";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
@@ -207,7 +208,15 @@ export default function HomeScreen() {
               className="absolute -left-14 -bottom-14 h-32 w-32 rounded-full opacity-10"
               style={{ backgroundColor: Colors[theme].secondary }}
             />
-            <ThemedText type="label">Training dashboard</ThemedText>
+            <View className="flex-row items-center justify-between">
+              <ThemedText type="label">Training dashboard</ThemedText>
+              {logs && logs.length > 0 && (
+                <RoundedButton
+                  icon="upload"
+                  onPress={() => setShareDayVisible(true)}
+                />
+              )}
+            </View>
             <ThemedText type="subtitle" className="mt-2 mb-8">
               Log the work. Keep the rhythm.
             </ThemedText>
@@ -250,16 +259,6 @@ export default function HomeScreen() {
                   Log Exercise
                 </Button>
               </View>
-              {logs && logs.length > 0 && (
-                <View className="flex-1">
-                  <Button
-                    type="default"
-                    onPress={() => setShareDayVisible(true)}
-                  >
-                    Share Day
-                  </Button>
-                </View>
-              )}
             </View>
           </Card>
 

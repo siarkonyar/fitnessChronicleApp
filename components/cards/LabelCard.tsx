@@ -210,7 +210,7 @@ export default function LabelCard({
         <ThemedView className="flex-row">
           {isEditing ? (
             <>
-              <RoundedButton icon="check" onPress={handleEditLabel} />
+              <RoundedButton icon="check" type="blue" onPress={handleEditLabel} />
               <RoundedButton
                 type="danger"
                 icon="delete"
@@ -218,7 +218,7 @@ export default function LabelCard({
               />
             </>
           ) : (
-            <RoundedButton icon="edit" onPress={handleEditPress} />
+            <RoundedButton icon="edit" type="blue" onPress={handleEditPress} />
           )}
         </ThemedView>
       ) : (
