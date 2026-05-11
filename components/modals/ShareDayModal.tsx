@@ -1,7 +1,10 @@
 import ShareExerciseCard from "@/components/exercise/ShareExerciseCard";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
+import { getLabelAsignmentByDate } from "@/lib/firebase/label";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import React, { useRef, useState } from "react";
 import {
   Modal,
@@ -35,6 +38,11 @@ export default function ShareDayModal({
   const palette = Colors[theme];
   const cardRef = useRef<View>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const today = new Date().toLocaleDateString("en-CA");
+  const { data: labelAssignment } = useQuery({
+    queryFn: () => getLabelAsignmentByDate(today),
+    queryKey: queryKeys.labelAssignments.byDate(today),
+  });
 
   const totalSets = logs.reduce(
     (acc, log) => acc + log.sets.filter((s) => s.setType === "normal").length,
@@ -124,14 +132,38 @@ export default function ShareDayModal({
                   style={{ backgroundColor: "rgba(255,255,255,0.07)" }}
                 />
 
-                <View className="flex-row items-center gap-1 mb-5">
+                <View className="flex-row items-center gap-1 mb-4">
                   <LogoIcon size={28} color="rgba(255,255,255,0.9)" />
                   <Text className="text-lg font-bold" style={{ color: "rgba(255,255,255,0.9)" }}>
                     ercule
                   </Text>
                 </View>
 
-                <View className="flex-row gap-6">
+                {labelAssignment ? (
+                  <>
+                    <View
+                      className="w-full mb-4"
+                      style={{ height: 1, backgroundColor: "rgba(255,255,255,0.15)" }}
+                    />
+                    <Text className="text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                      Today's session
+                    </Text>
+                    <View className="flex-row items-baseline gap-2 flex-wrap mb-4">
+                      <Text className="text-2xl font-bold" style={{ color: "#FFFFFF" }}>
+                        {labelAssignment.label}
+                      </Text>
+                      <Text className="text-base font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
+                        {labelAssignment.description}
+                      </Text>
+                    </View>
+                    <View
+                      className="w-full mb-4"
+                      style={{ height: 1, backgroundColor: "rgba(255,255,255,0.15)" }}
+                    />
+                  </>
+                ) : null}
+
+                <View className="flex-row gap-5">
                   <View>
                     <Text className="text-2xl font-bold" style={{ color: "#FFFFFF" }}>
                       {logs.length}
