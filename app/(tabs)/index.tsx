@@ -4,6 +4,7 @@ import TodayLabelCard from "@/components/cards/TodayLabelCard";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
+import ShareDayModal from "@/components/modals/ShareDayModal";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
@@ -40,6 +41,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const [refreshing, setRefreshing] = useState(false);
+  const [shareDayVisible, setShareDayVisible] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const hasAttemptedSync = useRef(false);
   const lastSyncAttempt = useRef<number>(0);
@@ -248,6 +250,16 @@ export default function HomeScreen() {
                   Log Exercise
                 </Button>
               </View>
+              {logs && logs.length > 0 && (
+                <View className="flex-1">
+                  <Button
+                    type="default"
+                    onPress={() => setShareDayVisible(true)}
+                  >
+                    Share Day
+                  </Button>
+                </View>
+              )}
             </View>
           </Card>
 
@@ -256,6 +268,14 @@ export default function HomeScreen() {
           <StreakDisplay />
         </View>
       </ScrollView>
+      {logs && logs.length > 0 && (
+        <ShareDayModal
+          visible={shareDayVisible}
+          onClose={() => setShareDayVisible(false)}
+          logs={logs}
+          date={readableDate}
+        />
+      )}
     </SafeAreaView>
   );
 }
