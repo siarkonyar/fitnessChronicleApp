@@ -52,8 +52,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   title: {
+    fontFamily: "Inter-Bold",
     fontSize: 24,
-    fontWeight: "bold",
     lineHeight: 32,
   },
   subtitle: {
@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
     color: "#0a7ea4",
   },
   label: {
+    fontFamily: "Inter",
     textTransform: "uppercase",
     letterSpacing: 3.5,
     opacity: 0.6,
