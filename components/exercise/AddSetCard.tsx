@@ -279,7 +279,7 @@ export const AddSetCard: React.FC<Props> = ({
               </ThemedView>
             </ThemedView>
             <ThemedView className="flex-col items-center gap-2">
-              <RoundedButton icon="copy" onPress={() => onCopy(id)} />
+              <RoundedButton icon="copy" type="blue" onPress={() => onCopy(id)} />
               <RoundedButton
                 type="danger"
                 icon="x"

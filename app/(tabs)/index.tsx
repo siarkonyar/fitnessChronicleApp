@@ -4,6 +4,8 @@ import TodayLabelCard from "@/components/cards/TodayLabelCard";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
+import ShareDayModal from "@/components/modals/ShareDayModal";
+import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
@@ -40,6 +42,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const [refreshing, setRefreshing] = useState(false);
+  const [shareDayVisible, setShareDayVisible] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const hasAttemptedSync = useRef(false);
   const lastSyncAttempt = useRef<number>(0);
@@ -205,7 +208,15 @@ export default function HomeScreen() {
               className="absolute -left-14 -bottom-14 h-32 w-32 rounded-full opacity-10"
               style={{ backgroundColor: Colors[theme].secondary }}
             />
-            <ThemedText type="label">Training dashboard</ThemedText>
+            <View className="flex-row items-center justify-between">
+              <ThemedText type="label">Training dashboard</ThemedText>
+              {logs && logs.length > 0 && (
+                <RoundedButton
+                  icon="upload"
+                  onPress={() => setShareDayVisible(true)}
+                />
+              )}
+            </View>
             <ThemedText type="subtitle" className="mt-2 mb-8">
               Log the work. Keep the rhythm.
             </ThemedText>
@@ -256,6 +267,14 @@ export default function HomeScreen() {
           <StreakDisplay />
         </View>
       </ScrollView>
+      {logs && logs.length > 0 && (
+        <ShareDayModal
+          visible={shareDayVisible}
+          onClose={() => setShareDayVisible(false)}
+          logs={logs}
+          date={today}
+        />
+      )}
     </SafeAreaView>
   );
 }
