@@ -256,7 +256,7 @@ export default function Settings() {
                     >
                       {name || "Not set"}
                     </ThemedText>
-                    <RoundedButton icon="edit" onPress={() => setIsEditingName(true)} />
+                    <RoundedButton icon="edit" type="blue" onPress={() => setIsEditingName(true)} />
                   </>
                 )}
               </View>
@@ -357,6 +357,7 @@ export default function Settings() {
                     </ThemedText>
                     <RoundedButton
                       icon="edit"
+                      type="blue"
                       onPress={() => setIsEditingBirthday(true)}
                     />
                   </>

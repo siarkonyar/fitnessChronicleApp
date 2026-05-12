@@ -84,8 +84,9 @@ NativeWind (Tailwind) for styling. Use `ThemedView`/`ThemedText` for theme-aware
 **CRITICAL — prefer `className` over `style` at all times.**
 
 - Always use NativeWind `className` for layout, spacing, colors, typography, borders, and shadows.
-- Only use the `style` prop when the value **cannot** be expressed as a Tailwind class — for example: dynamic numeric values computed at runtime (e.g. `paddingTop: topPadding`), `StyleSheet`-based shadow objects, or platform-specific values that have no Tailwind equivalent.
+- Only use the `style` prop when the value **cannot** be expressed as a Tailwind class — for example: dynamic numeric values computed at runtime (e.g. `paddingTop: topPadding`), shadow objects requiring JS values, or platform-specific values with no Tailwind equivalent.
 - Never use `style` to set colors, font sizes, font weights, padding, margin, border radius, or flex properties that have a direct Tailwind class.
+- Only reach for `StyleSheet.create()` when there is a concrete reason it cannot be done with `className` or an inline `style`. Do not use it as a default pattern for new components.
 
 **CRITICAL — always use colors from `constants/Colors.ts`.**
 
