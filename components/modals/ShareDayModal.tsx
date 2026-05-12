@@ -38,11 +38,19 @@ export default function ShareDayModal({
   const palette = Colors[theme];
   const cardRef = useRef<View>(null);
   const [isSharing, setIsSharing] = useState(false);
-  const today = new Date().toLocaleDateString("en-CA");
   const { data: labelAssignment } = useQuery({
-    queryFn: () => getLabelAsignmentByDate(today),
-    queryKey: queryKeys.labelAssignments.byDate(today),
+    queryFn: () => getLabelAsignmentByDate(date),
+    queryKey: queryKeys.labelAssignments.byDate(date),
   });
+
+  const formattedDate = new Date(date + "T00:00:00").toLocaleDateString(
+    "en-US",
+    {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    },
+  );
 
   const totalSets = logs.reduce(
     (acc, log) => acc + log.sets.filter((s) => s.setType === "normal").length,
@@ -89,11 +97,11 @@ export default function ShareDayModal({
           {/* Modal header */}
           <View className="flex-row items-center justify-between mb-5">
             <View>
-              <Text className="text-xl font-bold" style={{ color: palette.text }}>
+              <Text
+                className="text-xl font-bold"
+                style={{ color: palette.text }}
+              >
                 Share your day
-              </Text>
-              <Text className="text-sm" style={{ color: palette.mutedText }}>
-                {date}
               </Text>
             </View>
             <TouchableOpacity
@@ -118,7 +126,7 @@ export default function ShareDayModal({
             >
               {/* Hero header */}
               <View
-                className="px-5 pt-5 pb-6 overflow-hidden"
+                className="px-5 pt-4 overflow-hidden"
                 style={{ backgroundColor: palette.highlight }}
               >
                 <View
@@ -132,69 +140,91 @@ export default function ShareDayModal({
                   style={{ backgroundColor: "rgba(255,255,255,0.07)" }}
                 />
 
-                <View className="flex-row items-center gap-1 mb-4">
-                  <LogoIcon size={28} color="rgba(255,255,255,0.9)" />
-                  <Text className="text-lg font-bold" style={{ color: "rgba(255,255,255,0.9)" }}>
-                    ercule
-                  </Text>
+                <View className="flex-row items-center justify-between mb-4">
+                  <View>
+                    <View className="flex-row items-center gap-1 mb-0.5">
+                      <LogoIcon size={28} color="rgba(255,255,255,0.9)" />
+                      <Text
+                        className="text-lg font-bold"
+                        style={{ color: "rgba(255,255,255,0.9)" }}
+                      >
+                        ercule
+                      </Text>
+                    </View>
+                    <Text
+                      className="text-xs font-semibold tracking-widest uppercase"
+                      style={{ color: "rgba(255,255,255,0.45)" }}
+                    >
+                      {formattedDate}
+                    </Text>
+                  </View>
+                  <View className="flex-row gap-4 items-center">
+                    <View className="items-end">
+                      <Text
+                        className="text-xl font-bold"
+                        style={{ color: "#FFFFFF" }}
+                      >
+                        {logs.length}
+                      </Text>
+                      <Text
+                        className="text-xs font-semibold tracking-widest uppercase"
+                        style={{ color: "rgba(255,255,255,0.55)" }}
+                      >
+                        {logs.length === 1 ? "exercise" : "exercises"}
+                      </Text>
+                    </View>
+                    <View
+                      className="w-px self-stretch"
+                      style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+                    />
+                    <View className="items-end">
+                      <Text
+                        className="text-xl font-bold"
+                        style={{ color: "#FFFFFF" }}
+                      >
+                        {totalSets}
+                      </Text>
+                      <Text
+                        className="text-xs font-semibold tracking-widest uppercase"
+                        style={{ color: "rgba(255,255,255,0.55)" }}
+                      >
+                        {totalSets === 1 ? "set" : "sets"}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
 
                 {labelAssignment ? (
                   <>
                     <View
                       className="w-full mb-4"
-                      style={{ height: 1, backgroundColor: "rgba(255,255,255,0.15)" }}
+                      style={{
+                        height: 1,
+                        backgroundColor: "rgba(255,255,255,0.15)",
+                      }}
                     />
-                    <Text className="text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
-                      Today's session
-                    </Text>
-                    <View className="flex-row items-baseline gap-2 flex-wrap mb-4">
-                      <Text className="text-2xl font-bold" style={{ color: "#FFFFFF" }}>
+                    <View className="flex-row items-center gap-2 mb-4">
+                      <Text
+                        className="text-2xl font-bold"
+                        style={{ color: "#FFFFFF" }}
+                      >
                         {labelAssignment.label}
                       </Text>
-                      <Text className="text-base font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
+                      <Text
+                        className="text-base"
+                        style={{ color: "rgba(255,255,255,0.35)" }}
+                      >
+                        ·
+                      </Text>
+                      <Text
+                        className="text-base font-semibold flex-shrink"
+                        style={{ color: "rgba(255,255,255,0.75)" }}
+                      >
                         {labelAssignment.description}
                       </Text>
                     </View>
-                    <View
-                      className="w-full mb-4"
-                      style={{ height: 1, backgroundColor: "rgba(255,255,255,0.15)" }}
-                    />
                   </>
                 ) : null}
-
-                <View className="flex-row gap-5">
-                  <View>
-                    <Text className="text-2xl font-bold" style={{ color: "#FFFFFF" }}>
-                      {logs.length}
-                    </Text>
-                    <Text
-                      className="text-xs font-semibold tracking-widest uppercase mt-0.5"
-                      style={{ color: "rgba(255,255,255,0.65)" }}
-                    >
-                      {logs.length === 1 ? "exercise" : "exercises"}
-                    </Text>
-                  </View>
-                  <View
-                    className="w-px self-stretch"
-                    style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
-                  />
-                  <View>
-                    <Text className="text-2xl font-bold" style={{ color: "#FFFFFF" }}>
-                      {totalSets}
-                    </Text>
-                    <Text
-                      className="text-xs font-semibold tracking-widest uppercase mt-0.5"
-                      style={{ color: "rgba(255,255,255,0.65)" }}
-                    >
-                      {totalSets === 1 ? "set" : "sets"}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text className="text-xs mt-4" style={{ color: "rgba(255,255,255,0.55)" }}>
-                  {date}
-                </Text>
               </View>
 
               {/* Exercise list */}
@@ -207,10 +237,16 @@ export default function ShareDayModal({
               {/* Footer */}
               <View
                 className="flex-row items-center justify-center gap-1.5 py-3"
-                style={{ borderTopWidth: 1, borderTopColor: palette.cardBorderColor }}
+                style={{
+                  borderTopWidth: 1,
+                  borderTopColor: palette.cardBorderColor,
+                }}
               >
                 <LogoIcon size={13} color={palette.mutedText} />
-                <Text className="text-xs tracking-widest" style={{ color: palette.mutedText }}>
+                <Text
+                  className="text-xs tracking-widest"
+                  style={{ color: palette.mutedText }}
+                >
                   Logged with Hercule
                 </Text>
               </View>
@@ -228,7 +264,10 @@ export default function ShareDayModal({
             }}
           >
             <Feather name="upload" size={18} color="#FFFFFF" />
-            <Text className="text-base font-semibold" style={{ color: "#FFFFFF" }}>
+            <Text
+              className="text-base font-semibold"
+              style={{ color: "#FFFFFF" }}
+            >
               {isSharing ? "Sharing..." : "Share"}
             </Text>
           </TouchableOpacity>

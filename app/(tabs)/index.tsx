@@ -1,11 +1,11 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
-import { RoundedButton } from "@/components/RoundButton";
 import TodayLabelCard from "@/components/cards/TodayLabelCard";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
 import ShareDayModal from "@/components/modals/ShareDayModal";
+import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
@@ -272,7 +272,7 @@ export default function HomeScreen() {
           visible={shareDayVisible}
           onClose={() => setShareDayVisible(false)}
           logs={logs}
-          date={readableDate}
+          date={today}
         />
       )}
     </SafeAreaView>
