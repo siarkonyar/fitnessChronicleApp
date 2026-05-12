@@ -1,6 +1,8 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
+import ShareDayModal from "@/components/modals/ShareDayModal";
+import { RoundedButton } from "@/components/RoundButton";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
@@ -8,8 +10,8 @@ import { formatDateAsString, getTodayString } from "@/lib/dateUtils";
 import { getExerciseLogByDate } from "@/lib/firebase/exercise";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { useEffect } from "react";
-import { ActivityIndicator, useColorScheme } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, View, useColorScheme } from "react-native";
 import { Button } from "../Button";
 import DateLabelAssignment from "./DateLabelAssignment";
 
@@ -20,6 +22,7 @@ export default function ExerciseLogByDate({
 }) {
   const theme = useColorScheme() ?? "light";
   const { handleQueryError } = useServerErrorHandler();
+  const [shareDayVisible, setShareDayVisible] = useState(false);
 
   const {
     data: logs,
@@ -121,9 +124,19 @@ export default function ExerciseLogByDate({
           selectedDate={selectedDate}
           buttonText="Assign a Label to This Day"
         />
-        <ThemedText type="subtitle" className="my-8 text-center">
-          Exercise Log
-        </ThemedText>
+        {logs && logs.length > 0 ? (
+          <View className="flex-row items-center justify-between w-full px-4 my-8">
+            <ThemedText type="subtitle">Exercise Log</ThemedText>
+            <RoundedButton
+              icon="upload"
+              onPress={() => setShareDayVisible(true)}
+            />
+          </View>
+        ) : (
+          <ThemedText type="subtitle" className="my-8 text-center">
+            Exercise Log
+          </ThemedText>
+        )}
 
         {logs && logs.length > 0 ? (
           <ThemedView className="w-full p-4">
@@ -145,6 +158,15 @@ export default function ExerciseLogByDate({
           <>{emptyDay}</>
         )}
       </ThemedView>
+
+      {logs && logs.length > 0 && (
+        <ShareDayModal
+          visible={shareDayVisible}
+          onClose={() => setShareDayVisible(false)}
+          logs={logs}
+          date={selectedDate}
+        />
+      )}
     </>
   );
 }
