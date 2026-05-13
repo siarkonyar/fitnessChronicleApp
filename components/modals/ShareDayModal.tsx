@@ -1,6 +1,7 @@
 import ShareExerciseCard from "@/components/exercise/ShareExerciseCard";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
+import { useAuth } from "@/context/AuthContext";
 import { getLabelAsignmentByDate } from "@/lib/firebase/label";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
@@ -36,6 +37,8 @@ export default function ShareDayModal({
 }: ShareDayModalProps) {
   const theme = useColorScheme() ?? "light";
   const palette = Colors[theme];
+  const { user } = useAuth();
+  const firstName = user?.displayName?.split(" ")[0] ?? null;
   const cardRef = useRef<View>(null);
   const [isSharing, setIsSharing] = useState(false);
   const { data: labelAssignment } = useQuery({
@@ -61,7 +64,7 @@ export default function ShareDayModal({
     if (!cardRef.current) return;
     try {
       setIsSharing(true);
-      const uri = await captureRef(cardRef, { format: "png", quality: 0.95 });
+      const uri = await captureRef(cardRef, { format: "png", quality: 1 });
       await Share.share({ url: uri });
     } catch {
       // cancelled or failed — still close
@@ -142,7 +145,7 @@ export default function ShareDayModal({
 
                 <View className="flex-row items-center justify-between mb-4">
                   <View>
-                    <View className="flex-row items-center gap-1 mb-0.5">
+                    <View className="flex-row items-center gap-1 mb-1">
                       <LogoIcon size={28} color="rgba(255,255,255,0.9)" />
                       <Text
                         className="text-lg font-bold"
@@ -151,6 +154,14 @@ export default function ShareDayModal({
                         ercule
                       </Text>
                     </View>
+                    {firstName ? (
+                      <Text
+                        className="text-base font-semibold mb-0.5"
+                        style={{ color: "#FFFFFF" }}
+                      >
+                        {firstName}&apos;s workout
+                      </Text>
+                    ) : null}
                     <Text
                       className="text-xs font-semibold tracking-widest uppercase"
                       style={{ color: "rgba(255,255,255,0.45)" }}
@@ -229,9 +240,15 @@ export default function ShareDayModal({
 
               {/* Exercise list */}
               <View className="px-5 pt-4 pb-2">
-                {logs.map((log) => (
-                  <ShareExerciseCard key={log.id} exercise={log} />
-                ))}
+                {logs
+                  .sort(
+                    (a, b) =>
+                      (a.createdAt?.getTime() ?? 0) -
+                      (b.createdAt?.getTime() ?? 0),
+                  )
+                  .map((log) => (
+                    <ShareExerciseCard key={log.id} exercise={log} />
+                  ))}
               </View>
 
               {/* Footer */}
