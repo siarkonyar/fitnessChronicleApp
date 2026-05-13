@@ -64,7 +64,7 @@ export default function ShareDayModal({
     if (!cardRef.current) return;
     try {
       setIsSharing(true);
-      const uri = await captureRef(cardRef, { format: "png", quality: 0.95 });
+      const uri = await captureRef(cardRef, { format: "png", quality: 1, pixelRatio: 3 });
       await Share.share({ url: uri });
     } catch {
       // cancelled or failed — still close
