@@ -64,7 +64,7 @@ export default function ShareDayModal({
     if (!cardRef.current) return;
     try {
       setIsSharing(true);
-      const uri = await captureRef(cardRef, { format: "png", quality: 1, pixelRatio: 3 });
+      const uri = await captureRef(cardRef, { format: "png", quality: 1 });
       await Share.share({ url: uri });
     } catch {
       // cancelled or failed — still close
@@ -159,7 +159,7 @@ export default function ShareDayModal({
                         className="text-base font-semibold mb-0.5"
                         style={{ color: "#FFFFFF" }}
                       >
-                        {firstName}'s workout
+                        {firstName}&apos;s workout
                       </Text>
                     ) : null}
                     <Text
