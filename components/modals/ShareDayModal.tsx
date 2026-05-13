@@ -229,9 +229,15 @@ export default function ShareDayModal({
 
               {/* Exercise list */}
               <View className="px-5 pt-4 pb-2">
-                {logs.map((log) => (
-                  <ShareExerciseCard key={log.id} exercise={log} />
-                ))}
+                {logs
+                  .sort(
+                    (a, b) =>
+                      (a.createdAt?.getTime() ?? 0) -
+                      (b.createdAt?.getTime() ?? 0),
+                  )
+                  .map((log) => (
+                    <ShareExerciseCard key={log.id} exercise={log} />
+                  ))}
               </View>
 
               {/* Footer */}
