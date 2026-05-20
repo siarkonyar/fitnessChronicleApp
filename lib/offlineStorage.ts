@@ -157,6 +157,7 @@ export const offlineData = async (): Promise<string> => {
 };
 
 const HAPTICS_ENABLED_KEY = "hapticsEnabled";
+const DEFAULT_REP_TYPE_KEY = "defaultRepType";
 
 /**
  * Save haptics enabled state to storage
@@ -175,9 +176,27 @@ export const saveHapticsEnabled = async (enabled: boolean): Promise<void> => {
 export const getHapticsEnabled = async (): Promise<boolean> => {
   try {
     const value = await AsyncStorage.getItem(HAPTICS_ENABLED_KEY);
-    return value !== null ? JSON.parse(value) : true; // Default to enabled
+    return value !== null ? JSON.parse(value) : true;
   } catch (error) {
     console.error('Failed to get haptics setting:', error);
-    return true; // Default to enabled on error
+    return true;
+  }
+};
+
+export const saveDefaultRepType = async (isFixed: boolean): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(DEFAULT_REP_TYPE_KEY, JSON.stringify(isFixed));
+  } catch (error) {
+    console.error('Failed to save default rep type:', error);
+  }
+};
+
+export const getDefaultRepType = async (): Promise<boolean> => {
+  try {
+    const value = await AsyncStorage.getItem(DEFAULT_REP_TYPE_KEY);
+    return value !== null ? JSON.parse(value) : false;
+  } catch (error) {
+    console.error('Failed to get default rep type:', error);
+    return false;
   }
 };
