@@ -8,6 +8,7 @@ import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { formatDateAsString } from "@/lib/dateUtils";
+import { getDefaultRepType } from "@/lib/offlineStorage";
 import {
   addExerciseLog,
   getLatestExercisesByName,
@@ -90,6 +91,10 @@ export default function Index() {
     }
   });
   const [isRepsFixed, setIsRepsFixed] = useState(false);
+
+  useEffect(() => {
+    getDefaultRepType().then(setIsRepsFixed);
+  }, []);
 
   const [isLogging, setIsLogging] = useState(false);
   const [measurement, setMeasurement] = useState<

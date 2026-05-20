@@ -1,25 +1,36 @@
+import { RoundedButton } from "@/components/RoundButton";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedTextInput } from "@/components/ThemedTextInput";
+import { ThemedView } from "@/components/ThemedView";
+import { IconBox } from "@/components/ui/IconBox";
+import { RowDivider } from "@/components/ui/RowDivider";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/context/AuthContext";
+import { getUserProfile, updateUserProfile } from "@/lib/firebase/user";
+import {
+  getDefaultRepType,
+  getHapticsEnabled,
+  saveDefaultRepType,
+  saveHapticsEnabled,
+} from "@/lib/offlineStorage";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetModalProvider,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { RoundedButton } from "@/components/RoundButton";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedTextInput } from "@/components/ThemedTextInput";
-import { ThemedView } from "@/components/ThemedView";
-import { Colors } from "@/constants/Colors";
-import { useAuth } from "@/context/AuthContext";
-import { getUserProfile, updateUserProfile } from "@/lib/firebase/user";
-import { getHapticsEnabled, saveHapticsEnabled } from "@/lib/offlineStorage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { IconBox } from "@/components/ui/IconBox";
-import { RowDivider } from "@/components/ui/RowDivider";
-import { SectionCard } from "@/components/ui/SectionCard";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -44,8 +55,11 @@ const GENDER_OPTIONS = [
 
 type GenderValue = (typeof GENDER_OPTIONS)[number]["value"];
 
-
-function validateBirthday(day: string, month: string, year: string): string | null {
+function validateBirthday(
+  day: string,
+  month: string,
+  year: string,
+): string | null {
   if (!day || !month || !year) return "Please fill in all fields.";
   const d = parseInt(day, 10);
   const m = parseInt(month, 10);
@@ -55,7 +69,11 @@ function validateBirthday(day: string, month: string, year: string): string | nu
   if (isNaN(y) || y < 1900 || y > CURRENT_YEAR)
     return `Year must be between 1900 and ${CURRENT_YEAR}.`;
   const date = new Date(y, m - 1, d);
-  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d)
+  if (
+    date.getFullYear() !== y ||
+    date.getMonth() !== m - 1 ||
+    date.getDate() !== d
+  )
     return "Invalid date.";
   return null;
 }
@@ -68,7 +86,6 @@ function formatDisplayBirthday(isoDate: string): string {
 function genderLabel(value: string): string {
   return GENDER_OPTIONS.find((o) => o.value === value)?.label ?? value;
 }
-
 
 export default function Settings() {
   const theme = useColorScheme() ?? "light";
@@ -97,15 +114,22 @@ export default function Settings() {
   const snapPoints = useMemo(() => [], []);
 
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const [defaultFixedReps, setDefaultFixedReps] = useState(false);
 
   useEffect(() => {
     getHapticsEnabled().then(setHapticsEnabled);
+    getDefaultRepType().then(setDefaultFixedReps);
   }, []);
 
   const handleHapticsToggle = async (value: boolean) => {
     setHapticsEnabled(value);
     await saveHapticsEnabled(value);
     await Updates.reloadAsync();
+  };
+
+  const handleDefaultRepTypeToggle = async (value: boolean) => {
+    setDefaultFixedReps(value);
+    await saveDefaultRepType(value);
   };
 
   useEffect(() => {
@@ -210,7 +234,6 @@ export default function Settings() {
             contentContainerStyle={{ paddingBottom: 48, paddingTop: 8 }}
             keyboardShouldPersistTaps="handled"
           >
-
             {/* ── Profile ── */}
             <ThemedText type="label" className="mb-3 ml-2 mt-4">
               Profile
@@ -240,14 +263,24 @@ export default function Settings() {
                       />
                     ) : (
                       <View className="flex-row gap-1.5 ml-2">
-                        <RoundedButton icon="x" type="danger" onPress={handleCancelName} />
-                        <RoundedButton icon="check" type="success" onPress={handleSaveName} />
+                        <RoundedButton
+                          icon="x"
+                          type="danger"
+                          onPress={handleCancelName}
+                        />
+                        <RoundedButton
+                          icon="check"
+                          type="success"
+                          onPress={handleSaveName}
+                        />
                       </View>
                     )}
                   </>
                 ) : (
                   <>
-                    <ThemedText className="flex-1 text-base ml-3">Name</ThemedText>
+                    <ThemedText className="flex-1 text-base ml-3">
+                      Name
+                    </ThemedText>
                     <ThemedText
                       className="text-base mr-1.5 max-w-[160px]"
                       lightColor={Colors.light.mutedText}
@@ -256,7 +289,11 @@ export default function Settings() {
                     >
                       {name || "Not set"}
                     </ThemedText>
-                    <RoundedButton icon="edit" type="blue" onPress={() => setIsEditingName(true)} />
+                    <RoundedButton
+                      icon="edit"
+                      type="blue"
+                      onPress={() => setIsEditingName(true)}
+                    />
                   </>
                 )}
               </View>
@@ -338,14 +375,24 @@ export default function Settings() {
                       />
                     ) : (
                       <View className="flex-row gap-1.5 ml-2">
-                        <RoundedButton icon="x" type="danger" onPress={handleCancelBirthday} />
-                        <RoundedButton icon="check" type="success" onPress={handleSaveBirthday} />
+                        <RoundedButton
+                          icon="x"
+                          type="danger"
+                          onPress={handleCancelBirthday}
+                        />
+                        <RoundedButton
+                          icon="check"
+                          type="success"
+                          onPress={handleSaveBirthday}
+                        />
                       </View>
                     )}
                   </>
                 ) : (
                   <>
-                    <ThemedText className="flex-1 text-base ml-3">Birthday</ThemedText>
+                    <ThemedText className="flex-1 text-base ml-3">
+                      Birthday
+                    </ThemedText>
                     <ThemedText
                       className="text-base mr-1.5"
                       lightColor={Colors.light.mutedText}
@@ -384,7 +431,9 @@ export default function Settings() {
                 activeOpacity={0.7}
               >
                 <IconBox name="people" color={Colors[theme].accentTeal} />
-                <ThemedText className="flex-1 text-base ml-3">Gender</ThemedText>
+                <ThemedText className="flex-1 text-base ml-3">
+                  Gender
+                </ThemedText>
                 <ThemedText
                   className="text-base mr-1"
                   lightColor={Colors.light.mutedText}
@@ -408,7 +457,9 @@ export default function Settings() {
             <SectionCard>
               <View className="flex-row items-center px-4 py-3.5">
                 <IconBox name="vibration" color={Colors[theme].highlight} />
-                <ThemedText className="flex-1 text-base ml-3">Haptics</ThemedText>
+                <ThemedText className="flex-1 text-base ml-3">
+                  Haptics
+                </ThemedText>
                 <Switch
                   value={hapticsEnabled}
                   onValueChange={handleHapticsToggle}
@@ -419,6 +470,41 @@ export default function Settings() {
                   thumbColor={Colors[theme].background}
                   ios_backgroundColor={Colors[theme].inputBackground}
                 />
+              </View>
+
+              <RowDivider />
+
+              <View className="flex-row px-4 py-3.5">
+                <View className="justify-center">
+                  <IconBox
+                    name="fitness-center"
+                    color={Colors[theme].accentBlue}
+                  />
+                </View>
+                <View className="flex-1 ml-3">
+                  <ThemedText className="text-base">Fixed Reps</ThemedText>
+                  <ThemedText
+                    className="text-xs mt-0.5"
+                    lightColor={Colors.light.mutedText}
+                    darkColor={Colors.dark.mutedText}
+                  >
+                    {defaultFixedReps
+                      ? "Enter exact rep count"
+                      : "Pick from rep range"}
+                  </ThemedText>
+                </View>
+                <View className="justify-center">
+                  <Switch
+                    value={defaultFixedReps}
+                    onValueChange={handleDefaultRepTypeToggle}
+                    trackColor={{
+                      false: Colors[theme].inputBackground,
+                      true: Colors[theme].highlight,
+                    }}
+                    thumbColor={Colors[theme].background}
+                    ios_backgroundColor={Colors[theme].inputBackground}
+                  />
+                </View>
               </View>
             </SectionCard>
 
@@ -448,7 +534,6 @@ export default function Settings() {
                 />
               </TouchableOpacity>
             </SectionCard>
-
           </ScrollView>
         </ThemedView>
 
@@ -476,15 +561,15 @@ export default function Settings() {
                 style={{ borderBottomColor: Colors[theme].cardBorderColor }}
               >
                 <ThemedText className="text-base">{option.label}</ThemedText>
-                {genderMutation.isPending && profile?.gender === option.value && (
-                  <ActivityIndicator color={Colors[theme].accentBlue} />
-                )}
+                {genderMutation.isPending &&
+                  profile?.gender === option.value && (
+                    <ActivityIndicator color={Colors[theme].accentBlue} />
+                  )}
               </TouchableOpacity>
             ))}
             <ThemedView style={{ height: insets.bottom + 16 }} />
           </BottomSheetView>
         </BottomSheetModal>
-
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
