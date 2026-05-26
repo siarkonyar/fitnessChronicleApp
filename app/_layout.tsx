@@ -1,5 +1,6 @@
 import { ConnectivityProvider } from "@/context/ConnectivityContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import appCheck from "@react-native-firebase/app-check";
 import {
   DarkTheme,
   DefaultTheme,
@@ -9,7 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import "../global.css";
@@ -23,6 +24,28 @@ export default function RootLayout() {
     Inter: require("../assets/fonts/Inter/static/Inter_18pt-Medium.ttf"),
     "Inter-Bold": require("../assets/fonts/Inter/static/Inter_24pt-Bold.ttf"),
   });
+
+  useEffect(() => {
+    const initAppCheck = async () => {
+      const provider = appCheck().newReactNativeFirebaseAppCheckProvider();
+      provider.configure({
+        apple: {
+          // real devices attest; falls back to DeviceCheck on older hardware
+          provider: __DEV__ ? "debug" : "appAttestWithDeviceCheckFallback",
+        },
+        android: {
+          provider: __DEV__ ? "debug" : "playIntegrity",
+        },
+      });
+
+      await appCheck().initializeAppCheck({
+        provider,
+        isTokenAutoRefreshEnabled: true,
+      });
+    };
+
+    initAppCheck();
+  }, []);
 
   if (!loaded) {
     return null;
