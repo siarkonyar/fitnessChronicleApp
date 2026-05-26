@@ -16,7 +16,6 @@ import {
 import { ExerciseLogSchema, ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Checkbox } from "expo-checkbox";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -37,6 +36,7 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
+import { getDefaultRepType } from "@/lib/offlineStorage";
 
 type ExerciseLogWithId = z.infer<typeof ExerciseLogWithIdSchema>;
 type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
@@ -88,7 +88,12 @@ export default function Index() {
       setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
     }[]
   >([]);
+
   const [isRepsFixed, setIsRepsFixed] = useState(false);
+
+    useEffect(() => {
+      getDefaultRepType().then(setIsRepsFixed);
+    }, []);
 
   const [isEditting, setIsEditting] = useState(false);
   const [measurement, setMeasurement] = useState<
@@ -401,122 +406,7 @@ export default function Index() {
                       Lbs
                     </ThemedText>
                   </TouchableOpacity>
-                  {/* <TouchableOpacity
-                  key={3}
-                  activeOpacity={1}
-                  onPress={() => handleMeasurementChange("time")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 6,
-                    paddingHorizontal: 16,
-
-                    borderWidth: 2,
-                    borderColor: Colors[theme].highlight,
-                    backgroundColor:
-                      measurement === "time"
-                        ? Colors[theme].highlight
-                        : "transparent",
-                  }}
-                >
-                  <ThemedText
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "500",
-                      fontSize: 12,
-                      color:
-                        measurement === "time"
-                          ? Colors[theme].background
-                          : Colors[theme].highlight,
-                    }}
-                  >
-                    Time
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  key={4}
-                  activeOpacity={1}
-                  onPress={() => handleMeasurementChange("distance")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 6,
-                    paddingHorizontal: 16,
-
-                    borderWidth: 2,
-                    borderColor: Colors[theme].highlight,
-                    borderRightWidth: 0,
-                    borderLeftWidth: 0,
-                    backgroundColor:
-                      measurement === "distance"
-                        ? Colors[theme].highlight
-                        : "transparent",
-                  }}
-                >
-                  <ThemedText
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "500",
-                      fontSize: 12,
-                      color:
-                        measurement === "distance"
-                          ? Colors[theme].background
-                          : Colors[theme].highlight,
-                    }}
-                  >
-                    Km
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  key={5}
-                  activeOpacity={1}
-                  onPress={() => handleMeasurementChange("steps")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 6,
-                    paddingHorizontal: 16,
-
-                    borderWidth: 2,
-                    borderColor: Colors[theme].highlight,
-                    borderTopRightRadius: 8,
-                    borderBottomRightRadius: 8,
-                    backgroundColor:
-                      measurement === "steps"
-                        ? Colors[theme].highlight
-                        : "transparent",
-                  }}
-                >
-                  <ThemedText
-                    style={{
-                      textAlign: "center",
-                      fontWeight: "500",
-                      fontSize: 12,
-                      color:
-                        measurement === "steps"
-                          ? Colors[theme].background
-                          : Colors[theme].highlight,
-                    }}
-                  >
-                    Steps
-                  </ThemedText>
-                </TouchableOpacity> */}
                 </ThemedView>
-              </ThemedView>
-              <ThemedView className="mb-4 flex-row items-center justify-end">
-                <Checkbox
-                  value={isRepsFixed}
-                  onValueChange={(value) => {
-                    setIsRepsFixed(value);
-                    // Reset all reps to "1" when the toggle changes
-                    setSets((prev) => prev.map((s) => ({ ...s, reps: "1" })));
-                  }}
-                  color={Colors[theme].highlight}
-                />
-                <ThemedText
-                  className="ml-2 text-sm"
-                  lightColor={Colors[theme].mutedText}
-                  darkColor={Colors[theme].mutedText}
-                >
-                  fixed reps
-                </ThemedText>
               </ThemedView>
               <ThemedView className="w-full mb-8">
                 {sets.map((set, index) => {
