@@ -90,10 +90,16 @@ export const WorkoutTemplateSchema = z.object({
   createdAt: FirestoreTimestampSchema.optional(),
 });
 
+export const ProgramDaySchema = z.object({
+  index: z.number(),
+  isRestDay: z.boolean(),
+  label: LabelSchema.optional(),
+  workouts: z.array(WorkoutTemplateSchema).optional(),
+});
+
 export const ProgramSchema = z.object({
   name: z.string().min(1),
-  programLabel: z.string().min(1).max(50),
-  workouts: z.array(WorkoutTemplateSchema),
+  days: z.array(ProgramDaySchema),
 });
 
 export const ExerciseNameListSchema = z.object({

@@ -1,54 +1,76 @@
-import { WorkoutTemplateSchema } from "@/types/types";
+import {
+  ProgramDaySchema,
+  ProgramSchema,
+  ProgramWithIdSchema,
+} from "@/types/types";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
 
-const GetCurrentUserId = () => {
+const getCurrentUserId = () => {
   const user = auth().currentUser;
   if (!user) throw new Error("User not authenticated");
   return user.uid;
 };
 
-type WorkoutTemplate = z.infer<typeof WorkoutTemplateSchema>;
+type Program = z.infer<typeof ProgramSchema>;
+type ProgramDay = z.infer<typeof ProgramDaySchema>;
+type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
+
+const programsCollection = (userId: string) =>
+  firestore().collection("users").doc(userId).collection("programs");
 
 export const addProgram = async (
   name: string,
-  programLabel: string,
-  workouts: WorkoutTemplate[],
-) => {
-  const userId = GetCurrentUserId();
-  if (!userId) throw new Error("User not authenticated");
+  days: ProgramDay[],
+): Promise<string> => {
+  const userId = getCurrentUserId();
 
-  const exerciseLogRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("programLogs");
-
-  const newLogRef = await exerciseLogRef.add({
+  const ref = await programsCollection(userId).add({
     name,
-    programLabel,
-    ...workouts,
+    days,
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
 
-  return newLogRef.id;
+  return ref.id;
 };
 
-export const deleteProgram = async (id: string) => {
-  const userId = GetCurrentUserId();
-  if (!userId) throw new Error("User not authenticated");
+export const getPrograms = async (): Promise<ProgramWithId[]> => {
+  const userId = getCurrentUserId();
 
-  const doc = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("programLogs")
-    .doc(id);
+  const snapshot = await programsCollection(userId).get();
 
-  const progDoc = await doc.get();
+  return snapshot.docs.map((doc) =>
+    ProgramWithIdSchema.parse({ id: doc.id, ...doc.data() }),
+  );
+};
 
-  if (!progDoc.exists) {
-    throw new Error("Fitness log not found.");
-  }
+export const getProgram = async (id: string): Promise<ProgramWithId> => {
+  const userId = getCurrentUserId();
 
-  return doc.delete();
+  const doc = await programsCollection(userId).doc(id).get();
+
+  if (!doc.exists) throw new Error("Program not found.");
+
+  return ProgramWithIdSchema.parse({ id: doc.id, ...doc.data() });
+};
+
+export const updateProgram = async (
+  id: string,
+  updates: Partial<Program>,
+): Promise<void> => {
+  const userId = getCurrentUserId();
+
+  await programsCollection(userId).doc(id).update(updates);
+};
+
+export const deleteProgram = async (id: string): Promise<void> => {
+  const userId = getCurrentUserId();
+
+  const ref = programsCollection(userId).doc(id);
+  const doc = await ref.get();
+
+  if (!doc.exists) throw new Error("Program not found.");
+
+  await ref.delete();
 };
