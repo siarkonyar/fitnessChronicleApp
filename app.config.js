@@ -2,7 +2,7 @@ export default {
   expo: {
     name: process.env.APP_ENV === 'production' ? 'Hercule' : 'Hercule (DEV)',
     slug: "fitnessChronicle",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "fitnesschronicle",
