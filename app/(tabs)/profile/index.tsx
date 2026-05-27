@@ -145,8 +145,11 @@ export default function Profile() {
               {user?.displayName || "User"}
             </ThemedText>
             {user?.email && (
-              <ThemedText className="text-sm text-center opacity-70"
-                style={{ marginBottom: profile?.birthday || profile?.gender ? 10 : 16 }}
+              <ThemedText
+                className="text-sm text-center opacity-70"
+                style={{
+                  marginBottom: profile?.birthday || profile?.gender ? 10 : 16,
+                }}
               >
                 {user.email}
               </ThemedText>

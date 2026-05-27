@@ -41,3 +41,6 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# Claude Code worktrees (local only, should never be committed)
+.claude/worktrees/

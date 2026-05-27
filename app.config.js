@@ -41,6 +41,7 @@ export default {
       "@react-native-firebase/auth",
       "@react-native-firebase/crashlytics",
       "@react-native-google-signin/google-signin",
+      "./plugins/ios/withFmtFix",
       [
         "expo-splash-screen",
         {

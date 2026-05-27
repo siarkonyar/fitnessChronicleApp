@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // This rule allows an authenticated user to read/write their
+    // own top-level user profile document (e.g., /users/their-uid)
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // This rule uses a recursive wildcard ({document=**}) to cover
+    // ALL documents and subcollections nested under a specific user's path.
+    // Examples:
+    // - /users/{userId}/fitnessLogs/{logId}
+    // - /users/{userId}/settings/{settingId}
+    // - /users/{userId}/goals/{goalId}/subGoal/{subGoalId}
+    // Access is granted ONLY if the authenticated user's UID matches the {userId}
+    // in the path.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // This crucial fallback rule explicitly denies access to ANY other
+    // document paths in your database that are not covered by a more
+    // specific 'allow' rule above. This ensures maximum security by
+    // preventing unintended public access to any data.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

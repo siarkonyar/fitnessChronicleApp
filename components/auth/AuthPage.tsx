@@ -88,25 +88,23 @@ export default function AuthPage() {
             <AuthButtons />
 
             <View className="mt-5 flex-row flex-wrap justify-center gap-2">
-              {["Workout logging", "Daily labels", "Offline sync"].map(
-                (feature) => (
-                  <View
-                    key={feature}
-                    className="rounded-full border px-3 py-2"
-                    style={{
-                      borderColor: palette.cardBorderColor,
-                      backgroundColor: `${palette.cardBackground}B8`,
-                    }}
+              {["Workout logging", "Daily labels"].map((feature) => (
+                <View
+                  key={feature}
+                  className="rounded-full border px-3 py-2"
+                  style={{
+                    borderColor: palette.cardBorderColor,
+                    backgroundColor: `${palette.cardBackground}B8`,
+                  }}
+                >
+                  <Text
+                    className="text-xs font-semibold"
+                    style={{ color: `${palette.text}D1` }}
                   >
-                    <Text
-                      className="text-xs font-semibold"
-                      style={{ color: `${palette.text}D1` }}
-                    >
-                      {feature}
-                    </Text>
-                  </View>
-                ),
-              )}
+                    {feature}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
         </ThemedView>
