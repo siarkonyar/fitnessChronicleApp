@@ -1,3 +1,4 @@
+import AppTextInput from "@/components/ui/AppTextInput";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { queryKeys } from "@/constants/QueryKeys";
@@ -20,7 +21,6 @@ import {
 } from "react-native";
 import exerciseNames from "../../types/exercise_names_master.json";
 import { ThemedText } from "../ThemedText";
-import { ThemedTextInput } from "../ThemedTextInput";
 
 export default function ExerciseNameInput({
   title,
@@ -126,25 +126,16 @@ export default function ExerciseNameInput({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="relative"
     >
-      <ThemedTextInput
+      <AppTextInput
         value={title}
         onChangeText={setTitle}
         onFocus={handleInputFocus}
         autoFocus={false}
         onBlur={handleInputBlur}
-        className="p-3 rounded-xl w-full text-3xl font-semibold"
-        style={{
-          backgroundColor: Colors[theme].inputBackground,
-          borderWidth: 2,
-          borderColor: isInputFocused
-            ? Colors[theme].highlight
-            : "transparent",
-          textTransform: "uppercase",
-          color: Colors[theme].text,
-        }}
+        className="w-full text-3xl font-semibold"
+        style={{ textTransform: "uppercase" }}
         placeholder="Exercise name..."
         autoCapitalize="characters"
-        placeholderTextColor={Colors[theme].mutedText}
       />
 
       {showSuggestions && (hasPrevious || hasMasterSuggestions) && (
