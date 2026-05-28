@@ -27,11 +27,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, {
-  Easing,
-  FadeInUp,
-  LinearTransition,
-} from "react-native-reanimated";
+import { View } from "react-native";
+import Animated, { LinearTransition } from "react-native-reanimated";
 import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
 
@@ -390,11 +387,7 @@ export default function Index() {
                       .filter((s) => s.setType === "normal").length - 1;
 
                   return (
-                    <Animated.View
-                      key={set.id}
-                      layout={LinearTransition}
-                      entering={FadeInUp.easing(Easing.out(Easing.cubic))}
-                    >
+                    <View key={set.id}>
                       <AddSetCard
                         id={set.id}
                         index={displayIndex}
@@ -409,18 +402,15 @@ export default function Index() {
                         onRemove={removeSet}
                         onCopy={copySet}
                       />
-                    </Animated.View>
+                    </View>
                   );
                 })}
 
-                <Animated.View
-                  layout={LinearTransition}
-                  className="flex-row items-start justify-between mt-2"
-                >
+                <View className="flex-row items-start justify-between mt-2">
                   <Button onPress={addSet} className="mb-12">
                     + Enter Set
                   </Button>
-                </Animated.View>
+                </View>
                 <Animated.View
                   layout={LinearTransition}
                   className="items-center justify-between mb-16"
