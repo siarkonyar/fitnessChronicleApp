@@ -158,6 +158,7 @@ export const offlineData = async (): Promise<string> => {
 
 const HAPTICS_ENABLED_KEY = "hapticsEnabled";
 const DEFAULT_REP_TYPE_KEY = "defaultRepType";
+const DEFAULT_MEASUREMENT_KEY = "defaultMeasurement";
 
 /**
  * Save haptics enabled state to storage
@@ -198,5 +199,23 @@ export const getDefaultRepType = async (): Promise<boolean> => {
   } catch (error) {
     console.error('Failed to get default rep type:', error);
     return false;
+  }
+};
+
+export const saveDefaultMeasurement = async (measurement: "kg" | "lbs"): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(DEFAULT_MEASUREMENT_KEY, measurement);
+  } catch (error) {
+    console.error('Failed to save default measurement:', error);
+  }
+};
+
+export const getDefaultMeasurement = async (): Promise<"kg" | "lbs"> => {
+  try {
+    const value = await AsyncStorage.getItem(DEFAULT_MEASUREMENT_KEY);
+    return value === "lbs" ? "lbs" : "kg";
+  } catch (error) {
+    console.error('Failed to get default measurement:', error);
+    return "kg";
   }
 };
