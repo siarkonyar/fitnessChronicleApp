@@ -348,9 +348,20 @@ export const deleteAssignment = async (date: string) => {
 
   const assignmentDoc = assignmentSnapshot.docs[0];
   const assignmentId = assignmentDoc.id;
+  const labelId = assignmentDoc.data().labelId as string | undefined;
 
-  // Delete the assignment
   await assignmentDoc.ref.delete();
+
+  if (labelId) {
+    const labelRef = firestore()
+      .collection("users")
+      .doc(userId)
+      .collection("labels")
+      .doc(labelId);
+    await labelRef.update({
+      dates: firestore.FieldValue.arrayRemove(date),
+    });
+  }
 
   return {
     id: assignmentId,
