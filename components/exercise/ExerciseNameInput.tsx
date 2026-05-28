@@ -1,3 +1,6 @@
+import AppTextInput from "@/components/ui/AppTextInput";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import {
@@ -18,7 +21,6 @@ import {
 } from "react-native";
 import exerciseNames from "../../types/exercise_names_master.json";
 import { ThemedText } from "../ThemedText";
-import { ThemedTextInput } from "../ThemedTextInput";
 
 export default function ExerciseNameInput({
   title,
@@ -27,6 +29,7 @@ export default function ExerciseNameInput({
   title: string;
   setTitle: (title: string) => void;
 }) {
+  const theme = useColorScheme() ?? "light";
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestionsFromPrevios, setSuggestionsFromPrevios] = useState<
     string[]
@@ -56,24 +59,21 @@ export default function ExerciseNameInput({
 
   useEffect(() => {
     if (title.trim().length > 0) {
-      // Ensure data is an array before calling map
       const previousExerciseNames = Array.isArray(data)
         ? data.map((item) => item.name)
         : [];
 
-      // Filter from master exercise names
       const filtered = exerciseNames
         .filter((name) => name.toLowerCase().includes(title.toLowerCase()))
         .sort((a, b) => a.length - b.length || a.localeCompare(b))
-        .slice(0, 8); // Take first 8 from master list
+        .slice(0, 8);
 
-      // Filter from previous exercise names
       const previousExercisesNamesFiltered = previousExerciseNames
         .filter((name: string) =>
           name.toLowerCase().includes(title.toLowerCase()),
         )
         .sort((a, b) => a.length - b.length || a.localeCompare(b))
-        .slice(0, 8); // Take first 8 from previous exercises
+        .slice(0, 8);
 
       setSuggestions(filtered);
       setSuggestionsFromPrevios(previousExercisesNamesFiltered);
@@ -106,7 +106,6 @@ export default function ExerciseNameInput({
 
   const handleInputBlur = () => {
     setIsInputFocused(false);
-    // Delay hiding suggestions to allow for touch events
     setTimeout(() => setShowSuggestions(false), 150);
   };
 
@@ -115,91 +114,129 @@ export default function ExerciseNameInput({
   };
 
   const handleSuggestionDeletion = (suggestion: string) => {
-    try {
-      setSuggestionsFromPrevios((prev) => prev.filter((n) => n !== suggestion));
-      deleteExerciseNameMutation.mutate(suggestion);
-    } catch (error) {
-      console.log(error);
-    }
+    setSuggestionsFromPrevios((prev) => prev.filter((n) => n !== suggestion));
+    deleteExerciseNameMutation.mutate(suggestion);
   };
+
+  const hasPrevious = suggestionsFromPrevios.length > 0;
+  const hasMasterSuggestions = suggestions.length > 0;
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="relative"
     >
-      <ThemedTextInput
+      <AppTextInput
         value={title}
         onChangeText={setTitle}
         onFocus={handleInputFocus}
         autoFocus={false}
         onBlur={handleInputBlur}
-        className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg w-full text-3xl"
-        placeholder="Enter exercise name..."
+        className="w-full text-3xl font-semibold"
+        style={{ textTransform: "uppercase" }}
+        placeholder="Exercise name..."
         autoCapitalize="characters"
-        style={{ textTransform: "uppercase" }} // 🔑 immediate uppercase display
       />
 
-      {showSuggestions &&
-        (suggestions.length > 0 || suggestionsFromPrevios.length > 0) && (
-          <TouchableWithoutFeedback onPress={dismissSuggestions}>
-            <View className="absolute top-full left-0 right-0 z-50">
-              <View
-                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48"
-                style={{
-                  elevation: Platform.OS === "android" ? 10 : 0,
-                }}
+      {showSuggestions && (hasPrevious || hasMasterSuggestions) && (
+        <TouchableWithoutFeedback onPress={dismissSuggestions}>
+          <View className="absolute top-full left-0 right-0 z-50 mt-1">
+            <View
+              style={{
+                backgroundColor: Colors[theme].cardBackground,
+                borderWidth: 1,
+                borderColor: Colors[theme].cardBorderColor,
+                borderRadius: 12,
+                maxHeight: 192,
+                elevation: Platform.OS === "android" ? 10 : 0,
+                overflow: "hidden",
+              }}
+            >
+              <ScrollView
+                className="max-h-48"
+                keyboardShouldPersistTaps="always"
+                nestedScrollEnabled={true}
+                showsVerticalScrollIndicator={false}
               >
-                <ScrollView
-                  className="max-h-48"
-                  keyboardShouldPersistTaps="always"
-                  nestedScrollEnabled={true}
-                  showsVerticalScrollIndicator={true}
-                >
-                  {suggestionsFromPrevios.map((suggestion, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => handleSuggestionPress(suggestion)}
-                      className="px-4 py-3 border-b flex-row justify-between border-gray-200 dark:border-gray-700 last:border-b-0"
-                      style={{
-                        backgroundColor:
-                          index % 2 === 0 ? "rgba(0,0,0,0.02)" : "transparent",
-                      }}
-                      activeOpacity={0.7}
+                {hasPrevious && (
+                  <>
+                    <ThemedText
+                      className="px-4 pt-3 pb-1 text-xs font-bold tracking-widest"
+                      style={{ color: Colors[theme].mutedText }}
                     >
-                      <ThemedText className="text-lg">
-                        {suggestion.toUpperCase()}
-                      </ThemedText>
+                      MY EXERCISES
+                    </ThemedText>
+                    {suggestionsFromPrevios.map((suggestion, index) => (
                       <TouchableOpacity
-                        onPress={() => handleSuggestionDeletion(suggestion)}
+                        key={index}
+                        onPress={() => handleSuggestionPress(suggestion)}
+                        className="px-4 py-3 flex-row justify-between items-center"
+                        style={{
+                          borderBottomWidth: 1,
+                          borderBottomColor: Colors[theme].separator,
+                        }}
+                        activeOpacity={0.7}
                       >
-                        <MaterialIcons name="close" size={20} color="#666" />
+                        <ThemedText
+                          className="text-base font-medium flex-1 mr-3"
+                          style={{ color: Colors[theme].text }}
+                        >
+                          {suggestion.toUpperCase()}
+                        </ThemedText>
+                        <TouchableOpacity
+                          onPress={() => handleSuggestionDeletion(suggestion)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <MaterialIcons
+                            name="close"
+                            size={16}
+                            color={Colors[theme].mutedText}
+                          />
+                        </TouchableOpacity>
                       </TouchableOpacity>
-                    </TouchableOpacity>
-                  ))}
-                  {suggestions.map((suggestion, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() =>
-                        handleSuggestionPress(suggestion.toUpperCase())
-                      }
-                      className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
-                      style={{
-                        backgroundColor:
-                          index % 2 === 0 ? "rgba(0,0,0,0.02)" : "transparent",
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <ThemedText className="text-lg">
-                        {suggestion.toUpperCase()}
+                    ))}
+                  </>
+                )}
+
+                {hasMasterSuggestions && (
+                  <>
+                    {hasPrevious && (
+                      <ThemedText
+                        className="px-4 pt-3 pb-1 text-xs font-bold tracking-widest"
+                        style={{ color: Colors[theme].mutedText }}
+                      >
+                        SUGGESTIONS
                       </ThemedText>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+                    )}
+                    {suggestions.map((suggestion, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() =>
+                          handleSuggestionPress(suggestion.toUpperCase())
+                        }
+                        className="px-4 py-3"
+                        style={{
+                          borderBottomWidth:
+                            index < suggestions.length - 1 ? 1 : 0,
+                          borderBottomColor: Colors[theme].separator,
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <ThemedText
+                          className="text-base"
+                          style={{ color: Colors[theme].text }}
+                        >
+                          {suggestion.toUpperCase()}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    ))}
+                  </>
+                )}
+              </ScrollView>
             </View>
-          </TouchableWithoutFeedback>
-        )}
+          </View>
+        </TouchableWithoutFeedback>
+      )}
     </KeyboardAvoidingView>
   );
 }

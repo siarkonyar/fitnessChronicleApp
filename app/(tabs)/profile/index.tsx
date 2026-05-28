@@ -195,7 +195,13 @@ export default function Profile() {
 
         <UserLabelList labelOnPress={() => {}} />
 
-        <View className="mb-8">
+        {/* <View className="mb-8">
+          <View className="w-full mb-8">
+            <ProgramList />
+          </View>
+        </View> */}
+
+        <View className="my-8">
           <View className="w-full mb-8">
             <Button type="danger" onPress={handleSignout}>
               Sign Out

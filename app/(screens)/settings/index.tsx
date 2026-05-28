@@ -9,8 +9,10 @@ import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
 import { getUserProfile, updateUserProfile } from "@/lib/firebase/user";
 import {
+  getDefaultMeasurement,
   getDefaultRepType,
   getHapticsEnabled,
+  saveDefaultMeasurement,
   saveDefaultRepType,
   saveHapticsEnabled,
 } from "@/lib/offlineStorage";
@@ -115,10 +117,12 @@ export default function Settings() {
 
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [defaultFixedReps, setDefaultFixedReps] = useState(false);
+  const [defaultMeasurement, setDefaultMeasurement] = useState<"kg" | "lbs">("kg");
 
   useEffect(() => {
     getHapticsEnabled().then(setHapticsEnabled);
     getDefaultRepType().then(setDefaultFixedReps);
+    getDefaultMeasurement().then(setDefaultMeasurement);
   }, []);
 
   const handleHapticsToggle = async (value: boolean) => {
@@ -130,6 +134,11 @@ export default function Settings() {
   const handleDefaultRepTypeToggle = async (value: boolean) => {
     setDefaultFixedReps(value);
     await saveDefaultRepType(value);
+  };
+
+  const handleDefaultMeasurementChange = async (value: "kg" | "lbs") => {
+    setDefaultMeasurement(value);
+    await saveDefaultMeasurement(value);
   };
 
   useEffect(() => {
@@ -506,6 +515,52 @@ export default function Settings() {
                   />
                 </View>
               </View>
+
+              <RowDivider />
+
+              <TouchableOpacity
+                className="flex-row px-4 py-3.5"
+                onPress={() =>
+                  handleDefaultMeasurementChange(
+                    defaultMeasurement === "kg" ? "lbs" : "kg",
+                  )
+                }
+                activeOpacity={0.7}
+              >
+                <View className="justify-center">
+                  <IconBox name="monitor-weight" color={Colors[theme].accentTeal} />
+                </View>
+                <View className="flex-1 ml-3">
+                  <ThemedText className="text-base">Default Measurement</ThemedText>
+                  <ThemedText
+                    className="text-xs mt-0.5"
+                    lightColor={Colors.light.mutedText}
+                    darkColor={Colors.dark.mutedText}
+                  >
+                    Tap to change
+                  </ThemedText>
+                </View>
+                <View className="justify-center">
+                  <View
+                    style={{
+                      backgroundColor: Colors[theme].highlight + "22",
+                      paddingHorizontal: 10,
+                      paddingVertical: 3,
+                      borderRadius: 6,
+                    }}
+                  >
+                    <ThemedText
+                      style={{
+                        color: Colors[theme].highlight,
+                        fontSize: 13,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {defaultMeasurement === "kg" ? "Kg" : "Lbs"}
+                    </ThemedText>
+                  </View>
+                </View>
+              </TouchableOpacity>
             </SectionCard>
 
             {/* ── Account ── */}
