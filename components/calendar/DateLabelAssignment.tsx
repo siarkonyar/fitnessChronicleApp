@@ -50,33 +50,28 @@ export default function DateLabelAssignment({
     queryFn: () => getLabelAsignmentByDate(selectedDate),
   });
 
+  const invalidateLabelCaches = () => {
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.labelAssignments.all,
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["labels", "prevExercises"],
+    });
+  };
+
   const asignLabelToDayMutation = useMutation({
     mutationFn: asignLabelToDay,
     onError: (error) => {
       handleMutationError(error);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.labelAssignments.byDate(selectedDate),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.labelAssignments.byMonth(selectedDate.slice(0, 7)),
-      });
-    },
+    onSuccess: invalidateLabelCaches,
   });
   const deleteAssignedLabelMutation = useMutation({
     mutationFn: deleteAssignment,
     onError: (error) => {
       handleMutationError(error);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.labelAssignments.byDate(selectedDate),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.labelAssignments.byMonth(selectedDate.slice(0, 7)),
-      });
-    },
+    onSuccess: invalidateLabelCaches,
   });
 
   useEffect(() => {
