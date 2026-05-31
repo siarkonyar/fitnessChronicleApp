@@ -8,11 +8,11 @@ import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { formatDateAsString } from "@/lib/dateUtils";
-import { getDefaultMeasurement, getDefaultRepType } from "@/lib/offlineStorage";
 import {
   addExerciseLog,
   getLatestExercisesByName,
 } from "@/lib/firebase/exercise";
+import { getDefaultMeasurement, getDefaultRepType } from "@/lib/offlineStorage";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,9 +25,9 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { View } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { z } from "zod";
 import { AddSetCard } from "../../../components/exercise/AddSetCard";
@@ -93,7 +93,7 @@ export default function Index() {
     if (!copySets) {
       getDefaultMeasurement().then(setMeasurement);
     }
-  }, []);
+  }, [copySets]);
 
   const [isLogging, setIsLogging] = useState(false);
   const [measurement, setMeasurement] = useState<
