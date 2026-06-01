@@ -1,12 +1,17 @@
 import { ConnectivityProvider } from "@/context/ConnectivityContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
 import appCheck from "@react-native-firebase/app-check";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import { onlineManager, QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import * as Application from "expo-application";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -15,7 +20,30 @@ import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import "../global.css";
 
-const queryClient = new QueryClient();
+onlineManager.setEventListener((setOnline) => {
+  return NetInfo.addEventListener((state) => {
+    setOnline(!!state.isConnected);
+  });
+});
+
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 min: serve cache without refetching
+      gcTime: CACHE_MAX_AGE_MS, // keep unused data 24h (also enables persistence)
+      retry: 2, // retry failed fetches (flaky mobile networks)
+      refetchOnReconnect: true, // refresh when connectivity returns
+      refetchOnWindowFocus: false, // explicit; off by default on RN
+    },
+  },
+});
+
+const persister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  key: "HERCULE_QUERY_CACHE",
+});
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -54,9 +82,16 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ConnectivityProvider>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{
+            persister,
+            maxAge: CACHE_MAX_AGE_MS,
+            buster: Application.nativeApplicationVersion ?? "1",
+          }}
+        >
           <AppSetup />
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </ConnectivityProvider>
     </AuthProvider>
   );

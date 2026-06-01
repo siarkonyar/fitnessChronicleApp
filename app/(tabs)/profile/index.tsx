@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserProfile } from "@/lib/firebase/user";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
 import React, { useState } from "react";
@@ -53,10 +53,14 @@ export default function Profile() {
     queryFn: getUserProfile,
   });
 
+  const queryClient = useQueryClient();
+
   const handleSignout = async () => {
     try {
       // Sign out from Firebase and Google
       await signOut();
+
+      queryClient.clear(); // empty the inmemory cache
 
       // Clear local storage
       await AsyncStorage.clear();

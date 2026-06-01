@@ -6,20 +6,18 @@ import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
 import React, { useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  useColorScheme,
-  View,
-} from "react-native";
+import { Alert, ScrollView, useColorScheme, View } from "react-native";
 
 export default function Index() {
   const theme = useColorScheme() ?? "light";
   const { deleteAccount, user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -36,6 +34,9 @@ export default function Index() {
           onPress: async () => {
             try {
               setIsDeleting(true);
+
+              queryClient.clear();
+
               await deleteAccount();
               await AsyncStorage.clear();
 
@@ -54,18 +55,18 @@ export default function Index() {
                 Alert.alert(
                   "Re-authentication Required",
                   "For security reasons, please sign out and sign in again before deleting your account.",
-                  [{ text: "OK" }]
+                  [{ text: "OK" }],
                 );
               } else {
                 Alert.alert(
                   "Error",
-                  "Failed to delete account. Please try again or contact support."
+                  "Failed to delete account. Please try again or contact support.",
                 );
               }
             }
           },
         },
-      ]
+      ],
     );
   };
 
