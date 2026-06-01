@@ -1,11 +1,13 @@
 import { ConnectivityProvider } from "@/context/ConnectivityContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import appCheck from "@react-native-firebase/app-check";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
@@ -15,7 +17,22 @@ import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import "../global.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 min: serve cache without refetching
+      gcTime: 24 * 60 * 60 * 1000, // keep unused data 24h (also enables persistence)
+      retry: 2, // retry failed fetches (flaky mobile networks)
+      refetchOnReconnect: true, // refresh when connectivity returns
+      refetchOnWindowFocus: false, // explicit; off by default on RN
+    },
+  },
+});
+
+const persister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  key: "HERCULE_QUERY_CACHE",
+});
 
 export default function RootLayout() {
   const [loaded] = useFonts({
