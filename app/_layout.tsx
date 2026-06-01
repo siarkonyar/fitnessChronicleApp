@@ -1,6 +1,7 @@
 import { ConnectivityProvider } from "@/context/ConnectivityContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
 import appCheck from "@react-native-firebase/app-check";
 import {
   DarkTheme,
@@ -8,7 +9,7 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { QueryClient } from "@tanstack/react-query";
+import { onlineManager, QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
@@ -17,6 +18,12 @@ import React, { useEffect } from "react";
 import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import "../global.css";
+
+onlineManager.setEventListener((setOnline) => {
+  return NetInfo.addEventListener((state) => {
+    setOnline(!!state.isConnected);
+  });
+});
 
 const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
