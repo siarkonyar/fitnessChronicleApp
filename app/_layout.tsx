@@ -8,7 +8,8 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -17,11 +18,13 @@ import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import "../global.css";
 
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 min: serve cache without refetching
-      gcTime: 24 * 60 * 60 * 1000, // keep unused data 24h (also enables persistence)
+      gcTime: CACHE_MAX_AGE_MS, // keep unused data 24h (also enables persistence)
       retry: 2, // retry failed fetches (flaky mobile networks)
       refetchOnReconnect: true, // refresh when connectivity returns
       refetchOnWindowFocus: false, // explicit; off by default on RN
@@ -71,9 +74,12 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ConnectivityProvider>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister, maxAge: CACHE_MAX_AGE_MS }}
+        >
           <AppSetup />
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </ConnectivityProvider>
     </AuthProvider>
   );
