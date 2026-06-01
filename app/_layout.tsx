@@ -11,6 +11,7 @@ import {
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { onlineManager, QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import * as Application from "expo-application";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -83,7 +84,11 @@ export default function RootLayout() {
       <ConnectivityProvider>
         <PersistQueryClientProvider
           client={queryClient}
-          persistOptions={{ persister, maxAge: CACHE_MAX_AGE_MS }}
+          persistOptions={{
+            persister,
+            maxAge: CACHE_MAX_AGE_MS,
+            buster: Application.nativeApplicationVersion ?? "1",
+          }}
         >
           <AppSetup />
         </PersistQueryClientProvider>
