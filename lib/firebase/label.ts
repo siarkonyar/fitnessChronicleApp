@@ -7,7 +7,7 @@ import {
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
-import { findMostRecentSessionDate } from "../dateUtils";
+import { findMostRecentSessionDate, getTodayString } from "../dateUtils";
 
 const GetCurrentUserId = () => {
   const user = auth().currentUser;
@@ -380,32 +380,27 @@ export const getPrevExercisesFromLabel = async (label: Label) => {
     return null;
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayString();
   let mostRecentDate = findMostRecentSessionDate(dates, today);
 
   if (!mostRecentDate) {
     return null;
   }
 
-  let snapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .where("date", "==", mostRecentDate)
-    .get();
-
-  while (snapshot.empty) {
-    mostRecentDate = findMostRecentSessionDate(dates, mostRecentDate ?? "");
-
-    snapshot = await firestore()
+  while (mostRecentDate) {
+    const snapshot = await firestore()
       .collection("users")
       .doc(userId)
       .collection("fitnessLogs")
       .where("date", "==", mostRecentDate)
       .get();
-  }
 
-  return snapshot.docs.map((doc) =>
-    ExerciseLogWithIdSchema.parse({ id: doc.id, ...doc.data() }),
-  );
+    if (!snapshot.empty) {
+      return snapshot.docs.map((doc) =>
+        ExerciseLogWithIdSchema.parse({ id: doc.id, ...doc.data() }),
+      );
+    }
+
+    mostRecentDate = findMostRecentSessionDate(dates, mostRecentDate);
+  }
 };
