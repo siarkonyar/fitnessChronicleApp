@@ -381,21 +381,28 @@ export const getPrevExercisesFromLabel = async (label: Label) => {
   }
 
   const today = new Date().toISOString().split("T")[0];
-  const mostRecentDate = findMostRecentSessionDate(dates, today);
+  let mostRecentDate = findMostRecentSessionDate(dates, today);
 
   if (!mostRecentDate) {
     return null;
   }
 
-  const snapshot = await firestore()
+  let snapshot = await firestore()
     .collection("users")
     .doc(userId)
     .collection("fitnessLogs")
     .where("date", "==", mostRecentDate)
     .get();
 
-  if (snapshot.empty) {
-    return null;
+  while (snapshot.empty) {
+    mostRecentDate = findMostRecentSessionDate(dates, mostRecentDate ?? "");
+
+    snapshot = await firestore()
+      .collection("users")
+      .doc(userId)
+      .collection("fitnessLogs")
+      .where("date", "==", mostRecentDate)
+      .get();
   }
 
   return snapshot.docs.map((doc) =>
