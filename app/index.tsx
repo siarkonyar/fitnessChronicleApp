@@ -10,7 +10,11 @@ import {
   getExerciseLogByDate,
   getExerciseLogsByMonth,
 } from "@/lib/firebase/exercise";
-import { getAllLabels, getAllLabelsFromMonth } from "@/lib/firebase/label";
+import {
+  getAllLabels,
+  getAllLabelsFromMonth,
+  getLabelAsignmentByDate,
+} from "@/lib/firebase/label";
 import { updateStreak } from "@/lib/firebase/streaks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -85,7 +89,7 @@ export default function App() {
         }),
         queryClient.prefetchQuery({
           queryKey: queryKeys.labelAssignments.byDate(today),
-          queryFn: () => getExerciseLogByDate(today),
+          queryFn: () => getLabelAsignmentByDate(today),
         }),
         queryClient.prefetchQuery({
           queryKey: queryKeys.labels.all,
