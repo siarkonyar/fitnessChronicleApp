@@ -2,6 +2,15 @@ export const getTodayString = (): string => {
   return new Date().toLocaleDateString("en-CA");
 };
 
+export const findMostRecentSessionDate = (
+  dates: string[],
+  today: string,
+): string | null => {
+  return (
+    [...dates].sort((a, b) => b.localeCompare(a)).find((d) => d < today) ?? null
+  );
+};
+
 export const formatDateAsString = (dateString: string): string => {
   const today = getTodayString();
 
