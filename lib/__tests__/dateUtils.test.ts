@@ -1,4 +1,8 @@
-import { findMostRecentSessionDate, formatDateAsString } from "../dateUtils";
+import {
+  findMostRecentSessionDate,
+  formatDateAsString,
+  getPreviousWeek,
+} from "../dateUtils";
 
 describe("findMostRecentSessionDate", () => {
   test("returns the most recent date when several are before today", () => {
@@ -96,5 +100,19 @@ describe("formatDateAsString", () => {
 
   test("uses 'st' again for the 21st", () => {
     expect(formatDateAsString("2026-01-21")).toBe("21st of January 2026");
+  });
+});
+
+describe("getPreviousWeek", () => {
+  test("decrements the week number within the same year", () => {
+    expect(getPreviousWeek("2026-W15")).toBe("2026-W14");
+  });
+
+  test("pads single-digit week numbers to two digits", () => {
+    expect(getPreviousWeek("2026-W10")).toBe("2026-W09");
+  });
+
+  test("wraps W01 back to the last week of the previous year", () => {
+    expect(getPreviousWeek("2026-W01")).toBe("2025-W52");
   });
 });
