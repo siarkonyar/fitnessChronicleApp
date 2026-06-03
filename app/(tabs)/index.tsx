@@ -11,6 +11,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { timestampToMillis } from "@/lib/dateUtils";
 import { getExerciseLogByDate } from "@/lib/firebase/exercise";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -153,8 +154,8 @@ export default function HomeScreen() {
                 {logs
                   .sort(
                     (a, b) =>
-                      (a.createdAt?.getTime() ?? 0) -
-                      (b.createdAt?.getTime() ?? 0),
+                      timestampToMillis(a.createdAt) -
+                      timestampToMillis(b.createdAt),
                   )
                   .map((log, index) => (
                     <GetExerciseCard
