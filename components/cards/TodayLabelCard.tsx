@@ -6,6 +6,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { timestampToMillis } from "@/lib/dateUtils";
 import {
   getLabelAsignmentByDate,
   getPrevExercisesFromLabel,
@@ -89,7 +90,8 @@ export default function TodayLabelCard() {
             prevExercises
               .sort(
                 (a, b) =>
-                  (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
+                  timestampToMillis(a.createdAt) -
+                  timestampToMillis(b.createdAt),
               )
               .map((exercise, index) => (
                 <GetExerciseCard

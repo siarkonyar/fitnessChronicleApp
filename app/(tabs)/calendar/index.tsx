@@ -4,7 +4,7 @@ import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { getExerciseLogsByMonth } from "@/lib/firebase/exercise";
 import { getAllLabels, getAllLabelsFromMonth } from "@/lib/firebase/label";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -25,7 +25,6 @@ export default function CalendarScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const theme = useColorScheme() ?? "light";
   const { handleQueryError } = useServerErrorHandler();
-  const queryClient = useQueryClient();
 
   // TODO: make this useeffect work
   useEffect(() => {
@@ -69,12 +68,6 @@ export default function CalendarScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    queryClient.invalidateQueries({
-      queryKey: queryKeys.exerciseLogs.byMonth(visibleMonth),
-    });
-    queryClient.invalidateQueries({
-      queryKey: queryKeys.labelAssignments.byMonth(visibleMonth),
-    });
     setTimeout(() => setRefreshing(false), 1500);
   };
 

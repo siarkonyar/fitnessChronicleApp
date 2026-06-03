@@ -2,6 +2,7 @@ import ShareExerciseCard from "@/components/exercise/ShareExerciseCard";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
+import { timestampToMillis } from "@/lib/dateUtils";
 import { getLabelAsignmentByDate } from "@/lib/firebase/label";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
@@ -243,8 +244,8 @@ export default function ShareDayModal({
                 {logs
                   .sort(
                     (a, b) =>
-                      (a.createdAt?.getTime() ?? 0) -
-                      (b.createdAt?.getTime() ?? 0),
+                      timestampToMillis(a.createdAt) -
+                      timestampToMillis(b.createdAt),
                   )
                   .map((log) => (
                     <ShareExerciseCard key={log.id} exercise={log} />

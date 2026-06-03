@@ -2,6 +2,32 @@ export const getTodayString = (): string => {
   return new Date().toLocaleDateString("en-CA");
 };
 
+export const findMostRecentSessionDate = (
+  dates: string[],
+  today: string,
+): string | null => {
+  return (
+    [...dates].sort((a, b) => b.localeCompare(a)).find((d) => d < today) ?? null
+  );
+};
+
+export const timestampToMillis = (value: unknown): number => {
+  if (value == null) return 0;
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const ms = new Date(value).getTime();
+    return Number.isNaN(ms) ? 0 : ms;
+  }
+  if (typeof (value as { toMillis?: unknown }).toMillis === "function") {
+    return (value as { toMillis: () => number }).toMillis();
+  }
+  if (typeof (value as { toDate?: unknown }).toDate === "function") {
+    return (value as { toDate: () => Date }).toDate().getTime();
+  }
+  return 0;
+};
+
 export const formatDateAsString = (dateString: string): string => {
   const today = getTodayString();
 

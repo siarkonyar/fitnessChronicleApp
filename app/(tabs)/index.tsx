@@ -11,14 +11,11 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import {
-  getExerciseLogByDate,
-  syncOfflineExercises,
-} from "@/lib/firebase/exercise";
-import { clearAllOfflineExercises, offlineData } from "@/lib/offlineStorage";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { timestampToMillis } from "@/lib/dateUtils";
+import { getExerciseLogByDate } from "@/lib/firebase/exercise";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -40,29 +37,9 @@ export default function HomeScreen() {
     day: "numeric",
   }).format(new Date());
   const insets = useSafeAreaInsets();
-  const { handleMutationError, handleQueryError } = useServerErrorHandler();
+  const { handleQueryError } = useServerErrorHandler();
   const [refreshing, setRefreshing] = useState(false);
   const [shareDayVisible, setShareDayVisible] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const hasAttemptedSync = useRef(false);
-  const lastSyncAttempt = useRef<number>(0);
-  const queryClient = useQueryClient();
-
-  const syncMutation = useMutation({
-    mutationFn: syncOfflineExercises,
-    onError: (error) => {
-      setIsSyncing(false);
-      handleMutationError(error);
-    },
-    onSuccess: () => {
-      setIsSyncing(false);
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.exerciseLogs.byDate(
-          new Date().toLocaleDateString("en-CA"),
-        ),
-      });
-    },
-  });
 
   const {
     data: logs,
@@ -80,54 +57,6 @@ export default function HomeScreen() {
       handleQueryError(error);
     }
   }, [error, handleQueryError]);
-
-  const syncExercises = async () => {
-    // Prevent multiple sync attempts within a short time window (5 seconds)
-    const now = Date.now();
-    if (
-      isSyncing ||
-      (hasAttemptedSync.current && now - lastSyncAttempt.current < 5000)
-    ) {
-      return;
-    }
-
-    try {
-      const offlineDataString = await offlineData();
-      if (offlineDataString && offlineDataString !== "[]") {
-        hasAttemptedSync.current = true;
-        lastSyncAttempt.current = now;
-        setIsSyncing(true);
-
-        const offlineExercises = JSON.parse(offlineDataString);
-
-        // Transform offline exercises to match ExerciseLogSchema
-        const exercises = offlineExercises.map((offlineExercise: any) => {
-          const exercise: any = {
-            date: offlineExercise.date,
-            activity: offlineExercise.activity,
-            sets: offlineExercise.sets,
-          };
-
-          return exercise;
-        });
-
-        await syncMutation.mutateAsync(exercises);
-        await clearAllOfflineExercises();
-      }
-    } catch (error) {
-      console.log(error);
-      setIsSyncing(false);
-    }
-  };
-
-  const syncExercisesCallBack = useCallback(syncExercises, [
-    isSyncing,
-    syncMutation,
-  ]);
-
-  useEffect(() => {
-    syncExercisesCallBack();
-  }, [syncExercisesCallBack]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -222,23 +151,11 @@ export default function HomeScreen() {
             </ThemedText>
             {logs && logs.length > 0 ? (
               <ThemedView>
-                {isSyncing && (
-                  <View className="mb-4 flex-row items-center justify-center">
-                    <ActivityIndicator
-                      size="small"
-                      color={Colors[theme].highlight}
-                      className="mr-2"
-                    />
-                    <ThemedText className="text-sm opacity-70">
-                      Syncing offline exercises...
-                    </ThemedText>
-                  </View>
-                )}
                 {logs
                   .sort(
                     (a, b) =>
-                      (a.createdAt?.getTime() ?? 0) -
-                      (b.createdAt?.getTime() ?? 0),
+                      timestampToMillis(a.createdAt) -
+                      timestampToMillis(b.createdAt),
                   )
                   .map((log, index) => (
                     <GetExerciseCard
