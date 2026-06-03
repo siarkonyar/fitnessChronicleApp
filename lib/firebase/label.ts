@@ -7,6 +7,7 @@ import {
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
+import { findMostRecentSessionDate } from "../dateUtils";
 
 const GetCurrentUserId = () => {
   const user = auth().currentUser;
@@ -380,9 +381,7 @@ export const getPrevExercisesFromLabel = async (label: Label) => {
   }
 
   const today = new Date().toISOString().split("T")[0];
-  const mostRecentDate = [...dates]
-    .sort((a, b) => b.localeCompare(a))
-    .find((d) => d < today);
+  const mostRecentDate = findMostRecentSessionDate(dates, today);
 
   if (!mostRecentDate) {
     return null;
