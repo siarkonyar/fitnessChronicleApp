@@ -1,4 +1,8 @@
-import { asignLabelToDay, deleteAssignment } from "../label";
+import {
+  asignLabelToDay,
+  deleteAssignment,
+  getPrevExercisesFromLabel,
+} from "../label";
 import {
   TEST_UID,
   readDoc,
@@ -84,5 +88,54 @@ describe("label", () => {
     expect(readDoc(["users", TEST_UID, "labels", "pull"])?.dates).toEqual([
       "2026-06-01",
     ]);
+  });
+});
+
+describe("getPrevExercisesFromLabel", () => {
+  test("returns the session when the most recent assigned date has logs", async () => {
+    // Arrange — label was trained on one past day, which has a logged exercise
+    seedDoc(["users", TEST_UID, "fitnessLogs", "log1"], {
+      date: "2020-05-20",
+      activity: "Bench Press",
+      sets: [],
+      dates: ["2020-05-20"],
+    });
+
+    const label = {
+      label: "Push",
+      description: "Push day",
+      dates: ["2020-05-20"],
+    };
+
+    // Act
+    const result = await getPrevExercisesFromLabel(label);
+
+    // Assert — we get that day's exercise back
+    expect(result).not.toBeNull();
+    expect(result?.[0].activity).toBe("Bench Press");
+  });
+
+  test("returns the most recent day that actually has logs, skipping empty assigned days", async () => {
+    // Arrange — label assigned to TWO past days:
+    //   2020-05-20 → has a real logged session
+    //   2020-05-28 → assigned but NOTHING logged (e.g. tagged but not trained)
+    seedDoc(["users", TEST_UID, "fitnessLogs", "log1"], {
+      date: "2020-05-20",
+      activity: "Bench Press",
+      sets: [],
+    });
+
+    const label = {
+      label: "Push",
+      description: "Push day",
+      dates: ["2020-05-20", "2020-05-28"], // 28th is the most recent, but empty
+    };
+
+    // Act
+    const result = await getPrevExercisesFromLabel(label);
+
+    // Assert — the "last session" should be the 20th (the real one), NOT null
+    expect(result).not.toBeNull();
+    expect(result?.[0].date).toBe("2020-05-20");
   });
 });
