@@ -1,13 +1,33 @@
+import AddProgramDayCard from "@/components/cards/AddProgramDayCard";
+import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import AppTextInput from "@/components/ui/AppTextInput";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { ProgramDaySchema } from "@/types/types";
+import { Feather } from "@expo/vector-icons";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { z } from "zod";
+
+type ProgramDay = z.infer<typeof ProgramDaySchema>;
 
 export default function CreateProgramScreen() {
   const scrollRef = useRef<ScrollView>(null);
+  const theme = useColorScheme() ?? "light";
   const [programName, setProgramName] = useState("");
+  const [days, setDays] = useState<ProgramDay[]>([]);
+
+  function addDay() {
+    setDays((prev) => [...prev, { index: prev.length, isRestDay: false }]);
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -24,6 +44,19 @@ export default function CreateProgramScreen() {
               autoCapitalize="characters"
             />
           </ThemedView>
+          <TouchableOpacity
+            className="px-4 mb-3 flex-row items-center gap-1 active:opacity-70"
+            onPress={addDay}
+          >
+            <Feather name="plus" size={16} color={Colors[theme].highlight} />
+            <ThemedText
+              className="text-sm font-medium"
+              lightColor={Colors.light.highlight}
+              darkColor={Colors.dark.highlight}
+            >
+              Add day
+            </ThemedText>
+          </TouchableOpacity>
           <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -31,10 +64,19 @@ export default function CreateProgramScreen() {
           >
             <ScrollView
               ref={scrollRef}
-              className="flex-1 p-4"
+              className="flex-1 px-4"
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled
-            />
+            >
+              {days.map((day, i) => (
+                <AddProgramDayCard
+                  key={i}
+                  index={i}
+                  day={day}
+                  className="mb-3"
+                />
+              ))}
+            </ScrollView>
           </KeyboardAvoidingView>
         </ThemedView>
       </BottomSheetModalProvider>
