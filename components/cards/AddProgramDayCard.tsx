@@ -2,7 +2,11 @@ import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { getAllLabels } from "@/lib/firebase/label";
-import { LabelSchema, LabelWithIdSchema, ProgramDaySchema } from "@/types/types";
+import {
+  LabelSchema,
+  LabelWithIdSchema,
+  ProgramDaySchema,
+} from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import React, { useState } from "react";
@@ -17,6 +21,7 @@ import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
 import UserLabelList from "../lists/UserLabelList";
+import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 import LabelBadge from "../ui/LabelBadge";
@@ -29,6 +34,7 @@ interface AddProgramDayCardProps {
   index: number;
   day: ProgramDay;
   onSelectLabel: (label: Label) => void;
+  onDeleteDay: (index: number) => void;
   className?: string;
 }
 
@@ -36,6 +42,7 @@ export default function AddProgramDayCard({
   index,
   day,
   onSelectLabel,
+  onDeleteDay,
   className,
 }: AddProgramDayCardProps) {
   const theme = useColorScheme() ?? "light";
@@ -65,7 +72,7 @@ export default function AddProgramDayCard({
 
   return (
     <>
-      <Card className={className}>
+      <Card className={`${className} flex-row`}>
         <ThemedView className="flex-row items-center flex-1 min-w-0">
           <TouchableOpacity
             activeOpacity={0.7}
@@ -78,7 +85,11 @@ export default function AddProgramDayCard({
                   {day.label.label}
                 </ThemedText>
               ) : (
-                <Feather name="plus" size={22} color={Colors[theme].highlight} />
+                <Feather
+                  name="plus"
+                  size={22}
+                  color={Colors[theme].highlight}
+                />
               )}
             </LabelBadge>
           </TouchableOpacity>
@@ -94,6 +105,13 @@ export default function AddProgramDayCard({
               {subtitle}
             </ThemedText>
           </ThemedView>
+        </ThemedView>
+        <ThemedView>
+          <RoundedButton
+            type="danger"
+            icon="x"
+            onPress={() => onDeleteDay(index)}
+          />
         </ThemedView>
       </Card>
 

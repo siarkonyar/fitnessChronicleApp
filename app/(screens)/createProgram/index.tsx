@@ -9,6 +9,7 @@ import { Feather } from "@expo/vector-icons";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useRef, useState } from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -29,6 +30,11 @@ export default function CreateProgramScreen() {
   function addDay() {
     setDays((prev) => [...prev, { index: prev.length, isRestDay: false }]);
   }
+
+  const removeDay = (index: number) => {
+    Keyboard.dismiss();
+    setDays((prev) => prev.filter((d) => d.index !== index));
+  };
 
   function selectLabelForDay(dayIndex: number, label: Label) {
     setDays((prev) =>
@@ -81,6 +87,7 @@ export default function CreateProgramScreen() {
                   index={i}
                   day={day}
                   onSelectLabel={(label) => selectLabelForDay(i, label)}
+                  onDeleteDay={(i) => removeDay(i)}
                   className="mb-3"
                 />
               ))}
