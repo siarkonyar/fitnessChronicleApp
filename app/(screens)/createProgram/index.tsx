@@ -27,8 +27,8 @@ export default function CreateProgramScreen() {
   const [programName, setProgramName] = useState("");
   const [days, setDays] = useState<ProgramDay[]>([]);
 
-  function addDay() {
-    setDays((prev) => [...prev, { index: prev.length, isRestDay: false }]);
+  function addDay(isRestDay: boolean) {
+    setDays((prev) => [...prev, { index: prev.length, isRestDay }]);
   }
 
   const removeDay = (index: number) => {
@@ -57,19 +57,34 @@ export default function CreateProgramScreen() {
               autoCapitalize="characters"
             />
           </ThemedView>
-          <TouchableOpacity
-            className="px-4 mb-3 flex-row items-center gap-1 active:opacity-70"
-            onPress={addDay}
-          >
-            <Feather name="plus" size={16} color={Colors[theme].highlight} />
-            <ThemedText
-              className="text-sm font-medium"
-              lightColor={Colors.light.highlight}
-              darkColor={Colors.dark.highlight}
+          <ThemedView className="flex-row justify-between">
+            <TouchableOpacity
+              className="px-4 mb-3 flex-row items-center gap-1 active:opacity-70"
+              onPress={() => addDay(true)}
             >
-              Add day
-            </ThemedText>
-          </TouchableOpacity>
+              <Feather name="plus" size={16} color={Colors[theme].secondary} />
+              <ThemedText
+                className="text-sm font-medium"
+                lightColor={Colors.light.secondary}
+                darkColor={Colors.dark.secondary}
+              >
+                Add rest day
+              </ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="px-4 mb-3 flex-row items-center gap-1 active:opacity-70"
+              onPress={() => addDay(false)}
+            >
+              <Feather name="plus" size={16} color={Colors[theme].highlight} />
+              <ThemedText
+                className="text-sm font-medium"
+                lightColor={Colors.light.highlight}
+                darkColor={Colors.dark.highlight}
+              >
+                Add day
+              </ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
           <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
