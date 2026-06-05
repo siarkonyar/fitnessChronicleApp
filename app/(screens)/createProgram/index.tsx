@@ -4,7 +4,7 @@ import { ThemedView } from "@/components/ThemedView";
 import AppTextInput from "@/components/ui/AppTextInput";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { ProgramDaySchema } from "@/types/types";
+import { LabelSchema, ProgramDaySchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useRef, useState } from "react";
@@ -18,6 +18,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { z } from "zod";
 
 type ProgramDay = z.infer<typeof ProgramDaySchema>;
+type Label = z.infer<typeof LabelSchema>;
 
 export default function CreateProgramScreen() {
   const scrollRef = useRef<ScrollView>(null);
@@ -27,6 +28,12 @@ export default function CreateProgramScreen() {
 
   function addDay() {
     setDays((prev) => [...prev, { index: prev.length, isRestDay: false }]);
+  }
+
+  function selectLabelForDay(dayIndex: number, label: Label) {
+    setDays((prev) =>
+      prev.map((day, i) => (i === dayIndex ? { ...day, label } : day)),
+    );
   }
 
   return (
@@ -73,6 +80,7 @@ export default function CreateProgramScreen() {
                   key={i}
                   index={i}
                   day={day}
+                  onSelectLabel={(label) => selectLabelForDay(i, label)}
                   className="mb-3"
                 />
               ))}
