@@ -13,6 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useRef, useState } from "react";
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -38,7 +39,16 @@ export default function CreateProgramScreen() {
 
   const removeDay = (index: number) => {
     Keyboard.dismiss();
-    setDays((prev) => prev.filter((_, i) => i !== index));
+    Alert.alert("Delete Day", "Are you sure you want to delete this day?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          setDays((prev) => prev.filter((_, i) => i !== index));
+        },
+      },
+    ]);
   };
 
   function selectLabelForDay(dayIndex: number, label: Label) {
