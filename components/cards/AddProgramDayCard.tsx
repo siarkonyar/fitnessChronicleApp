@@ -39,6 +39,7 @@ interface AddProgramDayCardProps {
   day: ProgramDay;
   onSelectLabel: (label: Label) => void;
   onAddExercise: (exercise: ProgramExercise) => void;
+  onEditExercise: (exerciseIndex: number, exercise: ProgramExercise) => void;
   onDeleteExercise: (exerciseIndex: number) => void;
   onDeleteDay: (index: number) => void;
   className?: string;
@@ -49,6 +50,7 @@ export default function AddProgramDayCard({
   day,
   onSelectLabel,
   onAddExercise,
+  onEditExercise,
   onDeleteExercise,
   onDeleteDay,
   className,
@@ -56,6 +58,7 @@ export default function AddProgramDayCard({
   const theme = useColorScheme() ?? "light";
   const [isLabelSelectionOpen, setIsLabelSelectionOpen] = useState(false);
   const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const { data: labels } = useQuery({
     queryKey: queryKeys.labels.all,
@@ -77,6 +80,24 @@ export default function AddProgramDayCard({
     const { id, ...label } = found;
     onSelectLabel(label);
     setIsLabelSelectionOpen(false);
+  }
+
+  function handleOpenEdit(exerciseIndex: number) {
+    setEditingIndex(exerciseIndex);
+    setIsAddExerciseOpen(true);
+  }
+
+  function handleCloseExerciseModal() {
+    setIsAddExerciseOpen(false);
+    setEditingIndex(null);
+  }
+
+  function handleSubmitExercise(exercise: ProgramExercise) {
+    if (editingIndex !== null) {
+      onEditExercise(editingIndex, exercise);
+      return;
+    }
+    onAddExercise(exercise);
   }
 
   return (
@@ -136,6 +157,11 @@ export default function AddProgramDayCard({
                   exercise={exercise}
                   variant="program"
                   className="flex-1"
+                />
+                <RoundedButton
+                  type="blue"
+                  icon="edit-2"
+                  onPress={() => handleOpenEdit(exerciseIndex)}
                 />
                 <RoundedButton
                   type="danger"
@@ -204,8 +230,11 @@ export default function AddProgramDayCard({
       <AddProgramExerciseModal
         visible={isAddExerciseOpen}
         dayIndex={index}
-        onClose={() => setIsAddExerciseOpen(false)}
-        onAddExercise={onAddExercise}
+        initialExercise={
+          editingIndex !== null ? day.exercises?.[editingIndex] : undefined
+        }
+        onClose={handleCloseExerciseModal}
+        onAddExercise={handleSubmitExercise}
       />
     </>
   );

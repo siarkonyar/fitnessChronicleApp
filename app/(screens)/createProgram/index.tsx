@@ -57,6 +57,25 @@ export default function CreateProgramScreen() {
     );
   }
 
+  function updateExerciseInDay(
+    dayIndex: number,
+    exerciseIndex: number,
+    exercise: ProgramExercise,
+  ) {
+    setDays((prev) =>
+      prev.map((day, i) =>
+        i === dayIndex
+          ? {
+              ...day,
+              exercises: (day.exercises ?? []).map((existing, j) =>
+                j === exerciseIndex ? exercise : existing,
+              ),
+            }
+          : day,
+      ),
+    );
+  }
+
   function removeExerciseFromDay(dayIndex: number, exerciseIndex: number) {
     setDays((prev) =>
       prev.map((day, i) =>
@@ -133,6 +152,9 @@ export default function CreateProgramScreen() {
                   day={day}
                   onSelectLabel={(label) => selectLabelForDay(i, label)}
                   onAddExercise={(exercise) => addExerciseToDay(i, exercise)}
+                  onEditExercise={(exerciseIndex, exercise) =>
+                    updateExerciseInDay(i, exerciseIndex, exercise)
+                  }
                   onDeleteExercise={(exerciseIndex) =>
                     removeExerciseFromDay(i, exerciseIndex)
                   }

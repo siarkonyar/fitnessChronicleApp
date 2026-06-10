@@ -29,6 +29,7 @@ type SetType = "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
 interface AddProgramExerciseModalProps {
   visible: boolean;
   dayIndex: number;
+  initialExercise?: ProgramExercise;
   onClose: () => void;
   onAddExercise: (exercise: ProgramExercise) => void;
 }
@@ -36,6 +37,7 @@ interface AddProgramExerciseModalProps {
 export default function AddProgramExerciseModal({
   visible,
   dayIndex,
+  initialExercise,
   onClose,
   onAddExercise,
 }: AddProgramExerciseModalProps) {
@@ -52,6 +54,23 @@ export default function AddProgramExerciseModal({
     getDefaultRepType().then(setIsRepsFixed);
     getDefaultMeasurement().then(setMeasurement);
   }, []);
+
+  useEffect(() => {
+    if (!visible || !initialExercise) return;
+
+    setTitle(initialExercise.activity);
+    setSets(
+      initialExercise.sets.map((set, index) => ({
+        id: Date.now() + index,
+        reps: ("reps" in set ? set.reps : undefined) ?? "1",
+        setType: set.setType as SetType,
+      })),
+    );
+    const firstMeasure = initialExercise.sets[0]?.measure;
+    if (firstMeasure === "kg" || firstMeasure === "lbs") {
+      setMeasurement(firstMeasure);
+    }
+  }, [visible, initialExercise]);
 
   const addSet = () => {
     const newSet = {
@@ -201,7 +220,7 @@ export default function AddProgramExerciseModal({
 
                   <View className="items-center justify-between mb-16">
                     <Button type="primary" onPress={handleAdd}>
-                      Add Exercise
+                      {initialExercise ? "Save Changes" : "Add Exercise"}
                     </Button>
                   </View>
                 </ThemedView>
