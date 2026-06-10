@@ -167,7 +167,11 @@ export default function CreateProgramScreen() {
           <ThemedView className="flex-row gap-2 px-4 mb-3">
             <ThemedView className="w-1/2 pr-2">
               <PillButton color="highlight" onPress={() => addDay(false)}>
-                <Feather name="plus" size={14} color={Colors[theme].highlight} />
+                <Feather
+                  name="plus"
+                  size={14}
+                  color={Colors[theme].highlight}
+                />
                 <ThemedText
                   className="text-sm font-semibold"
                   lightColor={Colors.light.highlight}
@@ -180,7 +184,11 @@ export default function CreateProgramScreen() {
 
             <ThemedView className="w-1/2 pr-2">
               <PillButton color="secondary" onPress={() => addDay(true)}>
-                <Feather name="plus" size={14} color={Colors[theme].secondary} />
+                <Feather
+                  name="plus"
+                  size={14}
+                  color={Colors[theme].secondary}
+                />
                 <ThemedText
                   className="text-sm font-semibold"
                   lightColor={Colors.light.secondary}
@@ -202,6 +210,30 @@ export default function CreateProgramScreen() {
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled
             >
+              {days.length === 0 && (
+                <ThemedView className="items-center my-12 px-8">
+                  <Feather
+                    name="calendar"
+                    size={32}
+                    color={Colors[theme].mutedText}
+                  />
+                  <ThemedText
+                    className="text-center text-base font-semibold mt-4"
+                    lightColor={Colors.light.mutedText}
+                    darkColor={Colors.dark.mutedText}
+                  >
+                    No days yet
+                  </ThemedText>
+                  <ThemedText
+                    className="text-center text-sm mt-1"
+                    lightColor={Colors.light.mutedText}
+                    darkColor={Colors.dark.mutedText}
+                  >
+                    Tap &quot;Add day&quot; or &quot;Add rest day&quot; above to
+                    start building your program.
+                  </ThemedText>
+                </ThemedView>
+              )}
               {days.map((day, i) => (
                 <AddProgramDayCard
                   key={i}
