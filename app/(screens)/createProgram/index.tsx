@@ -47,6 +47,16 @@ export default function CreateProgramScreen() {
     );
   }
 
+  function addExerciseToDay(dayIndex: number, exercise: ProgramExercise) {
+    setDays((prev) =>
+      prev.map((day, i) =>
+        i === dayIndex
+          ? { ...day, exercises: [...(day.exercises ?? []), exercise] }
+          : day,
+      ),
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
@@ -107,7 +117,7 @@ export default function CreateProgramScreen() {
                   index={i}
                   day={day}
                   onSelectLabel={(label) => selectLabelForDay(i, label)}
-                  //REVIEW - sometimes the first day is not deletable it doesnt delete the first day for some reason. (possible because there is something wrong happening with indexes)
+                  onAddExercise={(exercise) => addExerciseToDay(i, exercise)}
                   onDeleteDay={() => removeDay(i)}
                   className="mb-3"
                 />

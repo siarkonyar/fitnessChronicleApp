@@ -6,6 +6,7 @@ import {
   LabelSchema,
   LabelWithIdSchema,
   ProgramDaySchema,
+  ProgramExerciseSchema,
 } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -21,12 +22,14 @@ import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
 import UserLabelList from "../lists/UserLabelList";
+import AddProgramExerciseModal from "../modals/AddProgramExerciseModal";
 import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
 import LabelBadge from "../ui/LabelBadge";
 
 type ProgramDay = z.infer<typeof ProgramDaySchema>;
+type ProgramExercise = z.infer<typeof ProgramExerciseSchema>;
 type Label = z.infer<typeof LabelSchema>;
 type LabelWithId = z.infer<typeof LabelWithIdSchema>;
 
@@ -34,6 +37,7 @@ interface AddProgramDayCardProps {
   index: number;
   day: ProgramDay;
   onSelectLabel: (label: Label) => void;
+  onAddExercise: (exercise: ProgramExercise) => void;
   onDeleteDay: (index: number) => void;
   className?: string;
 }
@@ -42,11 +46,13 @@ export default function AddProgramDayCard({
   index,
   day,
   onSelectLabel,
+  onAddExercise,
   onDeleteDay,
   className,
 }: AddProgramDayCardProps) {
   const theme = useColorScheme() ?? "light";
   const [isLabelSelectionOpen, setIsLabelSelectionOpen] = useState(false);
+  const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
 
   const { data: labels } = useQuery({
     queryKey: queryKeys.labels.all,
@@ -72,47 +78,67 @@ export default function AddProgramDayCard({
 
   return (
     <>
-      <Card className={`${className} flex-row`}>
-        <ThemedView className="flex-row items-center flex-1 min-w-0">
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setIsLabelSelectionOpen(true)}
-            className="mr-4"
-          >
-            <LabelBadge>
-              {day.label ? (
-                <ThemedText style={{ fontSize: 24 }}>
-                  {day.label.label}
-                </ThemedText>
-              ) : (
-                <Feather
-                  name="plus"
-                  size={22}
-                  color={Colors[theme].highlight}
-                />
-              )}
-            </LabelBadge>
-          </TouchableOpacity>
-          <ThemedView className="flex-col flex-1 min-w-0">
-            <ThemedText className="text-base font-semibold">
-              {day.label ? day.label.description : "Choose a label"}
-            </ThemedText>
-            <ThemedText
-              className="text-sm"
-              lightColor={Colors.light.mutedText}
-              darkColor={Colors.dark.mutedText}
+      <Card className={className}>
+        <ThemedView className="flex-row items-center w-full">
+          <ThemedView className="flex-row items-center flex-1 min-w-0">
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setIsLabelSelectionOpen(true)}
+              className="mr-4"
             >
-              {subtitle}
-            </ThemedText>
+              <LabelBadge>
+                {day.label ? (
+                  <ThemedText style={{ fontSize: 24 }}>
+                    {day.label.label}
+                  </ThemedText>
+                ) : (
+                  <Feather
+                    name="plus"
+                    size={22}
+                    color={Colors[theme].highlight}
+                  />
+                )}
+              </LabelBadge>
+            </TouchableOpacity>
+            <ThemedView className="flex-col flex-1 min-w-0">
+              <ThemedText className="text-base font-semibold">
+                {day.label ? day.label.description : "Choose a label"}
+              </ThemedText>
+              <ThemedText
+                className="text-sm"
+                lightColor={Colors.light.mutedText}
+                darkColor={Colors.dark.mutedText}
+              >
+                {subtitle}
+              </ThemedText>
+            </ThemedView>
+          </ThemedView>
+          <ThemedView>
+            <RoundedButton
+              type="danger"
+              icon="x"
+              onPress={() => onDeleteDay(index)}
+            />
           </ThemedView>
         </ThemedView>
-        <ThemedView>
-          <RoundedButton
-            type="danger"
-            icon="x"
-            onPress={() => onDeleteDay(index)}
-          />
-        </ThemedView>
+
+        {!day.isRestDay && (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setIsAddExerciseOpen(true)}
+            className="flex-row items-center mt-3 pt-3 border-t"
+            style={{ borderTopColor: Colors[theme].separator }}
+          >
+            <Feather name="plus" size={16} color={Colors[theme].highlight} />
+            <ThemedText
+              className="text-sm font-medium ml-1"
+              lightColor={Colors.light.highlight}
+              darkColor={Colors.dark.highlight}
+            >
+              Add exercise
+            </ThemedText>
+          </TouchableOpacity>
+        )}
       </Card>
 
       <Modal
@@ -145,6 +171,13 @@ export default function AddProgramDayCard({
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <AddProgramExerciseModal
+        visible={isAddExerciseOpen}
+        dayIndex={index}
+        onClose={() => setIsAddExerciseOpen(false)}
+        onAddExercise={onAddExercise}
+      />
     </>
   );
 }
