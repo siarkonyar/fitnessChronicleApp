@@ -17,8 +17,10 @@ import {
   View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { AddSetCard } from "../exercise/AddSetCard";
+import { RoundedButton } from "../RoundButton";
 
 type ProgramExercise = z.infer<typeof ProgramExerciseSchema>;
 
@@ -44,6 +46,7 @@ export default function AddProgramExerciseModal({
   >([]);
   const [isRepsFixed, setIsRepsFixed] = useState(false);
   const [measurement, setMeasurement] = useState<"kg" | "lbs">("kg");
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     getDefaultRepType().then(setIsRepsFixed);
@@ -134,11 +137,15 @@ export default function AddProgramExerciseModal({
             className="flex-1"
             lightColor={Colors.light.background}
             darkColor={Colors.dark.background}
+            style={{ paddingTop: insets.top }}
           >
             <ThemedView className="px-4 my-4">
-              <ThemedText className="text-sm opacity-70 mb-2">
-                Day {dayIndex + 1}
-              </ThemedText>
+              <ThemedView className="flex-row items-center justify-between mb-2">
+                <ThemedText className="text-sm opacity-70">
+                  Day {dayIndex + 1}
+                </ThemedText>
+                <RoundedButton type="danger" icon="x" onPress={handleClose} />
+              </ThemedView>
               {titleError ? (
                 <>
                   <Text className="text-red-500 mb-2">
@@ -192,14 +199,9 @@ export default function AddProgramExerciseModal({
                     </Button>
                   </View>
 
-                  <View className="items-center justify-between mb-3">
+                  <View className="items-center justify-between mb-16">
                     <Button type="primary" onPress={handleAdd}>
                       Add Exercise
-                    </Button>
-                  </View>
-                  <View className="items-center justify-between mb-16">
-                    <Button type="danger" onPress={handleClose}>
-                      Cancel
                     </Button>
                   </View>
                 </ThemedView>
