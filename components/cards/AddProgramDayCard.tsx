@@ -66,8 +66,13 @@ export default function AddProgramDayCard({
   });
 
   const exerciseCount = day.exercises?.length ?? 0;
-  const subtitle = day.isRestDay
+  const title = day.isRestDay
     ? "Rest Day"
+    : day.label
+      ? day.label.description
+      : "Choose a label";
+  const subtitle = day.isRestDay
+    ? "Take a break"
     : exerciseCount > 0
       ? `${exerciseCount} exercise${exerciseCount !== 1 ? "s" : ""}`
       : "No exercises";
@@ -105,28 +110,40 @@ export default function AddProgramDayCard({
       <Card className={className}>
         <ThemedView className="flex-row items-center w-full">
           <ThemedView className="flex-row items-center flex-1 min-w-0">
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => setIsLabelSelectionOpen(true)}
-              className="mr-4"
-            >
-              <LabelBadge>
-                {day.label ? (
-                  <ThemedText style={{ fontSize: 24 }}>
-                    {day.label.label}
-                  </ThemedText>
-                ) : (
+            {day.isRestDay ? (
+              <ThemedView className="mr-4">
+                <LabelBadge>
                   <Feather
-                    name="plus"
+                    name="moon"
                     size={22}
                     color={Colors[theme].highlight}
                   />
-                )}
-              </LabelBadge>
-            </TouchableOpacity>
+                </LabelBadge>
+              </ThemedView>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setIsLabelSelectionOpen(true)}
+                className="mr-4"
+              >
+                <LabelBadge>
+                  {day.label ? (
+                    <ThemedText style={{ fontSize: 24 }}>
+                      {day.label.label}
+                    </ThemedText>
+                  ) : (
+                    <Feather
+                      name="plus"
+                      size={22}
+                      color={Colors[theme].highlight}
+                    />
+                  )}
+                </LabelBadge>
+              </TouchableOpacity>
+            )}
             <ThemedView className="flex-col flex-1 min-w-0">
               <ThemedText className="text-base font-semibold">
-                {day.label ? day.label.description : "Choose a label"}
+                {title}
               </ThemedText>
               <ThemedText
                 className="text-sm"
