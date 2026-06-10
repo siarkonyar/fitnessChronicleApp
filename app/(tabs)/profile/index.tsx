@@ -1,6 +1,7 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import StreakDisplay from "@/components/display/StreakDisplay";
+import ProgramList from "@/components/lists/ProgramList";
 import UserLabelList from "@/components/lists/UserLabelList";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -199,11 +200,11 @@ export default function Profile() {
 
         <UserLabelList labelOnPress={() => {}} />
 
-        {/* <View className="mb-8">
+        <View className="mb-8">
           <View className="w-full mb-8">
             <ProgramList />
           </View>
-        </View> */}
+        </View>
 
         <View className="my-8">
           <View className="w-full mb-8">

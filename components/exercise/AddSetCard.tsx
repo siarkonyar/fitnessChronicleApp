@@ -19,12 +19,13 @@ type Props = {
   id: number;
   index: number;
   reps: string;
-  value: string;
+  value?: string;
   setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
   measurement: "kg" | "lbs" | "time" | "distance" | "steps";
   repType: "fixed" | "range";
+  repsOnly?: boolean;
   onRepsChange: (id: number, newReps: string) => void;
-  onValueChange: (id: number, newValue: string) => void;
+  onValueChange?: (id: number, newValue: string) => void;
   onSetTypeChange: (
     id: number,
     newSetType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr",
@@ -41,6 +42,7 @@ export const AddSetCard: React.FC<Props> = ({
   setType,
   measurement,
   repType,
+  repsOnly,
   onRepsChange,
   onValueChange,
   onSetTypeChange,
@@ -86,7 +88,7 @@ export const AddSetCard: React.FC<Props> = ({
   const handleValueChange = (text: string) => {
     const clean = validateInput(text);
     if (clean === null) return;
-    onValueChange(id, clean);
+    onValueChange?.(id, clean);
   };
 
   const handleRepsChange = (text: string) => {
@@ -198,7 +200,7 @@ export const AddSetCard: React.FC<Props> = ({
             <ThemedView className="flex-1 min-w-0">
               {/* Only show reps picker for kg and lbs measurements */}
               {(measurement === "kg" || measurement === "lbs") && (
-                <ThemedView className="flex-row items-center mb-4">
+                <ThemedView className="flex-row items-center">
                   <Text className="text-xl text-gray-500 w-[50px] mr-4">
                     Reps:
                   </Text>
@@ -231,27 +233,43 @@ export const AddSetCard: React.FC<Props> = ({
                   </ThemedView>
                 </ThemedView>
               )}
-              <ThemedView className="flex-row items-center">
-                <Text className="text-xl text-gray-500 w-[50px] flex-shrink-0 mr-4">
-                  {measurement === "kg"
-                    ? "Kg:"
-                    : measurement === "lbs"
-                      ? "Lbs:"
-                      : measurement === "distance"
-                        ? "Km:"
-                        : measurement === "steps"
-                          ? "Steps"
-                          : ""}
-                </Text>
-                <ThemedView className="justify-center flex-1 min-w-0 max-w-64">
-                  {measurement === "time" ? (
-                    <>
+              {!repsOnly && (
+                <ThemedView className="flex-row items-center mt-4">
+                  <Text className="text-xl text-gray-500 w-[50px] flex-shrink-0 mr-4">
+                    {measurement === "kg"
+                      ? "Kg:"
+                      : measurement === "lbs"
+                        ? "Lbs:"
+                        : measurement === "distance"
+                          ? "Km:"
+                          : measurement === "steps"
+                            ? "Steps"
+                            : ""}
+                  </Text>
+                  <ThemedView className="justify-center flex-1 min-w-0 max-w-64">
+                    {measurement === "time" ? (
+                      <>
+                        <ThemedTextInput
+                          value={value}
+                          onChangeText={handleValueChange}
+                          onFocus={() => onValueChange?.(id, "")}
+                          onBlur={() => {
+                            if (!value) onValueChange?.(id, "0");
+                          }}
+                          keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          onSubmitEditing={() => Keyboard.dismiss()}
+                          maxLength={6}
+                          className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
+                        />
+                      </>
+                    ) : (
                       <ThemedTextInput
                         value={value}
                         onChangeText={handleValueChange}
-                        onFocus={() => onValueChange(id, "")}
+                        onFocus={() => onValueChange?.(id, "")}
                         onBlur={() => {
-                          if (!value) onValueChange(id, "0");
+                          if (!value) onValueChange?.(id, "0");
                         }}
                         keyboardType="decimal-pad"
                         returnKeyType="done"
@@ -259,27 +277,17 @@ export const AddSetCard: React.FC<Props> = ({
                         maxLength={6}
                         className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
                       />
-                    </>
-                  ) : (
-                    <ThemedTextInput
-                      value={value}
-                      onChangeText={handleValueChange}
-                      onFocus={() => onValueChange(id, "")}
-                      onBlur={() => {
-                        if (!value) onValueChange(id, "0");
-                      }}
-                      keyboardType="decimal-pad"
-                      returnKeyType="done"
-                      onSubmitEditing={() => Keyboard.dismiss()}
-                      maxLength={6}
-                      className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
-                    />
-                  )}
+                    )}
+                  </ThemedView>
                 </ThemedView>
-              </ThemedView>
+              )}
             </ThemedView>
             <ThemedView className="flex-col items-center gap-2">
-              <RoundedButton icon="copy" type="blue" onPress={() => onCopy(id)} />
+              <RoundedButton
+                icon="copy"
+                type="blue"
+                onPress={() => onCopy(id)}
+              />
               <RoundedButton
                 type="danger"
                 icon="x"

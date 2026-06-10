@@ -1,52 +1,76 @@
 import { Colors } from "@/constants/Colors";
-import { ExerciseLogWithIdSchema } from "@/types/types";
+import { ExerciseLogSchema } from "@/types/types";
 import { Text, View, useColorScheme } from "react-native";
 import { z } from "zod";
 
-type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
+type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
 type Set = ExerciseLog["sets"][number];
 
-type ShareExerciseCardProps = {
-  exercise: ExerciseLog;
+type MiniExerciseCardVariant = "share" | "program";
+
+type MiniExerciseCardProps = {
+  exercise: Pick<ExerciseLog, "activity" | "sets">;
+  variant?: MiniExerciseCardVariant;
+  className?: string;
 };
 
 function getSetLabel(set: Set, normalCountUpToHere: number): string {
   switch (set.setType) {
-    case "warmup": return "W";
-    case "failure": return "F";
-    case "drop": return "D";
-    case "pr": return "PR";
-    case "failedpr": return "FPR";
-    default: return `${normalCountUpToHere}`;
+    case "warmup":
+      return "W";
+    case "failure":
+      return "F";
+    case "drop":
+      return "D";
+    case "pr":
+      return "PR";
+    case "failedpr":
+      return "FPR";
+    default:
+      return `${normalCountUpToHere}`;
   }
 }
 
 function getSetLabelColor(set: Set, palette: (typeof Colors)["light"]) {
   switch (set.setType) {
-    case "warmup": return palette.secondary;
-    case "failure": return palette.highlight;
-    case "drop": return palette.accentBlue;
-    case "pr": return palette.success;
-    case "failedpr": return palette.danger;
-    default: return palette.mutedText;
+    case "warmup":
+      return palette.secondary;
+    case "failure":
+      return palette.highlight;
+    case "drop":
+      return palette.accentBlue;
+    case "pr":
+      return palette.success;
+    case "failedpr":
+      return palette.danger;
+    default:
+      return palette.mutedText;
   }
 }
 
-function formatSetValue(set: Set): string {
+function formatSetValue(set: Set, variant: MiniExerciseCardVariant): string {
+  const reps = "reps" in set ? (set.reps ?? "?") : "?";
+  if (variant === "program") return reps;
   if (set.measure === "kg" || set.measure === "lbs") {
-    const reps = "reps" in set ? (set.reps ?? "?") : "?";
     return `${set.value ?? "?"}${set.measure} × ${reps}`;
   }
   return set.value ?? "?";
 }
 
-export default function ShareExerciseCard({ exercise }: ShareExerciseCardProps) {
+export default function MiniExerciseCard({
+  exercise,
+  variant = "share",
+  className,
+}: MiniExerciseCardProps) {
   const theme = useColorScheme() ?? "light";
   const palette = Colors[theme];
   let normalCount = 0;
+  const isCompact = variant !== "share";
+  const titleSize = isCompact ? "text-base" : "text-sm";
+  const setTextSize = isCompact ? "text-sm" : "text-xs";
 
   return (
-    <View className="mb-4">
+    <View className={`mb-4 ${className ?? ""}`}>
       <View
         className="flex-row items-center mb-2"
         style={{
@@ -56,7 +80,7 @@ export default function ShareExerciseCard({ exercise }: ShareExerciseCardProps) 
         }}
       >
         <Text
-          className="text-sm font-bold tracking-widest"
+          className={`${titleSize} font-bold tracking-widest`}
           style={{ color: palette.text }}
         >
           {exercise.activity.toUpperCase()}
@@ -75,14 +99,15 @@ export default function ShareExerciseCard({ exercise }: ShareExerciseCardProps) 
                 style={{ backgroundColor: `${labelColor}22` }}
               >
                 <Text
-                  className="text-xs font-semibold"
+                  className={`${setTextSize} font-semibold`}
                   style={{ color: labelColor }}
                 >
                   {label}
                 </Text>
               </View>
-              <Text className="text-xs" style={{ color: palette.text }}>
-                {formatSetValue(set)}
+              {/* TODO make the sets text dynamic if it is only one set it should write set instead of sets */}
+              <Text className={setTextSize} style={{ color: palette.text }}>
+                {formatSetValue(set, variant)} sets
               </Text>
             </View>
           );

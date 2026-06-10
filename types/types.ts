@@ -85,7 +85,6 @@ export const ProgramExerciseSchema = z.object({
 });
 
 export const ProgramDaySchema = z.object({
-  index: z.number(),
   isRestDay: z.boolean(),
   label: LabelSchema.optional(),
   exercises: z.array(ProgramExerciseSchema).optional(),

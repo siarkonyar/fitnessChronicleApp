@@ -33,6 +33,12 @@ export const queryKeys = {
     all: ["exerciseNames"] as const,
   },
 
+  // Programs
+  programs: {
+    all: ["programs"] as const,
+    byId: (id: string) => [...queryKeys.programs.all, id] as const,
+  },
+
   //streak
   streak: {
     all: ["streakWeeks"] as const,
