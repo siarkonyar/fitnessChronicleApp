@@ -28,12 +28,12 @@ export default function CreateProgramScreen() {
   const [days, setDays] = useState<ProgramDay[]>([]);
 
   function addDay(isRestDay: boolean) {
-    setDays((prev) => [...prev, { index: prev.length, isRestDay }]);
+    setDays((prev) => [...prev, { isRestDay }]);
   }
 
   const removeDay = (index: number) => {
     Keyboard.dismiss();
-    setDays((prev) => prev.filter((d) => d.index !== index));
+    setDays((prev) => prev.filter((_, i) => i !== index));
   };
 
   function selectLabelForDay(dayIndex: number, label: Label) {
@@ -102,7 +102,8 @@ export default function CreateProgramScreen() {
                   index={i}
                   day={day}
                   onSelectLabel={(label) => selectLabelForDay(i, label)}
-                  onDeleteDay={(i) => removeDay(i)}
+                  //REVIEW - sometimes the first day is not deletable it doesnt delete the first day for some reason. (possible because there is something wrong happening with indexes)
+                  onDeleteDay={() => removeDay(i)}
                   className="mb-3"
                 />
               ))}
