@@ -3,6 +3,7 @@ import AddProgramDayCard from "@/components/cards/AddProgramDayCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import AppTextInput from "@/components/ui/AppTextInput";
+import PillButton from "@/components/ui/PillButton";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -25,7 +26,6 @@ import {
   Platform,
   ScrollView,
   Text,
-  TouchableOpacity,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { z } from "zod";
@@ -164,33 +164,32 @@ export default function CreateProgramScreen() {
               autoCapitalize="characters"
             />
           </ThemedView>
-          <ThemedView className="flex-row justify-between">
-            <TouchableOpacity
-              className="px-4 mb-3 flex-row items-center gap-1 active:opacity-70"
-              onPress={() => addDay(true)}
-            >
-              <Feather name="plus" size={16} color={Colors[theme].secondary} />
-              <ThemedText
-                className="text-sm font-medium"
-                lightColor={Colors.light.secondary}
-                darkColor={Colors.dark.secondary}
-              >
-                Add rest day
-              </ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="px-4 mb-3 flex-row items-center gap-1 active:opacity-70"
-              onPress={() => addDay(false)}
-            >
-              <Feather name="plus" size={16} color={Colors[theme].highlight} />
-              <ThemedText
-                className="text-sm font-medium"
-                lightColor={Colors.light.highlight}
-                darkColor={Colors.dark.highlight}
-              >
-                Add day
-              </ThemedText>
-            </TouchableOpacity>
+          <ThemedView className="flex-row gap-2 px-4 mb-3">
+            <ThemedView className="w-1/2 pr-2">
+              <PillButton color="highlight" onPress={() => addDay(false)}>
+                <Feather name="plus" size={14} color={Colors[theme].highlight} />
+                <ThemedText
+                  className="text-sm font-semibold"
+                  lightColor={Colors.light.highlight}
+                  darkColor={Colors.dark.highlight}
+                >
+                  Add day
+                </ThemedText>
+              </PillButton>
+            </ThemedView>
+
+            <ThemedView className="w-1/2 pr-2">
+              <PillButton color="secondary" onPress={() => addDay(true)}>
+                <Feather name="plus" size={14} color={Colors[theme].secondary} />
+                <ThemedText
+                  className="text-sm font-semibold"
+                  lightColor={Colors.light.secondary}
+                  darkColor={Colors.dark.secondary}
+                >
+                  Add rest day
+                </ThemedText>
+              </PillButton>
+            </ThemedView>
           </ThemedView>
           <KeyboardAvoidingView
             style={{ flex: 1 }}
