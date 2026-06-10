@@ -2,7 +2,7 @@ name: iOS production build and submit
 
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'v*']
 
 jobs:
   build_android:
