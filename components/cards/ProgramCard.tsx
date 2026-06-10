@@ -52,11 +52,15 @@ export default function ProgramCard({
         <ThemedView className="flex-row items-center w-full">
           <ThemedView className="flex-row items-center flex-1 min-w-0">
             <LabelBadge className="mr-4">
-              <Feather name="calendar" size={22} color={Colors[theme].highlight} />
+              <Feather
+                name="calendar"
+                size={22}
+                color={Colors[theme].highlight}
+              />
             </LabelBadge>
             <ThemedView className="flex-col flex-1 min-w-0">
               <ThemedText className="text-base font-semibold" numberOfLines={1}>
-                {program.name}
+                {program.name.toUpperCase()}
               </ThemedText>
               <ThemedText
                 className="text-sm"
@@ -92,7 +96,11 @@ export default function ProgramCard({
                     borderColor: `${Colors[theme].secondary}30`,
                   }}
                 >
-                  <Feather name="moon" size={13} color={Colors[theme].secondary} />
+                  <Feather
+                    name="moon"
+                    size={13}
+                    color={Colors[theme].secondary}
+                  />
                 </ThemedView>
               ) : (
                 <ThemedView
