@@ -79,10 +79,7 @@ export default function ProgramList() {
         Your Programs
       </ThemedText>
       <ThemedView>
-        <ScrollView
-          className="max-h-[48rem]"
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView className="max-h-96" keyboardShouldPersistTaps="handled">
           <View>
             {programs && programs.length > 0 ? (
               <ThemedView className="gap-3 mb-3">
