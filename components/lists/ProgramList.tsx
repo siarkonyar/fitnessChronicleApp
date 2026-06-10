@@ -83,7 +83,7 @@ export default function ProgramList() {
           className="max-h-[48rem]"
           keyboardShouldPersistTaps="handled"
         >
-          <View className="p-6">
+          <View>
             {programs && programs.length > 0 ? (
               <ThemedView className="gap-3 mb-3">
                 {programs.map((program) => (
