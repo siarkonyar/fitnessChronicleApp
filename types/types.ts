@@ -93,6 +93,7 @@ export const ProgramDaySchema = z.object({
 export const ProgramSchema = z.object({
   name: z.string().min(1),
   days: z.array(ProgramDaySchema),
+  createdAt: FirestoreTimestampSchema.optional(),
 });
 
 export const ExerciseNameListSchema = z.object({

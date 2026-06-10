@@ -3,12 +3,12 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
 import { View } from "react-native";
 
-interface LabelBadgeProps {
+interface IconBadgeProps {
   children: React.ReactNode;
   className?: string;
 }
 
-export default function LabelBadge({ children, className }: LabelBadgeProps) {
+export default function IconBadge({ children, className }: IconBadgeProps) {
   const theme = useColorScheme() ?? "light";
 
   return (

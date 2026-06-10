@@ -11,7 +11,7 @@ import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 import { ThemedTextInput } from "../ThemedTextInput";
 import { ThemedView } from "../ThemedView";
-import LabelBadge from "../ui/LabelBadge";
+import IconBadge from "../ui/IconBadge";
 import MutedCard from "./MuteCard";
 
 interface LabelCardProps {
@@ -142,7 +142,7 @@ export default function LabelCard({
       <ThemedView
         className={`flex-row items-center ${editable ? "flex-1" : ""} min-w-0 mr-2`}
       >
-        <LabelBadge className="mr-4">
+        <IconBadge className="mr-4">
           {isEditing ? (
             <ThemedTextInput
               value={editedLabel}
@@ -184,7 +184,7 @@ export default function LabelCard({
               {label.label}
             </ThemedText>
           )}
-        </LabelBadge>
+        </IconBadge>
         {isEditing ? (
           <ThemedTextInput
             value={editedDescription}
