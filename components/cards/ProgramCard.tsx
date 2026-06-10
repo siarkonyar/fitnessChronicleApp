@@ -2,7 +2,7 @@ import Card from "@/components/Card";
 import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import LabelBadge from "@/components/ui/LabelBadge";
+import IconBadge from "@/components/ui/IconBadge";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ProgramWithIdSchema } from "@/types/types";
@@ -51,13 +51,13 @@ export default function ProgramCard({
       >
         <ThemedView className="flex-row items-center w-full">
           <ThemedView className="flex-row items-center flex-1 min-w-0">
-            <LabelBadge className="mr-4">
+            <IconBadge className="mr-4">
               <Feather
                 name="calendar"
                 size={22}
                 color={Colors[theme].highlight}
               />
-            </LabelBadge>
+            </IconBadge>
             <ThemedView className="flex-col flex-1 min-w-0">
               <ThemedText className="text-base font-semibold" numberOfLines={1}>
                 {program.name.toUpperCase()}

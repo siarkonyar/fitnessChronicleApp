@@ -27,7 +27,7 @@ import AddProgramExerciseModal from "../modals/AddProgramExerciseModal";
 import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
-import LabelBadge from "../ui/LabelBadge";
+import IconBadge from "../ui/IconBadge";
 
 type ProgramDay = z.infer<typeof ProgramDaySchema>;
 type ProgramExercise = z.infer<typeof ProgramExerciseSchema>;
@@ -112,13 +112,13 @@ export default function AddProgramDayCard({
           <ThemedView className="flex-row items-center flex-1 min-w-0">
             {day.isRestDay ? (
               <ThemedView className="mr-4">
-                <LabelBadge>
+                <IconBadge>
                   <Feather
                     name="moon"
                     size={22}
                     color={Colors[theme].highlight}
                   />
-                </LabelBadge>
+                </IconBadge>
               </ThemedView>
             ) : (
               <TouchableOpacity
@@ -126,7 +126,7 @@ export default function AddProgramDayCard({
                 onPress={() => setIsLabelSelectionOpen(true)}
                 className="mr-4"
               >
-                <LabelBadge>
+                <IconBadge>
                   {day.label ? (
                     <ThemedText style={{ fontSize: 24 }}>
                       {day.label.label}
@@ -138,7 +138,7 @@ export default function AddProgramDayCard({
                       color={Colors[theme].highlight}
                     />
                   )}
-                </LabelBadge>
+                </IconBadge>
               </TouchableOpacity>
             )}
             <ThemedView className="flex-col flex-1 min-w-0">
