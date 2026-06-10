@@ -1,3 +1,4 @@
+import Card from "@/components/Card";
 import ProgramCard from "@/components/cards/ProgramCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -10,7 +11,7 @@ import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
-import { Alert } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { Button } from "../Button";
 
 export default function ProgramList() {
@@ -58,53 +59,74 @@ export default function ProgramList() {
 
   if (isLoading) {
     return (
-      <ThemedView className="items-center justify-center py-8">
-        <ThemedText
-          className="text-base"
-          lightColor={Colors.light.mutedText}
-          darkColor={Colors.dark.mutedText}
-        >
-          Loading programs...
-        </ThemedText>
-      </ThemedView>
+      <Card>
+        <ThemedView className="items-center justify-center py-8">
+          <ThemedText
+            className="text-base"
+            lightColor={Colors.light.mutedText}
+            darkColor={Colors.dark.mutedText}
+          >
+            Loading programs...
+          </ThemedText>
+        </ThemedView>
+      </Card>
     );
   }
 
   return (
-    <ThemedView>
-      {programs && programs.length > 0 ? (
-        <ThemedView className="gap-3 mb-3">
-          {programs.map((program) => (
-            <ProgramCard
-              key={program.id}
-              program={program}
-              onDelete={handleDeleteProgram}
-            />
-          ))}
-        </ThemedView>
-      ) : (
-        <ThemedView className="items-center py-8 px-4">
-          <Feather name="calendar" size={32} color={Colors[theme].mutedText} />
-          <ThemedText
-            className="text-center text-base font-semibold mt-4"
-            lightColor={Colors.light.mutedText}
-            darkColor={Colors.dark.mutedText}
-          >
-            No programs yet
-          </ThemedText>
-          <ThemedText
-            className="text-center text-sm mt-1"
-            lightColor={Colors.light.mutedText}
-            darkColor={Colors.dark.mutedText}
-          >
-            Create a program to start planning your training week.
-          </ThemedText>
-        </ThemedView>
-      )}
+    <Card>
+      <ThemedText type="subtitle" className="text-center my-4">
+        Your Programs
+      </ThemedText>
+      <ThemedView>
+        <ScrollView
+          className="max-h-[48rem]"
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="p-6">
+            {programs && programs.length > 0 ? (
+              <ThemedView className="gap-3 mb-3">
+                {programs.map((program) => (
+                  <ProgramCard
+                    key={program.id}
+                    program={program}
+                    onDelete={handleDeleteProgram}
+                  />
+                ))}
+              </ThemedView>
+            ) : (
+              <ThemedView className="items-center py-8">
+                <Feather
+                  name="calendar"
+                  size={32}
+                  color={Colors[theme].mutedText}
+                />
+                <ThemedText
+                  className="text-center text-base font-semibold mt-4"
+                  lightColor={Colors.light.mutedText}
+                  darkColor={Colors.dark.mutedText}
+                >
+                  No programs yet
+                </ThemedText>
+                <ThemedText
+                  className="text-center text-sm mt-1"
+                  lightColor={Colors.light.mutedText}
+                  darkColor={Colors.dark.mutedText}
+                >
+                  Create a program to start planning your training week.
+                </ThemedText>
+              </ThemedView>
+            )}
+          </View>
+        </ScrollView>
 
-      <Button onPress={() => router.push("/(screens)/createProgram")}>
-        Create Program
-      </Button>
-    </ThemedView>
+        <Button
+          className="my-2"
+          onPress={() => router.push("/(screens)/createProgram")}
+        >
+          Create Program
+        </Button>
+      </ThemedView>
+    </Card>
   );
 }
