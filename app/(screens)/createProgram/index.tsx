@@ -4,7 +4,11 @@ import { ThemedView } from "@/components/ThemedView";
 import AppTextInput from "@/components/ui/AppTextInput";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { LabelSchema, ProgramDaySchema } from "@/types/types";
+import {
+  LabelSchema,
+  ProgramDaySchema,
+  ProgramExerciseSchema,
+} from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useRef, useState } from "react";
@@ -19,6 +23,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { z } from "zod";
 
 type ProgramDay = z.infer<typeof ProgramDaySchema>;
+type ProgramExercise = z.infer<typeof ProgramExerciseSchema>;
 type Label = z.infer<typeof LabelSchema>;
 
 export default function CreateProgramScreen() {
