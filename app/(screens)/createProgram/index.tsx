@@ -57,6 +57,21 @@ export default function CreateProgramScreen() {
     );
   }
 
+  function removeExerciseFromDay(dayIndex: number, exerciseIndex: number) {
+    setDays((prev) =>
+      prev.map((day, i) =>
+        i === dayIndex
+          ? {
+              ...day,
+              exercises: (day.exercises ?? []).filter(
+                (_, j) => j !== exerciseIndex,
+              ),
+            }
+          : day,
+      ),
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
@@ -118,6 +133,9 @@ export default function CreateProgramScreen() {
                   day={day}
                   onSelectLabel={(label) => selectLabelForDay(i, label)}
                   onAddExercise={(exercise) => addExerciseToDay(i, exercise)}
+                  onDeleteExercise={(exerciseIndex) =>
+                    removeExerciseFromDay(i, exerciseIndex)
+                  }
                   onDeleteDay={() => removeDay(i)}
                   className="mb-3"
                 />

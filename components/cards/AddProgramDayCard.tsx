@@ -21,6 +21,7 @@ import {
 import { z } from "zod";
 import { Button } from "../Button";
 import Card from "../Card";
+import MiniExerciseCard from "../exercise/MiniExerciseCard";
 import UserLabelList from "../lists/UserLabelList";
 import AddProgramExerciseModal from "../modals/AddProgramExerciseModal";
 import { RoundedButton } from "../RoundButton";
@@ -38,6 +39,7 @@ interface AddProgramDayCardProps {
   day: ProgramDay;
   onSelectLabel: (label: Label) => void;
   onAddExercise: (exercise: ProgramExercise) => void;
+  onDeleteExercise: (exerciseIndex: number) => void;
   onDeleteDay: (index: number) => void;
   className?: string;
 }
@@ -47,6 +49,7 @@ export default function AddProgramDayCard({
   day,
   onSelectLabel,
   onAddExercise,
+  onDeleteExercise,
   onDeleteDay,
   className,
 }: AddProgramDayCardProps) {
@@ -122,12 +125,38 @@ export default function AddProgramDayCard({
           </ThemedView>
         </ThemedView>
 
+        {!day.isRestDay && exerciseCount > 0 && (
+          <ThemedView
+            className="mt-3 pt-3 border-t"
+            style={{ borderTopColor: Colors[theme].separator }}
+          >
+            {day.exercises?.map((exercise, exerciseIndex) => (
+              <ThemedView key={exerciseIndex} className="flex-row items-start gap-2">
+                <MiniExerciseCard
+                  exercise={exercise}
+                  variant="program"
+                  className="flex-1"
+                />
+                <RoundedButton
+                  type="danger"
+                  icon="trash-2"
+                  onPress={() => onDeleteExercise(exerciseIndex)}
+                />
+              </ThemedView>
+            ))}
+          </ThemedView>
+        )}
+
         {!day.isRestDay && (
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => setIsAddExerciseOpen(true)}
-            className="flex-row items-center mt-3 pt-3 border-t"
-            style={{ borderTopColor: Colors[theme].separator }}
+            className={`flex-row items-center mt-3 pt-3 ${exerciseCount > 0 ? "" : "border-t"}`}
+            style={
+              exerciseCount > 0
+                ? undefined
+                : { borderTopColor: Colors[theme].separator }
+            }
           >
             <Feather name="plus" size={16} color={Colors[theme].highlight} />
             <ThemedText

@@ -200,7 +200,7 @@ export const AddSetCard: React.FC<Props> = ({
             <ThemedView className="flex-1 min-w-0">
               {/* Only show reps picker for kg and lbs measurements */}
               {(measurement === "kg" || measurement === "lbs") && (
-                <ThemedView className="flex-row items-center mb-4">
+                <ThemedView className="flex-row items-center">
                   <Text className="text-xl text-gray-500 w-[50px] mr-4">
                     Reps:
                   </Text>
@@ -234,7 +234,7 @@ export const AddSetCard: React.FC<Props> = ({
                 </ThemedView>
               )}
               {!repsOnly && (
-                <ThemedView className="flex-row items-center">
+                <ThemedView className="flex-row items-center mt-4">
                   <Text className="text-xl text-gray-500 w-[50px] flex-shrink-0 mr-4">
                     {measurement === "kg"
                       ? "Kg:"
