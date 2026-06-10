@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   View,
@@ -20,7 +21,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 import { AddSetCard } from "../exercise/AddSetCard";
-import { RoundedButton } from "../RoundButton";
+import TextPill from "../TextPill";
 
 type ProgramExercise = z.infer<typeof ProgramExerciseSchema>;
 
@@ -158,12 +159,21 @@ export default function AddProgramExerciseModal({
             darkColor={Colors.dark.background}
             style={{ paddingTop: insets.top }}
           >
-            <ThemedView className="px-4 my-4">
-              <ThemedView className="flex-row items-center justify-between mb-2">
-                <ThemedText className="text-sm opacity-70">
-                  Day {dayIndex + 1}
+            <ThemedView className="px-4 pt-2 pb-4">
+              <ThemedView className="flex-row items-center justify-between mb-3">
+                <Pressable onPress={handleClose} hitSlop={8}>
+                  <ThemedText
+                    className="text-base"
+                    lightColor={Colors.light.mutedText}
+                    darkColor={Colors.dark.mutedText}
+                  >
+                    Cancel
+                  </ThemedText>
+                </Pressable>
+                <ThemedText className="text-base font-semibold">
+                  {initialExercise ? "Edit Exercise" : "Add Exercise"}
                 </ThemedText>
-                <RoundedButton type="danger" icon="x" onPress={handleClose} />
+                <TextPill text={`Day ${dayIndex + 1}`} />
               </ThemedView>
               {titleError ? (
                 <>
