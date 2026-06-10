@@ -1,9 +1,13 @@
+import { Button } from "@/components/Button";
 import AddProgramDayCard from "@/components/cards/AddProgramDayCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import AppTextInput from "@/components/ui/AppTextInput";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { addProgram } from "@/lib/firebase/program";
 import {
   LabelSchema,
   ProgramDaySchema,
@@ -11,6 +15,8 @@ import {
 } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -18,6 +24,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Text,
   TouchableOpacity,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -28,9 +35,13 @@ type ProgramExercise = z.infer<typeof ProgramExerciseSchema>;
 type Label = z.infer<typeof LabelSchema>;
 
 export default function CreateProgramScreen() {
+  const queryClient = useQueryClient();
+  const { handleMutationError } = useServerErrorHandler();
+
   const scrollRef = useRef<ScrollView>(null);
   const theme = useColorScheme() ?? "light";
   const [programName, setProgramName] = useState("");
+  const [nameError, setNameError] = useState(false);
   const [days, setDays] = useState<ProgramDay[]>([]);
 
   function addDay(isRestDay: boolean) {
@@ -101,14 +112,51 @@ export default function CreateProgramScreen() {
     );
   }
 
+  const addProgramMutation = useMutation({
+    mutationFn: ({ name, days }: { name: string; days: ProgramDay[] }) =>
+      addProgram(name, days),
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.programs.all });
+    },
+  });
+
+  const createProgram = async () => {
+    if (!programName.trim()) {
+      setNameError(true);
+      console.warn("Please enter a program name");
+      return;
+    }
+
+    try {
+      await addProgramMutation.mutateAsync({
+        name: programName.trim(),
+        days,
+      });
+      router.back();
+    } catch (error) {
+      console.error("Failed to create program:", error);
+    }
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <ThemedView className="flex-1">
           <ThemedView className="px-4 my-4">
+            {nameError && (
+              <Text className="text-red-500 mb-2">
+                Please enter a program name
+              </Text>
+            )}
             <AppTextInput
               value={programName}
-              onChangeText={setProgramName}
+              onChangeText={(text) => {
+                setProgramName(text);
+                if (nameError) setNameError(false);
+              }}
               autoFocus={false}
               className="w-full text-3xl font-semibold"
               style={{ textTransform: "uppercase" }}
@@ -172,6 +220,16 @@ export default function CreateProgramScreen() {
                   className="mb-3"
                 />
               ))}
+              <Button
+                type="primary"
+                onPress={createProgram}
+                disabled={addProgramMutation.isPending}
+                className="my-6"
+              >
+                {addProgramMutation.isPending
+                  ? "Creating Program..."
+                  : "Create Program"}
+              </Button>
             </ScrollView>
           </KeyboardAvoidingView>
         </ThemedView>
