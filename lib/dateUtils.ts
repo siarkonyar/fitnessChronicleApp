@@ -2,6 +2,13 @@ export const getTodayString = (): string => {
   return new Date().toLocaleDateString("en-CA");
 };
 
+export const daysBetween = (fromDate: string, toDate: string): number => {
+  const from = new Date(`${fromDate}T00:00:00`);
+  const to = new Date(`${toDate}T00:00:00`);
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.round((to.getTime() - from.getTime()) / msPerDay);
+};
+
 export const findMostRecentSessionDate = (
   dates: string[],
   today: string,
