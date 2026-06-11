@@ -288,7 +288,7 @@ export default function Index() {
                 color={Colors[theme].highlight}
               />
               <ThemedText
-                className="ml-2 text-sm"
+                className="ml-2"
                 lightColor={Colors[theme].mutedText}
                 darkColor={Colors[theme].mutedText}
               >

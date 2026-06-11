@@ -485,7 +485,7 @@ export default function Index() {
                               <ThemedText
                                 lightColor={Colors.light.mutedText}
                                 darkColor={Colors.dark.mutedText}
-                                className="text-sm mb-2"
+                                className="mb-2"
                               >
                                 {formatDateAsString(exercise.date)}
                               </ThemedText>

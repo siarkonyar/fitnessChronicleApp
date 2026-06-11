@@ -45,7 +45,7 @@ export default function ExerciseLogByDate({
 
   let emptyDay = (
     <ThemedView className="flex-1 justify-center items-center pt-8">
-      <ThemedText className="text-xl font-semibold text-center leading-relaxed">
+      <ThemedText className="font-semibold text-center">
         No exercise logs found for {"\n"}
         {formatDateAsString(selectedDate)}.{" "}
       </ThemedText>
@@ -60,10 +60,10 @@ export default function ExerciseLogByDate({
     case selectedDate === today:
       emptyDay = (
         <ThemedView className="px-6 rounded-xl max-w-md mx-auto">
-          <ThemedText className="text-xl font-semibold text-center leading-relaxed">
+          <ThemedText className="font-semibold text-center">
             You haven&apos;t started your workout yet. Ready to{" "}
             <ThemedText className="font-bold">crush</ThemedText> it today?{"\n"}{" "}
-            <ThemedText className="text-2xl">🚀💪</ThemedText>
+            <ThemedText>🚀💪</ThemedText>
           </ThemedText>
 
           <ThemedView className="items-center mt-4">
@@ -81,13 +81,13 @@ export default function ExerciseLogByDate({
     case selectedDate < today:
       emptyDay = (
         <ThemedView className="px-6 rounded-xl max-w-md mx-auto">
-          <ThemedText className="text-xl font-semibold text-center leading-relaxed">
+          <ThemedText className="font-semibold text-center">
             Seems like it was a
             <ThemedText className="font-bold"> rest day</ThemedText>. {"\n"} The
             perfect time to{" "}
             <ThemedText className="font-bold">recharge </ThemedText>
             and get ready for your next workout!{" "}
-            <ThemedText className="text-2xl">🛌💪</ThemedText>
+            <ThemedText>🛌💪</ThemedText>
           </ThemedText>
         </ThemedView>
       );
@@ -95,11 +95,11 @@ export default function ExerciseLogByDate({
     case selectedDate > today:
       emptyDay = (
         <ThemedView className="px-6 rounded-xl max-w-md mx-auto">
-          <ThemedText className="text-xl font-semibold text-center leading-relaxed">
+          <ThemedText className="font-semibold text-center">
             Your workout is waiting.{"\n"}
             <ThemedText className="font-bold">Prepare</ThemedText> to make it
             count!{"\n"}
-            <ThemedText className="text-2xl">💪✨</ThemedText>
+            <ThemedText>💪✨</ThemedText>
           </ThemedText>
         </ThemedView>
       );

@@ -85,7 +85,6 @@ export default function ProgramDetailsModal({
       >
         {totalDays === 0 ? (
           <ThemedText
-            className="text-sm"
             lightColor={Colors.light.mutedText}
             darkColor={Colors.dark.mutedText}
           >
@@ -104,7 +103,7 @@ export default function ProgramDetailsModal({
                 }`}
               >
                 <ThemedText
-                  className="text-xs font-bold"
+                  className="font-bold"
                   style={{ color: palette.highlight }}
                 >
                   DAY {index + 1}
@@ -113,7 +112,7 @@ export default function ProgramDetailsModal({
                   <ThemedView className="flex-row items-center ml-2">
                     <Feather name="moon" size={12} color={palette.secondary} />
                     <ThemedText
-                      className="text-sm ml-1"
+                      className="ml-1"
                       lightColor={Colors.light.mutedText}
                       darkColor={Colors.dark.mutedText}
                     >
@@ -122,12 +121,12 @@ export default function ProgramDetailsModal({
                   </ThemedView>
                 ) : (
                   <ThemedView className="flex-row items-center flex-1 min-w-0 ml-2">
-                    <ThemedText className="text-sm font-semibold">
+                    <ThemedText className="font-semibold">
                       {day.label?.label ?? "?"}
                     </ThemedText>
                     {day.label?.description && (
                       <ThemedText
-                        className="text-sm ml-2"
+                        className="ml-2"
                         numberOfLines={1}
                         lightColor={Colors.light.mutedText}
                         darkColor={Colors.dark.mutedText}
@@ -150,7 +149,6 @@ export default function ProgramDetailsModal({
                   ))
                 ) : (
                   <ThemedText
-                    className="text-xs"
                     lightColor={Colors.light.mutedText}
                     darkColor={Colors.dark.mutedText}
                   >

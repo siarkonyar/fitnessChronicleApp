@@ -106,7 +106,7 @@ export default function ProgramList() {
                   No programs yet
                 </ThemedText>
                 <ThemedText
-                  className="text-center text-sm mt-1"
+                  className="text-center mt-1"
                   lightColor={Colors.light.mutedText}
                   darkColor={Colors.dark.mutedText}
                 >

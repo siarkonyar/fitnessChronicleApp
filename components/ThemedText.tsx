@@ -2,16 +2,36 @@ import { StyleSheet, Text, type TextProps } from "react-native";
 
 import { useThemeColor } from "@/hooks/useThemeColor";
 
+export type ThemedTextType =
+  | "default"
+  | "title"
+  | "defaultSemiBold"
+  | "subtitle"
+  | "link"
+  | "label";
+
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?:
-    | "default"
-    | "title"
-    | "defaultSemiBold"
-    | "subtitle"
-    | "link"
-    | "label";
+  type?: ThemedTextType;
+};
+
+const TYPE_CLASS_NAMES: Record<ThemedTextType, string> = {
+  default: "text-base",
+  defaultSemiBold: "text-base font-semibold",
+  title: "text-2xl font-['Inter-Bold']",
+  subtitle: "text-xl font-bold",
+  link: "text-base",
+  label: "font-sans uppercase tracking-[3.5px] opacity-60",
+};
+
+const TYPE_LINE_HEIGHTS: Record<ThemedTextType, number | undefined> = {
+  default: undefined,
+  defaultSemiBold: undefined,
+  title: undefined,
+  subtitle: undefined,
+  link: undefined,
+  label: undefined,
 };
 
 export function ThemedText({
@@ -19,6 +39,7 @@ export function ThemedText({
   lightColor,
   darkColor,
   type = "default",
+  className,
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
@@ -26,49 +47,20 @@ export function ThemedText({
   return (
     <Text
       style={[
-        { color },
-        type === "default" ? styles.default : undefined,
-        type === "title" ? styles.title : undefined,
-        type === "defaultSemiBold" ? styles.defaultSemiBold : undefined,
-        type === "subtitle" ? styles.subtitle : undefined,
+        { color, lineHeight: TYPE_LINE_HEIGHTS[type] },
         type === "link" ? styles.link : undefined,
-        type === "label" ? styles.label : undefined,
         style,
       ]}
-      className="py-1"
+      className={["py-1", TYPE_CLASS_NAMES[type], className]
+        .filter(Boolean)
+        .join(" ")}
       {...rest}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "600",
-  },
-  title: {
-    fontFamily: "Inter-Bold",
-    fontSize: 24,
-    lineHeight: 32,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
   link: {
-    lineHeight: 30,
-    fontSize: 16,
     color: "#0a7ea4",
-  },
-  label: {
-    fontFamily: "Inter",
-    textTransform: "uppercase",
-    letterSpacing: 3.5,
-    opacity: 0.6,
   },
 });

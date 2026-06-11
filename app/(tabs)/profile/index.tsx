@@ -148,13 +148,13 @@ export default function Profile() {
             <View className="items-center py-4" style={{ paddingTop: 60 }}>
               <ThemedText
                 type="defaultSemiBold"
-                className="text-lg mb-1 text-center"
+                className="mb-1 text-center"
               >
                 {user?.displayName || "User"}
               </ThemedText>
               {user?.email && (
                 <ThemedText
-                  className="text-sm text-center opacity-70"
+                  className="text-center opacity-70"
                   style={{
                     marginBottom:
                       profile?.birthday || profile?.gender ? 10 : 16,
@@ -171,7 +171,6 @@ export default function Profile() {
                       style={{ backgroundColor: Colors[theme].inputBackground }}
                     >
                       <ThemedText
-                        className="text-xs"
                         lightColor={Colors.light.mutedText}
                         darkColor={Colors.dark.mutedText}
                       >
@@ -185,7 +184,6 @@ export default function Profile() {
                       style={{ backgroundColor: Colors[theme].inputBackground }}
                     >
                       <ThemedText
-                        className="text-xs"
                         lightColor={Colors.light.mutedText}
                         darkColor={Colors.dark.mutedText}
                       >

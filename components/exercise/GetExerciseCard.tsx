@@ -172,11 +172,11 @@ export default function GetExerciseCard({
                     key={index}
                     className="flex-row justify-between w-full border-b border-gray-300 dark:border-gray-700 mb-1 pb-1"
                   >
-                    <ThemedText className="text-sm">
+                    <ThemedText>
                       <Text style={{ color: setColor }}>{setDisplay}</Text>
                       {" set: "}
                     </ThemedText>
-                    <ThemedText className="text-sm">
+                    <ThemedText>
                       {set.value ?? "?"}
                       {set.measure}{" "}
                       <Feather name="x" size={12} color={Colors[theme].text} />{" "}

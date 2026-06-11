@@ -117,7 +117,7 @@ export default function ProgramCard({
                     borderColor: `${Colors[theme].highlight}30`,
                   }}
                 >
-                  <ThemedText className="text-xs font-bold">
+                  <ThemedText className="font-bold">
                     {day.label?.label ?? "?"}
                   </ThemedText>
                 </ThemedView>
