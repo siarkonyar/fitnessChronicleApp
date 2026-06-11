@@ -3,8 +3,10 @@ import { ThemedView } from "@/components/ThemedView";
 import { TintedButton } from "@/components/TintedButton";
 import { Colors } from "@/constants/Colors";
 import { useActiveProgram } from "@/hooks/useActiveProgram";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import React, { useState } from "react";
 import { ActivityIndicator, Modal, View, useColorScheme } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Button } from "./Button";
 import ProgramList from "./lists/ProgramList";
 
@@ -31,25 +33,29 @@ export default function ChooseProgram() {
         animationType="fade"
         onRequestClose={() => setIsOpen(false)}
       >
-        <View className="flex-1 items-center justify-center px-4 bg-black backdrop-blur-sm">
-          {isSelecting ? (
-            <ActivityIndicator
-              size="large"
-              color={Colors[theme].highlight}
-              className="mb-4"
-            />
-          ) : (
-            <ThemedView className="w-11/12 max-w-md mx-4">
-              <ThemedText className="font-bold mb-2 text-center">
-                Choose a Program
-              </ThemedText>
-              <ProgramList programOnPress={handleSelectProgram} />
-              <Button type="danger" onPress={() => setIsOpen(false)}>
-                Cancel
-              </Button>
-            </ThemedView>
-          )}
-        </View>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <BottomSheetModalProvider>
+            <View className="flex-1 items-center justify-center px-4 bg-black backdrop-blur-sm">
+              {isSelecting ? (
+                <ActivityIndicator
+                  size="large"
+                  color={Colors[theme].highlight}
+                  className="mb-4"
+                />
+              ) : (
+                <ThemedView className="w-11/12 max-w-md mx-4">
+                  <ThemedText className="font-bold mb-2 text-center">
+                    Choose a Program
+                  </ThemedText>
+                  <ProgramList programOnPress={handleSelectProgram} />
+                  <Button type="danger" onPress={() => setIsOpen(false)}>
+                    Cancel
+                  </Button>
+                </ThemedView>
+              )}
+            </View>
+          </BottomSheetModalProvider>
+        </GestureHandlerRootView>
       </Modal>
     </>
   );

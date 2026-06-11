@@ -1,5 +1,6 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
+import ChooseProgram from "@/components/ChooseProgram";
 import TodayLabelCard from "@/components/cards/TodayLabelCard";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
@@ -8,7 +9,6 @@ import ShareDayModal from "@/components/modals/ShareDayModal";
 import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { TintedButton } from "@/components/TintedButton";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
@@ -111,7 +111,7 @@ export default function HomeScreen() {
               {readableDate}
             </ThemedText>
           </View>
-          <TintedButton>Choose Program</TintedButton>
+          <ChooseProgram />
         </View>
       </View>
 
