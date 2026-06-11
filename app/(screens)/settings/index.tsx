@@ -23,6 +23,7 @@ import {
   BottomSheetModalProvider,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
@@ -93,7 +94,7 @@ export default function Settings() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const { refreshUser } = useAuth();
+  const { refreshUser, signOut } = useAuth();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["userProfile"],
@@ -117,7 +118,9 @@ export default function Settings() {
 
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [defaultFixedReps, setDefaultFixedReps] = useState(false);
-  const [defaultMeasurement, setDefaultMeasurement] = useState<"kg" | "lbs">("kg");
+  const [defaultMeasurement, setDefaultMeasurement] = useState<"kg" | "lbs">(
+    "kg",
+  );
 
   useEffect(() => {
     getHapticsEnabled().then(setHapticsEnabled);
@@ -212,6 +215,22 @@ export default function Settings() {
 
   const handleSelectGender = (value: GenderValue) => {
     genderMutation.mutate({ gender: value });
+  };
+
+  const handleSignout = async () => {
+    try {
+      await signOut();
+      queryClient.clear();
+      await AsyncStorage.clear();
+      if (Updates.reloadAsync) {
+        await Updates.reloadAsync();
+      } else {
+        router.replace("/signin");
+      }
+    } catch (error) {
+      console.error("Sign out error:", error);
+      Alert.alert("Error", "Failed to sign out. Please try again.");
+    }
   };
 
   const renderBackdrop = useCallback(
@@ -528,10 +547,15 @@ export default function Settings() {
                 activeOpacity={0.7}
               >
                 <View className="justify-center">
-                  <IconBox name="monitor-weight" color={Colors[theme].accentTeal} />
+                  <IconBox
+                    name="monitor-weight"
+                    color={Colors[theme].accentTeal}
+                  />
                 </View>
                 <View className="flex-1 ml-3">
-                  <ThemedText className="text-base">Default Measurement</ThemedText>
+                  <ThemedText className="text-base">
+                    Default Measurement
+                  </ThemedText>
                   <ThemedText
                     className="text-xs mt-0.5"
                     lightColor={Colors.light.mutedText}
@@ -569,6 +593,23 @@ export default function Settings() {
             </ThemedText>
 
             <SectionCard>
+              <TouchableOpacity
+                className="flex-row items-center px-4 py-4"
+                onPress={handleSignout}
+                activeOpacity={0.7}
+              >
+                <IconBox name="logout" color={Colors[theme].danger} />
+                <ThemedText
+                  className="flex-1 text-base ml-3"
+                  lightColor={Colors.light.danger}
+                  darkColor={Colors.dark.danger}
+                >
+                  Sign Out
+                </ThemedText>
+              </TouchableOpacity>
+
+              <RowDivider />
+
               <TouchableOpacity
                 className="flex-row items-center px-4 py-3.5"
                 onPress={() => router.push("/deleteAccount")}

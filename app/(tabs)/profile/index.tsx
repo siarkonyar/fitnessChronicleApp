@@ -1,4 +1,3 @@
-import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import UserLabelList from "@/components/lists/UserLabelList";
@@ -8,13 +7,10 @@ import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
 import { getUserProfile } from "@/lib/firebase/user";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import * as Updates from "expo-updates";
 import React, { useState } from "react";
 import {
-  Alert,
   Image,
   RefreshControl,
   ScrollView,
@@ -46,37 +42,12 @@ function calculateAge(birthday: string): number {
 export default function Profile() {
   const [refreshing, setRefreshing] = useState(false);
   const theme = useColorScheme() ?? "light";
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
 
   const { data: profile } = useQuery({
     queryKey: ["userProfile"],
     queryFn: getUserProfile,
   });
-
-  const queryClient = useQueryClient();
-
-  const handleSignout = async () => {
-    try {
-      // Sign out from Firebase and Google
-      await signOut();
-
-      queryClient.clear(); // empty the inmemory cache
-
-      // Clear local storage
-      await AsyncStorage.clear();
-
-      // Attempt to fully reload the app after sign-out
-      if (Updates.reloadAsync) {
-        await Updates.reloadAsync();
-      } else {
-        // Fallback: navigate to the signin screen
-        router.replace("/signin");
-      }
-    } catch (error) {
-      console.error("Sign out error:", error);
-      Alert.alert("Error", "Failed to sign out. Please try again.");
-    }
-  };
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -204,14 +175,6 @@ export default function Profile() {
             <ProgramList />
           </View>
         </View> */}
-
-        <View className="my-8">
-          <View className="w-full mb-8">
-            <Button type="danger" onPress={handleSignout}>
-              Sign Out
-            </Button>
-          </View>
-        </View>
       </ScrollView>
     </>
   );
