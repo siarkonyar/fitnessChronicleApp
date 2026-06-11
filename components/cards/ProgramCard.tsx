@@ -5,11 +5,11 @@ import { ThemedView } from "@/components/ThemedView";
 import IconBadge from "@/components/ui/IconBadge";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import MiniExerciseCard from "@/components/exercise/MiniExerciseCard";
+import ProgramDetailsModal from "@/components/modals/ProgramDetailsModal";
 import { ProgramWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { LayoutAnimation, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { z } from "zod";
 
 type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
@@ -28,12 +28,7 @@ export default function ProgramCard({
   className,
 }: ProgramCardProps) {
   const theme = useColorScheme() ?? "light";
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const handleToggleExpand = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsExpanded((prev) => !prev);
-  };
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
 
   const totalDays = program.days.length;
   const restDayCount = program.days.filter((day) => day.isRestDay).length;
@@ -90,7 +85,7 @@ export default function ProgramCard({
         {totalDays > 0 && (
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={handleToggleExpand}
+            onPress={() => setIsDetailsModalVisible(true)}
             className="flex-row items-center mt-3 pt-3 border-t"
             style={{ borderTopColor: Colors[theme].separator }}
           >
@@ -130,93 +125,20 @@ export default function ProgramCard({
               )}
             </ThemedView>
             <Feather
-              name={isExpanded ? "chevron-up" : "chevron-down"}
+              name="chevron-right"
               size={18}
               color={Colors[theme].mutedText}
               style={{ marginLeft: 8 }}
             />
           </TouchableOpacity>
         )}
-
-        {isExpanded && totalDays > 0 && (
-          <ThemedView
-            className="mt-3 pt-3 border-t"
-            style={{ borderTopColor: Colors[theme].separator }}
-          >
-            {program.days.map((day, index) => (
-              <Card
-                key={index}
-                className={index === totalDays - 1 ? "mb-0" : ""}
-                style={{ backgroundColor: Colors[theme].cardBackground }}
-              >
-                <ThemedView
-                  className={`flex-row items-center ${
-                    day.isRestDay ? "" : "mb-3"
-                  }`}
-                >
-                  <ThemedText
-                    className="text-xs font-bold"
-                    style={{ color: Colors[theme].highlight }}
-                  >
-                    DAY {index + 1}
-                  </ThemedText>
-                  {day.isRestDay ? (
-                    <ThemedView className="flex-row items-center ml-2">
-                      <Feather
-                        name="moon"
-                        size={12}
-                        color={Colors[theme].secondary}
-                      />
-                      <ThemedText
-                        className="text-sm ml-1"
-                        lightColor={Colors.light.mutedText}
-                        darkColor={Colors.dark.mutedText}
-                      >
-                        Rest day
-                      </ThemedText>
-                    </ThemedView>
-                  ) : (
-                    <ThemedView className="flex-row items-center flex-1 min-w-0 ml-2">
-                      <ThemedText className="text-sm font-semibold">
-                        {day.label?.label ?? "?"}
-                      </ThemedText>
-                      {day.label?.description && (
-                        <ThemedText
-                          className="text-sm ml-2"
-                          numberOfLines={1}
-                          lightColor={Colors.light.mutedText}
-                          darkColor={Colors.dark.mutedText}
-                        >
-                          {day.label.description}
-                        </ThemedText>
-                      )}
-                    </ThemedView>
-                  )}
-                </ThemedView>
-
-                {!day.isRestDay &&
-                  (day.exercises && day.exercises.length > 0 ? (
-                    day.exercises.map((exercise, exerciseIndex) => (
-                      <MiniExerciseCard
-                        key={exerciseIndex}
-                        exercise={exercise}
-                        variant="program"
-                      />
-                    ))
-                  ) : (
-                    <ThemedText
-                      className="text-xs"
-                      lightColor={Colors.light.mutedText}
-                      darkColor={Colors.dark.mutedText}
-                    >
-                      No exercises yet
-                    </ThemedText>
-                  ))}
-              </Card>
-            ))}
-          </ThemedView>
-        )}
       </TouchableOpacity>
+
+      <ProgramDetailsModal
+        program={program}
+        visible={isDetailsModalVisible}
+        onClose={() => setIsDetailsModalVisible(false)}
+      />
     </Card>
   );
 }
