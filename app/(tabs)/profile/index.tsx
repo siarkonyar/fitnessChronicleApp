@@ -9,8 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserProfile } from "@/lib/firebase/user";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -118,10 +117,7 @@ export default function Profile() {
               />
             </TouchableOpacity>
             <View className="items-center py-4" style={{ paddingTop: 60 }}>
-              <ThemedText
-                type="defaultSemiBold"
-                className="mb-1 text-center"
-              >
+              <ThemedText type="defaultSemiBold" className="mb-1 text-center">
                 {user?.displayName || "User"}
               </ThemedText>
               {user?.email && (
@@ -175,14 +171,6 @@ export default function Profile() {
           <UserLabelList labelOnPress={() => {}} />
 
           <ProgramList />
-
-          <View className="my-8">
-            <View className="w-full mb-8">
-              <Button type="danger" onPress={handleSignout}>
-                Sign Out
-              </Button>
-            </View>
-          </View>
         </ScrollView>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
