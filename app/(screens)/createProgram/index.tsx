@@ -173,7 +173,7 @@ export default function CreateProgramScreen() {
                   color={Colors[theme].highlight}
                 />
                 <ThemedText
-                  className="text-sm font-semibold"
+                  className="font-semibold"
                   lightColor={Colors.light.highlight}
                   darkColor={Colors.dark.highlight}
                 >
@@ -190,7 +190,7 @@ export default function CreateProgramScreen() {
                   color={Colors[theme].secondary}
                 />
                 <ThemedText
-                  className="text-sm font-semibold"
+                  className="font-semibold"
                   lightColor={Colors.light.secondary}
                   darkColor={Colors.dark.secondary}
                 >
@@ -225,7 +225,7 @@ export default function CreateProgramScreen() {
                     No days yet
                   </ThemedText>
                   <ThemedText
-                    className="text-center text-sm mt-1"
+                    className="text-center mt-1"
                     lightColor={Colors.light.mutedText}
                     darkColor={Colors.dark.mutedText}
                   >

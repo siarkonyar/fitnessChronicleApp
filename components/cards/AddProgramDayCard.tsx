@@ -146,7 +146,6 @@ export default function AddProgramDayCard({
                 {title}
               </ThemedText>
               <ThemedText
-                className="text-sm"
                 lightColor={Colors.light.mutedText}
                 darkColor={Colors.dark.mutedText}
               >
@@ -203,7 +202,7 @@ export default function AddProgramDayCard({
           >
             <Feather name="plus" size={16} color={Colors[theme].highlight} />
             <ThemedText
-              className="text-sm font-medium ml-1"
+              className="font-medium ml-1"
               lightColor={Colors.light.highlight}
               darkColor={Colors.dark.highlight}
             >
@@ -226,10 +225,10 @@ export default function AddProgramDayCard({
         >
           <View className="flex-1 items-center justify-center px-4 bg-black backdrop-blur-sm">
             <ThemedView className="w-11/12 max-w-md mx-4">
-              <ThemedText className="text-2xl font-bold mb-2 text-center">
+              <ThemedText className="font-bold mb-2 text-center">
                 Choose a Label
               </ThemedText>
-              <ThemedText className="text-sm opacity-70 text-center mb-6">
+              <ThemedText className="opacity-70 text-center mb-6">
                 Day {index + 1}
               </ThemedText>
               <UserLabelList labelOnPress={handleSelectLabel} />

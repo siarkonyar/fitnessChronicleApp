@@ -66,7 +66,7 @@ export default function TodayLabelCard() {
           <View className="flex-row items-center justify-between mb-3">
             <View className="flex-row items-center gap-2">
               <Feather name="clock" size={13} color={Colors[theme].mutedText} />
-              <ThemedText className="text-xs uppercase tracking-[0.35em] opacity-60">
+              <ThemedText className="uppercase tracking-[0.35em] opacity-60">
                 Last Session
               </ThemedText>
             </View>
@@ -104,14 +104,14 @@ export default function TodayLabelCard() {
           ) : (
             <View className="items-center py-4 gap-1">
               <ThemedText
-                className="text-sm opacity-50"
+                className="opacity-50"
                 lightColor={Colors.light.mutedText}
                 darkColor={Colors.dark.mutedText}
               >
                 No previous session yet.
               </ThemedText>
               <ThemedText
-                className="text-xs opacity-40"
+                className="opacity-40"
                 lightColor={Colors.light.mutedText}
                 darkColor={Colors.dark.mutedText}
               >

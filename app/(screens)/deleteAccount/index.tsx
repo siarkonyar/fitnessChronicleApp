@@ -177,11 +177,11 @@ export default function Index() {
               <ThemedText type="defaultSemiBold" className="mb-3">
                 Account Details:
               </ThemedText>
-              <ThemedText className="text-sm opacity-70">
+              <ThemedText className="opacity-70">
                 Email: {user.email}
               </ThemedText>
               {user.displayName && (
-                <ThemedText className="text-sm opacity-70 mt-1">
+                <ThemedText className="opacity-70 mt-1">
                   Name: {user.displayName}
                 </ThemedText>
               )}

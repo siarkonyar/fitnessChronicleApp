@@ -79,10 +79,7 @@ export default function ProgramList() {
         Your Programs
       </ThemedText>
       <ThemedView>
-        <ScrollView
-          className="max-h-[48rem]"
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView className="max-h-96" keyboardShouldPersistTaps="handled">
           <View>
             {programs && programs.length > 0 ? (
               <ThemedView className="gap-3 mb-3">
@@ -109,7 +106,7 @@ export default function ProgramList() {
                   No programs yet
                 </ThemedText>
                 <ThemedText
-                  className="text-center text-sm mt-1"
+                  className="text-center mt-1"
                   lightColor={Colors.light.mutedText}
                   darkColor={Colors.dark.mutedText}
                 >

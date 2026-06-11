@@ -161,7 +161,7 @@ export default function ExerciseNameInput({
                 {hasPrevious && (
                   <>
                     <ThemedText
-                      className="px-4 pt-3 pb-1 text-xs font-bold tracking-widest"
+                      className="px-4 pt-3 pb-1 font-bold tracking-widest"
                       style={{ color: Colors[theme].mutedText }}
                     >
                       MY EXERCISES
@@ -202,7 +202,7 @@ export default function ExerciseNameInput({
                   <>
                     {hasPrevious && (
                       <ThemedText
-                        className="px-4 pt-3 pb-1 text-xs font-bold tracking-widest"
+                        className="px-4 pt-3 pb-1 font-bold tracking-widest"
                         style={{ color: Colors[theme].mutedText }}
                       >
                         SUGGESTIONS

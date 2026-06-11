@@ -112,7 +112,7 @@ export default function DateLabelAssignment({
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center py-8">
-        <ThemedText className="text-lg text-center opacity-70">
+        <ThemedText className="text-center opacity-70">
           Loading...
         </ThemedText>
       </View>
@@ -161,10 +161,10 @@ export default function DateLabelAssignment({
               />
             ) : (
               <ThemedView className="w-11/12 max-w-md mx-4">
-                <ThemedText className="text-2xl font-bold mb-2 text-center">
+                <ThemedText className="font-bold mb-2 text-center">
                   Choose What You Hit!
                 </ThemedText>
-                <ThemedText className="text-sm opacity-70 text-center mb-6">
+                <ThemedText className="opacity-70 text-center mb-6">
                   {selectedDate}
                 </ThemedText>
                 <UserLabelList labelOnPress={handleAsignLabelToDay} />

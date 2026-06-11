@@ -311,7 +311,7 @@ export const AddSetCard: React.FC<Props> = ({
           backgroundColor: Colors[theme].separator,
         }}
       >
-        <ThemedText className="text-lg font-semibold text-center mb-6">
+        <ThemedText className="font-semibold text-center mb-6">
           Choose Set Type
         </ThemedText>
         <BottomSheetView style={{ flex: 1 }}>
@@ -335,7 +335,7 @@ export const AddSetCard: React.FC<Props> = ({
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
                 >
-                  <ThemedText className="text-lg font-bold">
+                  <ThemedText className="font-bold">
                     {index + 1}
                   </ThemedText>
                 </ThemedView>
@@ -344,10 +344,10 @@ export const AddSetCard: React.FC<Props> = ({
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
                 >
-                  <ThemedText className="text-lg font-semibold">
+                  <ThemedText className="font-semibold">
                     Normal Set
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Regular working set
                   </ThemedText>
                 </ThemedView>
@@ -372,7 +372,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].secondary }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     W
                   </ThemedText>
@@ -384,11 +384,11 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].secondary }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Warmup Set
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Light weight preparation
                   </ThemedText>
                 </ThemedView>
@@ -413,7 +413,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].highlight }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     F
                   </ThemedText>
@@ -425,11 +425,11 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].highlight }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Failure Set
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Pushed to muscle failure
                   </ThemedText>
                 </ThemedView>
@@ -454,7 +454,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].accentBlue }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     D
                   </ThemedText>
@@ -467,11 +467,11 @@ export const AddSetCard: React.FC<Props> = ({
                   zz
                   <ThemedText
                     style={{ color: Colors[theme].accentBlue }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Drop Set
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Reduce weight and continue
                   </ThemedText>
                 </ThemedView>
@@ -496,7 +496,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].success }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     PR
                   </ThemedText>
@@ -508,11 +508,11 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].success }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Personal Record
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     New personal best achieved
                   </ThemedText>
                 </ThemedView>
@@ -537,7 +537,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].danger }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     FPR
                   </ThemedText>
@@ -549,11 +549,11 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].danger }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Failed PR Attempt
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Attempted but couldn&apos;t complete
                   </ThemedText>
                 </ThemedView>
