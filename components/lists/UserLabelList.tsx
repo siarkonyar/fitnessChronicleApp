@@ -102,7 +102,7 @@ export default function UserLabelList({
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center py-8">
-        <ThemedText className="text-lg text-center opacity-70">
+        <ThemedText className="text-center opacity-70">
           Loading...
         </ThemedText>
       </View>
@@ -139,7 +139,7 @@ export default function UserLabelList({
                 <ThemedText className="text-center opacity-70 mb-2">
                   No labels available
                 </ThemedText>
-                <ThemedText className="text-sm text-center opacity-50 mb-2">
+                <ThemedText className="text-center opacity-50 mb-2">
                   Please add some labels first
                 </ThemedText>
               </View>

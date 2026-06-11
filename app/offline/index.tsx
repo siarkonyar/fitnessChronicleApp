@@ -225,10 +225,10 @@ export default function OfflineScreen() {
 
       <View className="flex-col justify-center px-4 my-4">
         <View className="items-center my-4">
-          <ThemedText className="text-xl font-semibold text-center mb-2">
+          <ThemedText className="font-semibold text-center mb-2">
             📱 Offline Mode
           </ThemedText>
-          <ThemedText className="text-base text-center text-gray-600 leading-relaxed">
+          <ThemedText className="text-base text-center text-gray-600">
             You&apos;re currently offline. Log your exercises here and
             they&apos;ll be automatically synced when you get back online.
           </ThemedText>

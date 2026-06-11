@@ -269,7 +269,7 @@ export default function Settings() {
 
             <SectionCard>
               {/* Name row */}
-              <View className="flex-row items-center px-4 py-3.5">
+              <View className="flex-row items-center px-4 py-4">
                 <IconBox name="person" color={Colors[theme].accentBlue} />
                 {isEditingName ? (
                   <>
@@ -329,7 +329,7 @@ export default function Settings() {
               <RowDivider />
 
               {/* Birthday row */}
-              <View className="flex-row items-center px-4 py-3.5">
+              <View className="flex-row items-center px-4 py-4">
                 <IconBox name="cake" color={Colors[theme].accentPurple} />
                 {isEditingBirthday ? (
                   <>
@@ -441,7 +441,6 @@ export default function Settings() {
               {birthdayError && (
                 <View className="px-4 pb-3">
                   <ThemedText
-                    className="text-sm"
                     lightColor={Colors.light.danger}
                     darkColor={Colors.dark.danger}
                   >
@@ -454,7 +453,7 @@ export default function Settings() {
 
               {/* Gender row */}
               <TouchableOpacity
-                className="flex-row items-center px-4 py-3.5"
+                className="flex-row items-center px-4 py-4"
                 onPress={() => genderSheetRef.current?.present()}
                 activeOpacity={0.7}
               >
@@ -483,7 +482,7 @@ export default function Settings() {
             </ThemedText>
 
             <SectionCard>
-              <View className="flex-row items-center px-4 py-3.5">
+              <View className="flex-row items-center px-4 py-4">
                 <IconBox name="vibration" color={Colors[theme].highlight} />
                 <ThemedText className="flex-1 text-base ml-3">
                   Haptics
@@ -502,7 +501,7 @@ export default function Settings() {
 
               <RowDivider />
 
-              <View className="flex-row px-4 py-3.5">
+              <View className="flex-row px-4 py-4">
                 <View className="justify-center">
                   <IconBox
                     name="fitness-center"
@@ -512,7 +511,6 @@ export default function Settings() {
                 <View className="flex-1 ml-3">
                   <ThemedText className="text-base">Fixed Reps</ThemedText>
                   <ThemedText
-                    className="text-xs mt-0.5"
                     lightColor={Colors.light.mutedText}
                     darkColor={Colors.dark.mutedText}
                   >
@@ -538,7 +536,7 @@ export default function Settings() {
               <RowDivider />
 
               <TouchableOpacity
-                className="flex-row px-4 py-3.5"
+                className="flex-row px-4 py-4"
                 onPress={() =>
                   handleDefaultMeasurementChange(
                     defaultMeasurement === "kg" ? "lbs" : "kg",
@@ -557,7 +555,6 @@ export default function Settings() {
                     Default Measurement
                   </ThemedText>
                   <ThemedText
-                    className="text-xs mt-0.5"
                     lightColor={Colors.light.mutedText}
                     darkColor={Colors.dark.mutedText}
                   >
@@ -611,7 +608,7 @@ export default function Settings() {
               <RowDivider />
 
               <TouchableOpacity
-                className="flex-row items-center px-4 py-3.5"
+                className="flex-row items-center px-4 py-4"
                 onPress={() => router.push("/deleteAccount")}
                 activeOpacity={0.7}
               >
@@ -644,7 +641,7 @@ export default function Settings() {
           <BottomSheetView>
             <ThemedText
               type="defaultSemiBold"
-              className="text-center text-lg mb-4 mt-2"
+              className="text-center mb-4 mt-2"
             >
               Select Gender
             </ThemedText>
