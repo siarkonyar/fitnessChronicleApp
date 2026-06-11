@@ -14,7 +14,11 @@ import React, { useEffect } from "react";
 import { Alert, ScrollView, View } from "react-native";
 import { Button } from "../Button";
 
-export default function ProgramList() {
+interface ProgramListProps {
+  programOnPress?: (programId: string) => void | Promise<void>;
+}
+
+export default function ProgramList({ programOnPress }: ProgramListProps) {
   const theme = useColorScheme() ?? "light";
   const queryClient = useQueryClient();
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
@@ -87,6 +91,7 @@ export default function ProgramList() {
                   <ProgramCard
                     key={program.id}
                     program={program}
+                    onPress={programOnPress}
                     onDelete={handleDeleteProgram}
                   />
                 ))}
