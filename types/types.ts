@@ -3,7 +3,7 @@ import firestore, {
 } from "@react-native-firebase/firestore";
 import { z } from "zod";
 
-// Update to use RN Firebase Timestamp
+// TODO: Update to use RN Firebase Timestamp
 const FirestoreTimestampSchema = z.union([
   z.date(),
   z
