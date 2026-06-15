@@ -2,10 +2,10 @@ import { queryKeys } from "@/constants/QueryKeys";
 import { daysBetween, getTodayString } from "@/lib/dateUtils";
 import { getPrograms } from "@/lib/firebase/program";
 import { getUserSettings, updateUserSettings } from "@/lib/firebase/user";
+import { computeProgramDay } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useServerErrorHandler } from "./useServerErrorHandler";
-import { computeProgramDay } from "@/lib/utils";
 
 export function useActiveProgram() {
   const queryClient = useQueryClient();
@@ -57,15 +57,14 @@ export function useActiveProgram() {
     if (!settings || !activeProgram) return;
     if (activeProgram.days.length === 0) return;
     if (settings.activeProgramDayDate === undefined) return;
-    if (settings.activeProgramDay === undefined) return;
     if (advanceDayMutation.isPending) return;
 
     const today = getTodayString();
     const elapsed = daysBetween(settings.activeProgramDayDate, today);
     if (elapsed <= 0) return;
 
-    const nextDay =
-      (settings.activeProgramDay + elapsed) % activeProgram.days.length;
+    const nextDay = computeProgramDay(settings, activeProgram);
+    if (nextDay === undefined) return;
 
     advanceDayMutation.mutate({
       activeProgramDay: nextDay,
@@ -90,7 +89,7 @@ export function useActiveProgram() {
 
   return {
     activeProgram,
-    programDay: settings?.activeProgramDay,
+    programDay,
     selectProgram: selectProgramMutation.mutate,
     isSelecting: selectProgramMutation.isPending,
     isLoading: isLoadingSettings || isLoadingPrograms,
