@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TintedButton } from "@/components/TintedButton";
 import { Colors } from "@/constants/Colors";
-import { useActiveProgram } from "@/hooks/useActiveProgram";
+import { useActiveProgramContext } from "@/context/ActiveProgramContext";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import React, { useState } from "react";
 import { ActivityIndicator, Modal, View, useColorScheme } from "react-native";
@@ -14,7 +14,7 @@ export default function ChooseProgram() {
   const theme = useColorScheme() ?? "light";
   const [isOpen, setIsOpen] = useState(false);
   const { activeProgram, selectProgram, isSelecting, programDay } =
-    useActiveProgram();
+    useActiveProgramContext();
 
   function handleSelectProgram(programId: string) {
     selectProgram(programId, {

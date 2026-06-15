@@ -1,17 +1,7 @@
 import { useActiveProgram } from "@/hooks/useActiveProgram";
-import { ProgramWithIdSchema } from "@/types/types";
 import React, { createContext, useContext } from "react";
-import { z } from "zod";
 
-type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
-
-interface ActiveProgramContextType {
-  activeProgram: ProgramWithId | undefined;
-  programDay: number | undefined;
-  selectProgram: (programId: string) => void;
-  isSelecting: boolean;
-  isLoading: boolean;
-}
+type ActiveProgramContextType = ReturnType<typeof useActiveProgram>;
 
 const ActiveProgramContext = createContext<
   ActiveProgramContextType | undefined
