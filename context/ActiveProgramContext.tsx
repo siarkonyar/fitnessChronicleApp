@@ -12,13 +12,20 @@ export function ActiveProgramProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { activeProgram, programDay, selectProgram, isSelecting, isLoading } =
-    useActiveProgram();
+  const {
+    activeProgram,
+    programDay,
+    selectProgram,
+    selectProgramDay,
+    isSelecting,
+    isLoading,
+  } = useActiveProgram();
 
   const value: ActiveProgramContextType = {
     activeProgram,
     programDay,
     selectProgram,
+    selectProgramDay,
     isSelecting,
     isLoading,
   };

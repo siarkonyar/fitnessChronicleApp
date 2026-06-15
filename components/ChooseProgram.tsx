@@ -13,7 +13,7 @@ import ProgramList from "./lists/ProgramList";
 export default function ChooseProgram() {
   const theme = useColorScheme() ?? "light";
   const [isOpen, setIsOpen] = useState(false);
-  const { activeProgram, selectProgram, isSelecting, programDay } =
+  const { activeProgram, selectProgram, isSelecting } =
     useActiveProgramContext();
 
   function handleSelectProgram(programId: string) {
@@ -25,8 +25,7 @@ export default function ChooseProgram() {
   return (
     <>
       <TintedButton onPress={() => setIsOpen(true)}>
-        {activeProgram?.name.toUpperCase() ?? "Choose Program"} Program day:{" "}
-        {programDay}
+        {activeProgram?.name.toUpperCase() ?? "Choose Program"}
       </TintedButton>
 
       <Modal
