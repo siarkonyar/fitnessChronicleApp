@@ -3,8 +3,9 @@ import { daysBetween, getTodayString } from "@/lib/dateUtils";
 import { getPrograms } from "@/lib/firebase/program";
 import { getUserSettings, updateUserSettings } from "@/lib/firebase/user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useServerErrorHandler } from "./useServerErrorHandler";
+import { computeProgramDay } from "@/lib/utils";
 
 export function useActiveProgram() {
   const queryClient = useQueryClient();
@@ -38,6 +39,11 @@ export function useActiveProgram() {
 
   const activeProgram = programs?.find(
     (program) => program.id === settings?.activeProgramId,
+  );
+
+  const programDay = useMemo(
+    () => computeProgramDay(settings, activeProgram),
+    [settings, activeProgram],
   );
 
   const advanceDayMutation = useMutation({
