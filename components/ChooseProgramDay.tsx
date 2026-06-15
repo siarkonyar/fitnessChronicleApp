@@ -4,9 +4,10 @@ import { Colors } from "@/constants/Colors";
 import { useActiveProgramContext } from "@/context/ActiveProgramContext";
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Modal, Pressable, View, useColorScheme } from "react-native";
+import { Modal, ScrollView, View, useColorScheme } from "react-native";
 import { Button } from "./Button";
 import MutedCard from "./cards/MuteCard";
+import ProgramDayCard from "./cards/ProgramDayCard";
 import IconBadge from "./ui/IconBadge";
 
 export default function ChooseProgramDay() {
@@ -76,7 +77,20 @@ export default function ChooseProgramDay() {
               Choose a Day
             </ThemedText>
 
-            {/* TODO 3 — list activeProgram.days, each row Pressable -> handleSelectDay(index) */}
+            <ScrollView
+              className="max-h-96 mb-3"
+              showsVerticalScrollIndicator={false}
+            >
+              {activeProgram?.days.map((day, index) => (
+                <ProgramDayCard
+                  key={index}
+                  index={index}
+                  day={day}
+                  isSelected={index === programDay}
+                  onPress={handleSelectDay}
+                />
+              ))}
+            </ScrollView>
 
             <Button type="danger" onPress={() => setIsOpen(false)}>
               Cancel
