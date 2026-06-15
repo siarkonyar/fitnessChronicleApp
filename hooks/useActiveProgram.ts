@@ -87,10 +87,24 @@ export function useActiveProgram() {
     },
   });
 
+  const selectProgramDayMutation = useMutation({
+    mutationFn: (day: number) =>
+      updateUserSettings({
+        activeProgramDay: day,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.userSettings.all });
+    },
+    onError: (error) => {
+      handleMutationError(error);
+    },
+  });
+
   return {
     activeProgram,
     programDay,
     selectProgram: selectProgramMutation.mutate,
+    selectProgramDay: selectProgramDayMutation.mutate,
     isSelecting: selectProgramMutation.isPending,
     isLoading: isLoadingSettings || isLoadingPrograms,
   };
