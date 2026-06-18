@@ -24,7 +24,7 @@ export default function ChooseProgram() {
 
   return (
     <>
-      <TintedButton onPress={() => setIsOpen(true)}>
+      <TintedButton fixedWidth onPress={() => setIsOpen(true)}>
         {activeProgram?.name.toUpperCase() ?? "Choose Program"}
       </TintedButton>
 
