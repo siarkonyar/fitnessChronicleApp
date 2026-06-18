@@ -17,11 +17,11 @@ export type ThemedTextProps = TextProps & {
 };
 
 const TYPE_CLASS_NAMES: Record<ThemedTextType, string> = {
-  default: "text-base",
-  defaultSemiBold: "text-base font-semibold",
+  default: "",
+  defaultSemiBold: "font-semibold",
   title: "text-2xl font-['Inter-Bold']",
   subtitle: "text-xl font-bold",
-  link: "text-base",
+  link: "",
   label: "font-sans uppercase tracking-[3.5px] opacity-60",
 };
 
