@@ -1,7 +1,8 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
-import ChooseProgram from "@/components/ChooseProgram";
 import TodayLabelCard from "@/components/cards/TodayLabelCard";
+import ChooseProgram from "@/components/ChooseProgram";
+import ChooseProgramDay from "@/components/ChooseProgramDay";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
@@ -128,6 +129,8 @@ export default function HomeScreen() {
         }
       >
         <View className="px-4 pt-2">
+          <ChooseProgramDay />
+
           <Card>
             <View
               pointerEvents="none"
