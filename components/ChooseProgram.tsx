@@ -1,63 +1,80 @@
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { TintedButton } from "@/components/TintedButton";
 import { Colors } from "@/constants/Colors";
 import { useActiveProgramContext } from "@/context/ActiveProgramContext";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import React, { useState } from "react";
-import { ActivityIndicator, Modal, View, useColorScheme } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Button } from "./Button";
+import { Feather } from "@expo/vector-icons";
+import {
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+  BottomSheetModal,
+  BottomSheetScrollView,
+} from "@gorhom/bottom-sheet";
+import React, { useCallback, useMemo, useRef } from "react";
+import { TouchableOpacity, View, useColorScheme } from "react-native";
 import ProgramList from "./lists/ProgramList";
 
 export default function ChooseProgram() {
   const theme = useColorScheme() ?? "light";
-  const [isOpen, setIsOpen] = useState(false);
-  const { activeProgram, selectProgram, isSelecting } =
-    useActiveProgramContext();
+  const palette = Colors[theme];
+  const { activeProgram, selectProgram } = useActiveProgramContext();
 
   function handleSelectProgram(programId: string) {
     selectProgram(programId, {
-      onSuccess: () => setIsOpen(false),
+      onSuccess: () => bottomSheetModalRef.current?.dismiss(),
     });
   }
 
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ["85%"], []);
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+        pressBehavior="close"
+      />
+    ),
+    [],
+  );
+
   return (
     <>
-      <TintedButton fixedWidth onPress={() => setIsOpen(true)}>
+      <TintedButton
+        fixedWidth
+        onPress={() => bottomSheetModalRef.current?.present()}
+      >
         {activeProgram?.name.toUpperCase() ?? "Choose Program"}
       </TintedButton>
 
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsOpen(false)}
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={0}
+        snapPoints={snapPoints}
+        enableDynamicSizing={false}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: palette.background }}
+        handleIndicatorStyle={{ backgroundColor: palette.separator }}
       >
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <BottomSheetModalProvider>
-            <View className="flex-1 items-center justify-center px-4 bg-black backdrop-blur-sm">
-              {isSelecting ? (
-                <ActivityIndicator
-                  size="large"
-                  color={Colors[theme].highlight}
-                  className="mb-4"
-                />
-              ) : (
-                <ThemedView className="w-11/12 max-w-md mx-4">
-                  <ThemedText className="font-bold mb-2 text-center">
-                    Choose a Program
-                  </ThemedText>
-                  <ProgramList programOnPress={handleSelectProgram} />
-                  <Button type="danger" onPress={() => setIsOpen(false)}>
-                    Cancel
-                  </Button>
-                </ThemedView>
-              )}
-            </View>
-          </BottomSheetModalProvider>
-        </GestureHandlerRootView>
-      </Modal>
+        <View className="flex-row items-center justify-between px-5 pb-4">
+          <ThemedText type="subtitle">Choose a Day</ThemedText>
+          <TouchableOpacity
+            onPress={() => bottomSheetModalRef.current?.dismiss()}
+            className="w-9 h-9 rounded-full items-center justify-center"
+            style={{ backgroundColor: palette.inputBackground }}
+          >
+            <Feather name="x" size={16} color={palette.mutedText} />
+          </TouchableOpacity>
+        </View>
+
+        <BottomSheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 80 }}
+        >
+          <ProgramList programOnPress={handleSelectProgram} bare />
+        </BottomSheetScrollView>
+      </BottomSheetModal>
     </>
   );
 }
