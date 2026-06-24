@@ -335,18 +335,14 @@ export const AddSetCard: React.FC<Props> = ({
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
                 >
-                  <ThemedText className="font-bold">
-                    {index + 1}
-                  </ThemedText>
+                  <ThemedText className="font-bold">{index + 1}</ThemedText>
                 </ThemedView>
                 <ThemedView
                   className="flex-1"
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
                 >
-                  <ThemedText className="font-semibold">
-                    Normal Set
-                  </ThemedText>
+                  <ThemedText className="font-semibold">Normal Set</ThemedText>
                   <ThemedText className="text-gray-500 dark:text-gray-400">
                     Regular working set
                   </ThemedText>
@@ -464,7 +460,6 @@ export const AddSetCard: React.FC<Props> = ({
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
                 >
-                  zz
                   <ThemedText
                     style={{ color: Colors[theme].accentBlue }}
                     className="font-semibold"
