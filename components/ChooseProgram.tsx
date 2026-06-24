@@ -10,12 +10,19 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
-import { TouchableOpacity, View, useColorScheme } from "react-native";
+import {
+  TouchableOpacity,
+  View,
+  useColorScheme,
+  useWindowDimensions,
+} from "react-native";
 import ProgramList from "./lists/ProgramList";
 
 export default function ChooseProgram() {
   const theme = useColorScheme() ?? "light";
   const palette = Colors[theme];
+  const { height } = useWindowDimensions();
+  const maxDynamicContentSize = height * 0.85;
   const { activeProgram, selectProgram } = useActiveProgramContext();
 
   function handleSelectProgram(programId: string) {
@@ -25,7 +32,7 @@ export default function ChooseProgram() {
   }
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ["85%"], []);
+  const snapPoints = useMemo(() => [], []);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -52,13 +59,13 @@ export default function ChooseProgram() {
         ref={bottomSheetModalRef}
         index={0}
         snapPoints={snapPoints}
-        enableDynamicSizing={false}
+        maxDynamicContentSize={maxDynamicContentSize}
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: palette.background }}
         handleIndicatorStyle={{ backgroundColor: palette.separator }}
       >
         <View className="flex-row items-center justify-between px-5 pb-4">
-          <ThemedText type="subtitle">Choose a Day</ThemedText>
+          <ThemedText type="subtitle">Choose a Program</ThemedText>
           <TouchableOpacity
             onPress={() => bottomSheetModalRef.current?.dismiss()}
             className="w-9 h-9 rounded-full items-center justify-center"

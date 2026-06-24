@@ -9,7 +9,12 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
-import { TouchableOpacity, View, useColorScheme } from "react-native";
+import {
+  TouchableOpacity,
+  View,
+  useColorScheme,
+  useWindowDimensions,
+} from "react-native";
 import Card from "./Card";
 import ProgramDayCard from "./cards/ProgramDayCard";
 import IconBadge from "./ui/IconBadge";
@@ -20,8 +25,11 @@ export default function ChooseProgramDay() {
   const { activeProgram, programDay, selectProgramDay } =
     useActiveProgramContext();
 
+  const { height } = useWindowDimensions();
+  const maxDynamicContentSize = height * 0.85;
+
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ["85%"], []);
+  const snapPoints = useMemo(() => [], []);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -106,7 +114,7 @@ export default function ChooseProgramDay() {
         ref={bottomSheetModalRef}
         index={0}
         snapPoints={snapPoints}
-        enableDynamicSizing={false}
+        maxDynamicContentSize={maxDynamicContentSize}
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: palette.background }}
         handleIndicatorStyle={{ backgroundColor: palette.separator }}
