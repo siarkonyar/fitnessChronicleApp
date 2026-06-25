@@ -8,7 +8,12 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
-import { Keyboard, Text, TouchableOpacity } from "react-native";
+import {
+  Keyboard,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+} from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 import Card from "../Card";
 import HorizontalWheelPicker from "../HorizontalWheelPicker";
@@ -50,6 +55,8 @@ export const AddSetCard: React.FC<Props> = ({
   onCopy,
 }) => {
   const theme = useColorScheme() ?? "light";
+  const { height } = useWindowDimensions();
+  const maxDynamicContentSize = height * 0.85;
   const repRange = useMemo(
     () => [
       "1",
@@ -159,19 +166,7 @@ export const AddSetCard: React.FC<Props> = ({
   };
 
   const openDropdown = useCallback(() => {
-    try {
-      bottomSheetModalRef.current?.present();
-      // Force it to open at full height immediately
-      requestAnimationFrame(() => {
-        try {
-          bottomSheetModalRef.current?.snapToIndex(0);
-        } catch (error) {
-          console.error("Error snapping to index:", error);
-        }
-      });
-    } catch (error) {
-      console.error("Error opening dropdown:", error);
-    }
+    bottomSheetModalRef.current?.present();
   }, []);
 
   const renderBackdrop = useCallback(
@@ -303,6 +298,7 @@ export const AddSetCard: React.FC<Props> = ({
         ref={bottomSheetModalRef}
         index={0}
         snapPoints={snapPoints}
+        maxDynamicContentSize={maxDynamicContentSize}
         backdropComponent={renderBackdrop}
         backgroundStyle={{
           backgroundColor: Colors[theme].cardBackground,
@@ -314,7 +310,7 @@ export const AddSetCard: React.FC<Props> = ({
         <ThemedText className="font-semibold text-center mb-6">
           Choose Set Type
         </ThemedText>
-        <BottomSheetView style={{ flex: 1 }}>
+        <BottomSheetView>
           <ThemedView
             lightColor={Colors[theme].cardBackground}
             darkColor={Colors[theme].cardBackground}
