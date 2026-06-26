@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import Card from "./Card";
 import ProgramDayCard from "./cards/ProgramDayCard";
+import { RoundedButton } from "./RoundButton";
 import IconBadge from "./ui/IconBadge";
 
 export default function ChooseProgramDay() {
@@ -136,13 +137,11 @@ export default function ChooseProgramDay() {
               {activeProgram?.name}
             </ThemedText>
           </View>
-          <TouchableOpacity
+          <RoundedButton
+            type="danger"
+            icon="x"
             onPress={() => bottomSheetModalRef.current?.dismiss()}
-            className="w-9 h-9 rounded-full items-center justify-center"
-            style={{ backgroundColor: palette.inputBackground }}
-          >
-            <Feather name="x" size={16} color={palette.mutedText} />
-          </TouchableOpacity>
+          />
         </View>
 
         <BottomSheetScrollView

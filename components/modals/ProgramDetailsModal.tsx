@@ -12,8 +12,9 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import { z } from "zod";
+import { RoundedButton } from "../RoundButton";
 
 type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
 
@@ -94,13 +95,11 @@ export default function ProgramDetailsModal({
             {subtitle}
           </ThemedText>
         </View>
-        <TouchableOpacity
+        <RoundedButton
+          type="danger"
+          icon="x"
           onPress={() => bottomSheetModalRef.current?.dismiss()}
-          className="w-9 h-9 rounded-full items-center justify-center"
-          style={{ backgroundColor: palette.inputBackground }}
-        >
-          <Feather name="x" size={16} color={palette.mutedText} />
-        </TouchableOpacity>
+        />
       </View>
 
       <BottomSheetScrollView

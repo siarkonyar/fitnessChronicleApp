@@ -2,7 +2,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { TintedButton } from "@/components/TintedButton";
 import { Colors } from "@/constants/Colors";
 import { useActiveProgramContext } from "@/context/ActiveProgramContext";
-import { Feather } from "@expo/vector-icons";
 import {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
@@ -10,13 +9,9 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
-import {
-  TouchableOpacity,
-  View,
-  useColorScheme,
-  useWindowDimensions,
-} from "react-native";
+import { View, useColorScheme, useWindowDimensions } from "react-native";
 import ProgramList from "./lists/ProgramList";
+import { RoundedButton } from "./RoundButton";
 
 export default function ChooseProgram() {
   const theme = useColorScheme() ?? "light";
@@ -78,13 +73,11 @@ export default function ChooseProgram() {
               Pick the plan you want to follow
             </ThemedText>
           </View>
-          <TouchableOpacity
+          <RoundedButton
+            type="danger"
+            icon="x"
             onPress={() => bottomSheetModalRef.current?.dismiss()}
-            className="w-9 h-9 rounded-full items-center justify-center"
-            style={{ backgroundColor: palette.inputBackground }}
-          >
-            <Feather name="x" size={16} color={palette.mutedText} />
-          </TouchableOpacity>
+          />
         </View>
 
         <BottomSheetScrollView
