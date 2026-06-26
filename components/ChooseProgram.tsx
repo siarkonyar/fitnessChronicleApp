@@ -64,8 +64,20 @@ export default function ChooseProgram() {
         backgroundStyle={{ backgroundColor: palette.background }}
         handleIndicatorStyle={{ backgroundColor: palette.separator }}
       >
-        <View className="flex-row items-center justify-between px-5 pb-4">
-          <ThemedText type="subtitle">Choose a Program</ThemedText>
+        <View className="flex-row items-center px-5 pb-4">
+          <View className="flex-1 mr-3">
+            <ThemedText className="text-xl font-bold" numberOfLines={1}>
+              Choose Program
+            </ThemedText>
+            <ThemedText
+              className="text-sm"
+              lightColor={Colors.light.mutedText}
+              darkColor={Colors.dark.mutedText}
+              numberOfLines={1}
+            >
+              Pick the plan you want to follow
+            </ThemedText>
+          </View>
           <TouchableOpacity
             onPress={() => bottomSheetModalRef.current?.dismiss()}
             className="w-9 h-9 rounded-full items-center justify-center"

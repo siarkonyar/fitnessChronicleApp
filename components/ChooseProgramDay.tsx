@@ -119,8 +119,23 @@ export default function ChooseProgramDay() {
         backgroundStyle={{ backgroundColor: palette.background }}
         handleIndicatorStyle={{ backgroundColor: palette.separator }}
       >
-        <View className="flex-row items-center justify-between px-5 pb-4">
-          <ThemedText type="subtitle">Choose a Day</ThemedText>
+        <View className="flex-row items-center px-5 pb-4">
+          <IconBadge className="mr-3">
+            <Feather name="calendar" size={24} color={palette.highlight} />
+          </IconBadge>
+          <View className="flex-1 mr-3">
+            <ThemedText className="text-xl font-bold" numberOfLines={1}>
+              Pick a Day to Follow
+            </ThemedText>
+            <ThemedText
+              className="text-sm uppercase"
+              lightColor={Colors.light.mutedText}
+              darkColor={Colors.dark.mutedText}
+              numberOfLines={1}
+            >
+              {activeProgram?.name}
+            </ThemedText>
+          </View>
           <TouchableOpacity
             onPress={() => bottomSheetModalRef.current?.dismiss()}
             className="w-9 h-9 rounded-full items-center justify-center"
