@@ -1,8 +1,6 @@
-import Card from "@/components/Card";
+import ProgramDayCard from "@/components/cards/ProgramDayCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import MiniExerciseCard from "@/components/exercise/MiniExerciseCard";
-import IconBadge from "@/components/ui/IconBadge";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ProgramWithIdSchema } from "@/types/types";
@@ -14,8 +12,9 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import { z } from "zod";
+import { RoundedButton } from "../RoundButton";
 
 type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
 
@@ -45,8 +44,11 @@ export default function ProgramDetailsModal({
           restDayCount > 0 ? ` · ${restDayCount} rest` : ""
         } · ${exerciseTotal} exercise${exerciseTotal !== 1 ? "s" : ""}`;
 
+  const { height } = useWindowDimensions();
+  const maxDynamicContentSize = height * 0.875;
+
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ["85%"], []);
+  const snapPoints = useMemo(() => [], []);
 
   useEffect(() => {
     if (visible) {
@@ -73,6 +75,7 @@ export default function ProgramDetailsModal({
       ref={bottomSheetModalRef}
       index={0}
       snapPoints={snapPoints}
+      maxDynamicContentSize={maxDynamicContentSize}
       onDismiss={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: palette.background }}
@@ -92,13 +95,11 @@ export default function ProgramDetailsModal({
             {subtitle}
           </ThemedText>
         </View>
-        <TouchableOpacity
+        <RoundedButton
+          type="danger"
+          icon="x"
           onPress={() => bottomSheetModalRef.current?.dismiss()}
-          className="w-9 h-9 rounded-full items-center justify-center"
-          style={{ backgroundColor: palette.inputBackground }}
-        >
-          <Feather name="x" size={16} color={palette.mutedText} />
-        </TouchableOpacity>
+        />
       </View>
 
       <BottomSheetScrollView
@@ -124,125 +125,14 @@ export default function ProgramDetailsModal({
             </ThemedText>
           </ThemedView>
         ) : (
-          program.days.map((day, index) => {
-            const exerciseCount = day.exercises?.length ?? 0;
-            const dayTitle = day.isRestDay
-              ? "Rest day"
-              : (day.label?.description ?? day.label?.label ?? "Workout day");
-
-            return (
-              <Card
-                key={index}
-                className={index === totalDays - 1 ? "mb-0" : ""}
-                style={{ backgroundColor: palette.cardBackground }}
-              >
-                <ThemedView className="flex-row items-center w-full">
-                  <IconBadge className="mr-4">
-                    {day.isRestDay ? (
-                      <Feather
-                        name="moon"
-                        size={22}
-                        color={palette.secondary}
-                      />
-                    ) : (
-                      <ThemedText className="text-2xl font-bold">
-                        {day.label?.label ?? "?"}
-                      </ThemedText>
-                    )}
-                  </IconBadge>
-                  <ThemedView className="flex-col flex-1 min-w-0">
-                    <ThemedText
-                      className="text-xs font-bold tracking-widest"
-                      style={{ color: palette.highlight }}
-                    >
-                      DAY {index + 1}
-                    </ThemedText>
-                    <ThemedText
-                      className="text-base font-semibold"
-                      numberOfLines={1}
-                    >
-                      {dayTitle}
-                    </ThemedText>
-                  </ThemedView>
-                  {day.isRestDay ? (
-                    <ThemedView
-                      className="flex-row items-center gap-1 px-2.5 py-1 rounded-full"
-                      style={{
-                        backgroundColor: `${palette.secondary}18`,
-                        borderWidth: 1,
-                        borderColor: `${palette.secondary}30`,
-                      }}
-                    >
-                      <Feather
-                        name="moon"
-                        size={12}
-                        color={palette.secondary}
-                      />
-                      <ThemedText
-                        className="text-xs font-semibold"
-                        style={{ color: palette.secondary }}
-                      >
-                        Rest
-                      </ThemedText>
-                    </ThemedView>
-                  ) : (
-                    exerciseCount > 0 && (
-                      <ThemedView
-                        className="px-2.5 py-1 rounded-full"
-                        style={{
-                          backgroundColor: `${palette.highlight}18`,
-                          borderWidth: 1,
-                          borderColor: `${palette.highlight}30`,
-                        }}
-                      >
-                        <ThemedText
-                          className="text-xs font-semibold"
-                          style={{ color: palette.highlight }}
-                        >
-                          {exerciseCount}{" "}
-                          {exerciseCount === 1 ? "exercise" : "exercises"}
-                        </ThemedText>
-                      </ThemedView>
-                    )
-                  )}
-                </ThemedView>
-
-                {!day.isRestDay &&
-                  (exerciseCount > 0 ? (
-                    <ThemedView
-                      className="mt-3 pt-3 border-t"
-                      style={{ borderTopColor: palette.separator }}
-                    >
-                      {(day.exercises ?? []).map((exercise, exerciseIndex) => (
-                        <MiniExerciseCard
-                          key={exerciseIndex}
-                          exercise={exercise}
-                          variant="program"
-                        />
-                      ))}
-                    </ThemedView>
-                  ) : (
-                    <ThemedView
-                      className="flex-row items-center mt-3 pt-3 border-t"
-                      style={{ borderTopColor: palette.separator }}
-                    >
-                      <Feather
-                        name="info"
-                        size={14}
-                        color={palette.mutedText}
-                      />
-                      <ThemedText
-                        className="ml-2"
-                        lightColor={Colors.light.mutedText}
-                        darkColor={Colors.dark.mutedText}
-                      >
-                        No exercises yet
-                      </ThemedText>
-                    </ThemedView>
-                  ))}
-              </Card>
-            );
-          })
+          program.days.map((day, index) => (
+            <ProgramDayCard
+              key={index}
+              index={index}
+              day={day}
+              className={index === totalDays - 1 ? "mb-0" : ""}
+            />
+          ))
         )}
       </BottomSheetScrollView>
     </BottomSheetModal>

@@ -11,10 +11,18 @@ import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
-import { Alert, ScrollView, View } from "react-native";
+import { Alert, ScrollView } from "react-native";
 import { Button } from "../Button";
 
-export default function ProgramList() {
+interface ProgramListProps {
+  programOnPress?: (programId: string) => void | Promise<void>;
+  bare?: boolean;
+}
+
+export default function ProgramList({
+  programOnPress,
+  bare,
+}: ProgramListProps) {
   const theme = useColorScheme() ?? "light";
   const queryClient = useQueryClient();
   const { handleQueryError, handleMutationError } = useServerErrorHandler();
@@ -42,6 +50,47 @@ export default function ProgramList() {
     },
   });
 
+  const listContent =
+    programs && programs.length > 0 ? (
+      <ThemedView className="gap-3 mb-3">
+        {programs.map((program) => (
+          <ProgramCard
+            key={program.id}
+            program={program}
+            onPress={programOnPress}
+            onDelete={handleDeleteProgram}
+          />
+        ))}
+      </ThemedView>
+    ) : (
+      <ThemedView className="items-center py-8">
+        <Feather name="calendar" size={32} color={Colors[theme].mutedText} />
+        <ThemedText
+          className="text-center text-base font-semibold mt-4"
+          lightColor={Colors.light.mutedText}
+          darkColor={Colors.dark.mutedText}
+        >
+          No programs yet
+        </ThemedText>
+        <ThemedText
+          className="text-center mt-1"
+          lightColor={Colors.light.mutedText}
+          darkColor={Colors.dark.mutedText}
+        >
+          Create a program to start planning your training week.
+        </ThemedText>
+      </ThemedView>
+    );
+
+  const createButton = (
+    <Button
+      className="my-2"
+      onPress={() => router.push("/(screens)/createProgram")}
+    >
+      Create Program
+    </Button>
+  );
+
   function handleDeleteProgram(id: string) {
     Alert.alert(
       "Delete Program",
@@ -58,19 +107,23 @@ export default function ProgramList() {
   }
 
   if (isLoading) {
-    return (
-      <Card>
-        <ThemedView className="items-center justify-center py-8">
-          <ThemedText
-            className="text-base"
-            lightColor={Colors.light.mutedText}
-            darkColor={Colors.dark.mutedText}
-          >
-            Loading programs...
-          </ThemedText>
-        </ThemedView>
-      </Card>
+    const loading = (
+      <ThemedView className="items-center justify-center py-8">
+        <ThemedText
+          className="text-base"
+          lightColor={Colors.light.mutedText}
+          darkColor={Colors.dark.mutedText}
+        >
+          Loading programs...
+        </ThemedText>
+      </ThemedView>
     );
+
+    return bare ? loading : <Card>{loading}</Card>;
+  }
+
+  if (bare) {
+    return <>{listContent}</>;
   }
 
   return (
@@ -80,49 +133,9 @@ export default function ProgramList() {
       </ThemedText>
       <ThemedView>
         <ScrollView className="max-h-96" keyboardShouldPersistTaps="handled">
-          <View>
-            {programs && programs.length > 0 ? (
-              <ThemedView className="gap-3 mb-3">
-                {programs.map((program) => (
-                  <ProgramCard
-                    key={program.id}
-                    program={program}
-                    onDelete={handleDeleteProgram}
-                  />
-                ))}
-              </ThemedView>
-            ) : (
-              <ThemedView className="items-center py-8">
-                <Feather
-                  name="calendar"
-                  size={32}
-                  color={Colors[theme].mutedText}
-                />
-                <ThemedText
-                  className="text-center text-base font-semibold mt-4"
-                  lightColor={Colors.light.mutedText}
-                  darkColor={Colors.dark.mutedText}
-                >
-                  No programs yet
-                </ThemedText>
-                <ThemedText
-                  className="text-center mt-1"
-                  lightColor={Colors.light.mutedText}
-                  darkColor={Colors.dark.mutedText}
-                >
-                  Create a program to start planning your training week.
-                </ThemedText>
-              </ThemedView>
-            )}
-          </View>
+          {listContent}
         </ScrollView>
-
-        <Button
-          className="my-2"
-          onPress={() => router.push("/(screens)/createProgram")}
-        >
-          Create Program
-        </Button>
+        {createButton}
       </ThemedView>
     </Card>
   );

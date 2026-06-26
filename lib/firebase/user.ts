@@ -31,6 +31,23 @@ export const getUserSettings = async () => {
   return defaultSettings;
 };
 
+export const updateUserSettings = async (
+  updates: Partial<UserSettings>,
+): Promise<void> => {
+  const userId = getCurrentUserId();
+
+  const sanitized: Record<string, unknown> = {};
+  if (updates.measure !== undefined) sanitized.measure = updates.measure;
+  if (updates.activeProgramId !== undefined)
+    sanitized.activeProgramId = updates.activeProgramId;
+  if (updates.activeProgramDay !== undefined)
+    sanitized.activeProgramDay = updates.activeProgramDay;
+  if (updates.activeProgramDayDate !== undefined)
+    sanitized.activeProgramDayDate = updates.activeProgramDayDate;
+
+  await firestore().collection("users").doc(userId).set(sanitized, { merge: true });
+};
+
 export const getUserProfile = async (): Promise<UserProfile> => {
   const userId = getCurrentUserId();
 
