@@ -12,7 +12,7 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, useWindowDimensions, View } from "react-native";
 import { z } from "zod";
 
 type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
@@ -43,8 +43,11 @@ export default function ProgramDetailsModal({
           restDayCount > 0 ? ` · ${restDayCount} rest` : ""
         } · ${exerciseTotal} exercise${exerciseTotal !== 1 ? "s" : ""}`;
 
+  const { height } = useWindowDimensions();
+  const maxDynamicContentSize = height * 0.875;
+
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ["85%"], []);
+  const snapPoints = useMemo(() => [], []);
 
   useEffect(() => {
     if (visible) {
@@ -71,6 +74,7 @@ export default function ProgramDetailsModal({
       ref={bottomSheetModalRef}
       index={0}
       snapPoints={snapPoints}
+      maxDynamicContentSize={maxDynamicContentSize}
       onDismiss={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: palette.background }}
