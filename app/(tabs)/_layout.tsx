@@ -7,17 +7,13 @@ import { Colors } from "@/constants/Colors";
 import { ActiveProgramProvider } from "@/context/ActiveProgramContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? "light";
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <ActiveProgramProvider>
-          <Tabs
+    <ActiveProgramProvider>
+      <Tabs
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme].tint,
           headerShown: false,
@@ -70,9 +66,7 @@ export default function TabLayout() {
             ),
           }}
         />
-          </Tabs>
-        </ActiveProgramProvider>
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+      </Tabs>
+    </ActiveProgramProvider>
   );
 }

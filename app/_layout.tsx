@@ -1,5 +1,6 @@
 import { ConnectivityProvider } from "@/context/ConnectivityContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import appCheck from "@react-native-firebase/app-check";
@@ -16,6 +17,7 @@ import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import "../global.css";
@@ -80,20 +82,24 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ConnectivityProvider>
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={{
-            persister,
-            maxAge: CACHE_MAX_AGE_MS,
-            buster: Application.nativeApplicationVersion ?? "1",
-          }}
-        >
-          <AppSetup />
-        </PersistQueryClientProvider>
-      </ConnectivityProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ConnectivityProvider>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{
+              persister,
+              maxAge: CACHE_MAX_AGE_MS,
+              buster: Application.nativeApplicationVersion ?? "1",
+            }}
+          >
+            <BottomSheetModalProvider>
+              <AppSetup />
+            </BottomSheetModalProvider>
+          </PersistQueryClientProvider>
+        </ConnectivityProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
 

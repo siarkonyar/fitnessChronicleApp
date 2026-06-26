@@ -20,7 +20,6 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
-  BottomSheetModalProvider,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -44,7 +43,6 @@ import {
   View,
   useColorScheme,
 } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -254,242 +252,270 @@ export default function Settings() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <ThemedView className="flex-1">
-          <ScrollView
-            className="px-4"
-            contentContainerStyle={{ paddingBottom: 48, paddingTop: 8 }}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* ── Profile ── */}
-            <ThemedText type="label" className="mb-3 ml-2 mt-4">
-              Profile
-            </ThemedText>
+    <>
+      <ThemedView className="flex-1">
+        <ScrollView
+          className="px-4"
+          contentContainerStyle={{ paddingBottom: 48, paddingTop: 8 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ── Profile ── */}
+          <ThemedText type="label" className="mb-3 ml-2 mt-4">
+            Profile
+          </ThemedText>
 
-            <SectionCard>
-              {/* Name row */}
-              <View className="flex-row items-center px-4 py-4">
-                <IconBox name="person" color={Colors[theme].accentBlue} />
-                {isEditingName ? (
-                  <>
-                    <ThemedTextInput
-                      value={name}
-                      onChangeText={setName}
-                      placeholder="Your name"
-                      placeholderTextColor={Colors[theme].mutedText}
-                      className="flex-1 text-base ml-3"
-                      maxLength={100}
-                      returnKeyType="done"
-                      onSubmitEditing={handleSaveName}
-                      autoFocus
+          <SectionCard>
+            {/* Name row */}
+            <View className="flex-row items-center px-4 py-4">
+              <IconBox name="person" color={Colors[theme].accentBlue} />
+              {isEditingName ? (
+                <>
+                  <ThemedTextInput
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="Your name"
+                    placeholderTextColor={Colors[theme].mutedText}
+                    className="flex-1 text-base ml-3"
+                    maxLength={100}
+                    returnKeyType="done"
+                    onSubmitEditing={handleSaveName}
+                    autoFocus
+                  />
+                  {nameMutation.isPending ? (
+                    <ActivityIndicator
+                      color={Colors[theme].accentBlue}
+                      className="ml-2"
                     />
-                    {nameMutation.isPending ? (
-                      <ActivityIndicator
-                        color={Colors[theme].accentBlue}
-                        className="ml-2"
+                  ) : (
+                    <View className="flex-row gap-1.5 ml-2">
+                      <RoundedButton
+                        icon="x"
+                        type="danger"
+                        onPress={handleCancelName}
                       />
-                    ) : (
-                      <View className="flex-row gap-1.5 ml-2">
-                        <RoundedButton
-                          icon="x"
-                          type="danger"
-                          onPress={handleCancelName}
-                        />
-                        <RoundedButton
-                          icon="check"
-                          type="success"
-                          onPress={handleSaveName}
-                        />
-                      </View>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <ThemedText className="flex-1 text-base ml-3">
-                      Name
-                    </ThemedText>
-                    <ThemedText
-                      className="text-base mr-1.5 max-w-[160px]"
-                      lightColor={Colors.light.mutedText}
-                      darkColor={Colors.dark.mutedText}
-                      numberOfLines={1}
-                    >
-                      {name || "Not set"}
-                    </ThemedText>
-                    <RoundedButton
-                      icon="edit"
-                      type="blue"
-                      onPress={() => setIsEditingName(true)}
-                    />
-                  </>
-                )}
-              </View>
-
-              <RowDivider />
-
-              {/* Birthday row */}
-              <View className="flex-row items-center px-4 py-4">
-                <IconBox name="cake" color={Colors[theme].accentPurple} />
-                {isEditingBirthday ? (
-                  <>
-                    <View className="flex-1 flex-row items-center ml-3">
-                      <ThemedTextInput
-                        value={birthDay}
-                        onChangeText={(text) => {
-                          const numeric = text.replace(/\D/g, "").slice(0, 2);
-                          setBirthDay(numeric);
-                          setBirthdayError(null);
-                          if (numeric.length === 2) monthRef.current?.focus();
-                        }}
-                        placeholder="DD"
-                        placeholderTextColor={Colors[theme].mutedText}
-                        className="w-7 text-base text-center border-b pb-0.5"
-                        style={{ borderBottomColor: Colors[theme].mutedText }}
-                        keyboardType="number-pad"
-                        maxLength={2}
-                        autoFocus
-                      />
-                      <ThemedText
-                        className="text-base mx-1"
-                        lightColor={Colors.light.mutedText}
-                        darkColor={Colors.dark.mutedText}
-                      >
-                        /
-                      </ThemedText>
-                      <ThemedTextInput
-                        ref={monthRef}
-                        value={birthMonth}
-                        onChangeText={(text) => {
-                          const numeric = text.replace(/\D/g, "").slice(0, 2);
-                          setBirthMonth(numeric);
-                          setBirthdayError(null);
-                          if (numeric.length === 2) yearRef.current?.focus();
-                        }}
-                        placeholder="MM"
-                        placeholderTextColor={Colors[theme].mutedText}
-                        className="w-7 text-base text-center border-b pb-0.5"
-                        style={{ borderBottomColor: Colors[theme].mutedText }}
-                        keyboardType="number-pad"
-                        maxLength={2}
-                      />
-                      <ThemedText
-                        className="text-base mx-1"
-                        lightColor={Colors.light.mutedText}
-                        darkColor={Colors.dark.mutedText}
-                      >
-                        /
-                      </ThemedText>
-                      <ThemedTextInput
-                        ref={yearRef}
-                        value={birthYear}
-                        onChangeText={(text) => {
-                          const numeric = text.replace(/\D/g, "").slice(0, 4);
-                          setBirthYear(numeric);
-                          setBirthdayError(null);
-                        }}
-                        placeholder="YYYY"
-                        placeholderTextColor={Colors[theme].mutedText}
-                        className="w-12 text-base text-center border-b pb-0.5"
-                        style={{ borderBottomColor: Colors[theme].mutedText }}
-                        keyboardType="number-pad"
-                        maxLength={4}
+                      <RoundedButton
+                        icon="check"
+                        type="success"
+                        onPress={handleSaveName}
                       />
                     </View>
-                    {birthdayMutation.isPending ? (
-                      <ActivityIndicator
-                        color={Colors[theme].accentBlue}
-                        className="ml-2"
-                      />
-                    ) : (
-                      <View className="flex-row gap-1.5 ml-2">
-                        <RoundedButton
-                          icon="x"
-                          type="danger"
-                          onPress={handleCancelBirthday}
-                        />
-                        <RoundedButton
-                          icon="check"
-                          type="success"
-                          onPress={handleSaveBirthday}
-                        />
-                      </View>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <ThemedText className="flex-1 text-base ml-3">
-                      Birthday
-                    </ThemedText>
+                  )}
+                </>
+              ) : (
+                <>
+                  <ThemedText className="flex-1 text-base ml-3">
+                    Name
+                  </ThemedText>
+                  <ThemedText
+                    className="text-base mr-1.5 max-w-[160px]"
+                    lightColor={Colors.light.mutedText}
+                    darkColor={Colors.dark.mutedText}
+                    numberOfLines={1}
+                  >
+                    {name || "Not set"}
+                  </ThemedText>
+                  <RoundedButton
+                    icon="edit"
+                    type="blue"
+                    onPress={() => setIsEditingName(true)}
+                  />
+                </>
+              )}
+            </View>
+
+            <RowDivider />
+
+            {/* Birthday row */}
+            <View className="flex-row items-center px-4 py-4">
+              <IconBox name="cake" color={Colors[theme].accentPurple} />
+              {isEditingBirthday ? (
+                <>
+                  <View className="flex-1 flex-row items-center ml-3">
+                    <ThemedTextInput
+                      value={birthDay}
+                      onChangeText={(text) => {
+                        const numeric = text.replace(/\D/g, "").slice(0, 2);
+                        setBirthDay(numeric);
+                        setBirthdayError(null);
+                        if (numeric.length === 2) monthRef.current?.focus();
+                      }}
+                      placeholder="DD"
+                      placeholderTextColor={Colors[theme].mutedText}
+                      className="w-7 text-base text-center border-b pb-0.5"
+                      style={{ borderBottomColor: Colors[theme].mutedText }}
+                      keyboardType="number-pad"
+                      maxLength={2}
+                      autoFocus
+                    />
                     <ThemedText
-                      className="text-base mr-1.5"
+                      className="text-base mx-1"
                       lightColor={Colors.light.mutedText}
                       darkColor={Colors.dark.mutedText}
                     >
-                      {profile?.birthday
-                        ? formatDisplayBirthday(profile.birthday)
-                        : "Not set"}
+                      /
                     </ThemedText>
-                    <RoundedButton
-                      icon="edit"
-                      type="blue"
-                      onPress={() => setIsEditingBirthday(true)}
+                    <ThemedTextInput
+                      ref={monthRef}
+                      value={birthMonth}
+                      onChangeText={(text) => {
+                        const numeric = text.replace(/\D/g, "").slice(0, 2);
+                        setBirthMonth(numeric);
+                        setBirthdayError(null);
+                        if (numeric.length === 2) yearRef.current?.focus();
+                      }}
+                      placeholder="MM"
+                      placeholderTextColor={Colors[theme].mutedText}
+                      className="w-7 text-base text-center border-b pb-0.5"
+                      style={{ borderBottomColor: Colors[theme].mutedText }}
+                      keyboardType="number-pad"
+                      maxLength={2}
                     />
-                  </>
-                )}
-              </View>
-              {birthdayError && (
-                <View className="px-4 pb-3">
-                  <ThemedText
-                    lightColor={Colors.light.danger}
-                    darkColor={Colors.dark.danger}
-                  >
-                    {birthdayError}
+                    <ThemedText
+                      className="text-base mx-1"
+                      lightColor={Colors.light.mutedText}
+                      darkColor={Colors.dark.mutedText}
+                    >
+                      /
+                    </ThemedText>
+                    <ThemedTextInput
+                      ref={yearRef}
+                      value={birthYear}
+                      onChangeText={(text) => {
+                        const numeric = text.replace(/\D/g, "").slice(0, 4);
+                        setBirthYear(numeric);
+                        setBirthdayError(null);
+                      }}
+                      placeholder="YYYY"
+                      placeholderTextColor={Colors[theme].mutedText}
+                      className="w-12 text-base text-center border-b pb-0.5"
+                      style={{ borderBottomColor: Colors[theme].mutedText }}
+                      keyboardType="number-pad"
+                      maxLength={4}
+                    />
+                  </View>
+                  {birthdayMutation.isPending ? (
+                    <ActivityIndicator
+                      color={Colors[theme].accentBlue}
+                      className="ml-2"
+                    />
+                  ) : (
+                    <View className="flex-row gap-1.5 ml-2">
+                      <RoundedButton
+                        icon="x"
+                        type="danger"
+                        onPress={handleCancelBirthday}
+                      />
+                      <RoundedButton
+                        icon="check"
+                        type="success"
+                        onPress={handleSaveBirthday}
+                      />
+                    </View>
+                  )}
+                </>
+              ) : (
+                <>
+                  <ThemedText className="flex-1 text-base ml-3">
+                    Birthday
                   </ThemedText>
-                </View>
+                  <ThemedText
+                    className="text-base mr-1.5"
+                    lightColor={Colors.light.mutedText}
+                    darkColor={Colors.dark.mutedText}
+                  >
+                    {profile?.birthday
+                      ? formatDisplayBirthday(profile.birthday)
+                      : "Not set"}
+                  </ThemedText>
+                  <RoundedButton
+                    icon="edit"
+                    type="blue"
+                    onPress={() => setIsEditingBirthday(true)}
+                  />
+                </>
               )}
-
-              <RowDivider />
-
-              {/* Gender row */}
-              <TouchableOpacity
-                className="flex-row items-center px-4 py-4"
-                onPress={() => genderSheetRef.current?.present()}
-                activeOpacity={0.7}
-              >
-                <IconBox name="people" color={Colors[theme].accentTeal} />
-                <ThemedText className="flex-1 text-base ml-3">
-                  Gender
-                </ThemedText>
+            </View>
+            {birthdayError && (
+              <View className="px-4 pb-3">
                 <ThemedText
-                  className="text-base mr-1"
+                  lightColor={Colors.light.danger}
+                  darkColor={Colors.dark.danger}
+                >
+                  {birthdayError}
+                </ThemedText>
+              </View>
+            )}
+
+            <RowDivider />
+
+            {/* Gender row */}
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-4"
+              onPress={() => genderSheetRef.current?.present()}
+              activeOpacity={0.7}
+            >
+              <IconBox name="people" color={Colors[theme].accentTeal} />
+              <ThemedText className="flex-1 text-base ml-3">Gender</ThemedText>
+              <ThemedText
+                className="text-base mr-1"
+                lightColor={Colors.light.mutedText}
+                darkColor={Colors.dark.mutedText}
+              >
+                {profile?.gender ? genderLabel(profile.gender) : "Not set"}
+              </ThemedText>
+              <MaterialIcons
+                name="chevron-right"
+                size={22}
+                color={Colors[theme].mutedText}
+              />
+            </TouchableOpacity>
+          </SectionCard>
+
+          {/* ── Preferences ── */}
+          <ThemedText type="label" className="mb-3 ml-2 mt-6">
+            Preferences
+          </ThemedText>
+
+          <SectionCard>
+            <View className="flex-row items-center px-4 py-4">
+              <IconBox name="vibration" color={Colors[theme].highlight} />
+              <ThemedText className="flex-1 text-base ml-3">Haptics</ThemedText>
+              <Switch
+                value={hapticsEnabled}
+                onValueChange={handleHapticsToggle}
+                trackColor={{
+                  false: Colors[theme].inputBackground,
+                  true: Colors[theme].highlight,
+                }}
+                thumbColor={Colors[theme].background}
+                ios_backgroundColor={Colors[theme].inputBackground}
+              />
+            </View>
+
+            <RowDivider />
+
+            <View className="flex-row px-4 py-4">
+              <View className="justify-center">
+                <IconBox
+                  name="fitness-center"
+                  color={Colors[theme].accentBlue}
+                />
+              </View>
+              <View className="flex-1 ml-3">
+                <ThemedText className="text-base">Fixed Reps</ThemedText>
+                <ThemedText
                   lightColor={Colors.light.mutedText}
                   darkColor={Colors.dark.mutedText}
                 >
-                  {profile?.gender ? genderLabel(profile.gender) : "Not set"}
+                  {defaultFixedReps
+                    ? "Enter exact rep count"
+                    : "Pick from rep range"}
                 </ThemedText>
-                <MaterialIcons
-                  name="chevron-right"
-                  size={22}
-                  color={Colors[theme].mutedText}
-                />
-              </TouchableOpacity>
-            </SectionCard>
-
-            {/* ── Preferences ── */}
-            <ThemedText type="label" className="mb-3 ml-2 mt-6">
-              Preferences
-            </ThemedText>
-
-            <SectionCard>
-              <View className="flex-row items-center px-4 py-4">
-                <IconBox name="vibration" color={Colors[theme].highlight} />
-                <ThemedText className="flex-1 text-base ml-3">
-                  Haptics
-                </ThemedText>
+              </View>
+              <View className="justify-center">
                 <Switch
-                  value={hapticsEnabled}
-                  onValueChange={handleHapticsToggle}
+                  value={defaultFixedReps}
+                  onValueChange={handleDefaultRepTypeToggle}
                   trackColor={{
                     false: Colors[theme].inputBackground,
                     true: Colors[theme].highlight,
@@ -498,172 +524,134 @@ export default function Settings() {
                   ios_backgroundColor={Colors[theme].inputBackground}
                 />
               </View>
+            </View>
 
-              <RowDivider />
+            <RowDivider />
 
-              <View className="flex-row px-4 py-4">
-                <View className="justify-center">
-                  <IconBox
-                    name="fitness-center"
-                    color={Colors[theme].accentBlue}
-                  />
-                </View>
-                <View className="flex-1 ml-3">
-                  <ThemedText className="text-base">Fixed Reps</ThemedText>
+            <TouchableOpacity
+              className="flex-row px-4 py-4"
+              onPress={() =>
+                handleDefaultMeasurementChange(
+                  defaultMeasurement === "kg" ? "lbs" : "kg",
+                )
+              }
+              activeOpacity={0.7}
+            >
+              <View className="justify-center">
+                <IconBox
+                  name="monitor-weight"
+                  color={Colors[theme].accentTeal}
+                />
+              </View>
+              <View className="flex-1 ml-3">
+                <ThemedText className="text-base">
+                  Default Measurement
+                </ThemedText>
+                <ThemedText
+                  lightColor={Colors.light.mutedText}
+                  darkColor={Colors.dark.mutedText}
+                >
+                  Tap to change
+                </ThemedText>
+              </View>
+              <View className="justify-center">
+                <View
+                  style={{
+                    backgroundColor: Colors[theme].highlight + "22",
+                    paddingHorizontal: 10,
+                    paddingVertical: 3,
+                    borderRadius: 6,
+                  }}
+                >
                   <ThemedText
-                    lightColor={Colors.light.mutedText}
-                    darkColor={Colors.dark.mutedText}
-                  >
-                    {defaultFixedReps
-                      ? "Enter exact rep count"
-                      : "Pick from rep range"}
-                  </ThemedText>
-                </View>
-                <View className="justify-center">
-                  <Switch
-                    value={defaultFixedReps}
-                    onValueChange={handleDefaultRepTypeToggle}
-                    trackColor={{
-                      false: Colors[theme].inputBackground,
-                      true: Colors[theme].highlight,
+                    style={{
+                      color: Colors[theme].highlight,
+                      fontSize: 13,
+                      fontWeight: "600",
                     }}
-                    thumbColor={Colors[theme].background}
-                    ios_backgroundColor={Colors[theme].inputBackground}
-                  />
+                  >
+                    {defaultMeasurement === "kg" ? "Kg" : "Lbs"}
+                  </ThemedText>
                 </View>
               </View>
+            </TouchableOpacity>
+          </SectionCard>
 
-              <RowDivider />
+          {/* ── Account ── */}
+          <ThemedText type="label" className="mb-3 ml-2 mt-6">
+            Account
+          </ThemedText>
 
-              <TouchableOpacity
-                className="flex-row px-4 py-4"
-                onPress={() =>
-                  handleDefaultMeasurementChange(
-                    defaultMeasurement === "kg" ? "lbs" : "kg",
-                  )
-                }
-                activeOpacity={0.7}
-              >
-                <View className="justify-center">
-                  <IconBox
-                    name="monitor-weight"
-                    color={Colors[theme].accentTeal}
-                  />
-                </View>
-                <View className="flex-1 ml-3">
-                  <ThemedText className="text-base">
-                    Default Measurement
-                  </ThemedText>
-                  <ThemedText
-                    lightColor={Colors.light.mutedText}
-                    darkColor={Colors.dark.mutedText}
-                  >
-                    Tap to change
-                  </ThemedText>
-                </View>
-                <View className="justify-center">
-                  <View
-                    style={{
-                      backgroundColor: Colors[theme].highlight + "22",
-                      paddingHorizontal: 10,
-                      paddingVertical: 3,
-                      borderRadius: 6,
-                    }}
-                  >
-                    <ThemedText
-                      style={{
-                        color: Colors[theme].highlight,
-                        fontSize: 13,
-                        fontWeight: "600",
-                      }}
-                    >
-                      {defaultMeasurement === "kg" ? "Kg" : "Lbs"}
-                    </ThemedText>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </SectionCard>
-
-            {/* ── Account ── */}
-            <ThemedText type="label" className="mb-3 ml-2 mt-6">
-              Account
-            </ThemedText>
-
-            <SectionCard>
-              <TouchableOpacity
-                className="flex-row items-center px-4 py-4"
-                onPress={handleSignout}
-                activeOpacity={0.7}
-              >
-                <IconBox name="logout" color={Colors[theme].danger} />
-                <ThemedText
-                  className="flex-1 text-base ml-3"
-                  lightColor={Colors.light.danger}
-                  darkColor={Colors.dark.danger}
-                >
-                  Sign Out
-                </ThemedText>
-              </TouchableOpacity>
-
-              <RowDivider />
-
-              <TouchableOpacity
-                className="flex-row items-center px-4 py-4"
-                onPress={() => router.push("/deleteAccount")}
-                activeOpacity={0.7}
-              >
-                <IconBox name="delete-forever" color={Colors[theme].danger} />
-                <ThemedText
-                  className="flex-1 text-base ml-3"
-                  lightColor={Colors.light.danger}
-                  darkColor={Colors.dark.danger}
-                >
-                  Delete Account
-                </ThemedText>
-                <MaterialIcons
-                  name="chevron-right"
-                  size={22}
-                  color={Colors[theme].danger}
-                />
-              </TouchableOpacity>
-            </SectionCard>
-          </ScrollView>
-        </ThemedView>
-
-        <BottomSheetModal
-          ref={genderSheetRef}
-          index={0}
-          snapPoints={snapPoints}
-          backdropComponent={renderBackdrop}
-          backgroundStyle={{ backgroundColor: Colors[theme].cardBackground }}
-          handleIndicatorStyle={{ backgroundColor: Colors[theme].separator }}
-        >
-          <BottomSheetView>
-            <ThemedText
-              type="defaultSemiBold"
-              className="text-center mb-4 mt-2"
+          <SectionCard>
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-4"
+              onPress={handleSignout}
+              activeOpacity={0.7}
             >
-              Select Gender
-            </ThemedText>
-            {GENDER_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                onPress={() => handleSelectGender(option.value)}
-                disabled={genderMutation.isPending}
-                className="flex-row items-center justify-between px-6 py-4 border-b"
-                style={{ borderBottomColor: Colors[theme].cardBorderColor }}
+              <IconBox name="logout" color={Colors[theme].danger} />
+              <ThemedText
+                className="flex-1 text-base ml-3"
+                lightColor={Colors.light.danger}
+                darkColor={Colors.dark.danger}
               >
-                <ThemedText className="text-base">{option.label}</ThemedText>
-                {genderMutation.isPending &&
-                  profile?.gender === option.value && (
-                    <ActivityIndicator color={Colors[theme].accentBlue} />
-                  )}
-              </TouchableOpacity>
-            ))}
-            <ThemedView style={{ height: insets.bottom + 16 }} />
-          </BottomSheetView>
-        </BottomSheetModal>
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+                Sign Out
+              </ThemedText>
+            </TouchableOpacity>
+
+            <RowDivider />
+
+            <TouchableOpacity
+              className="flex-row items-center px-4 py-4"
+              onPress={() => router.push("/deleteAccount")}
+              activeOpacity={0.7}
+            >
+              <IconBox name="delete-forever" color={Colors[theme].danger} />
+              <ThemedText
+                className="flex-1 text-base ml-3"
+                lightColor={Colors.light.danger}
+                darkColor={Colors.dark.danger}
+              >
+                Delete Account
+              </ThemedText>
+              <MaterialIcons
+                name="chevron-right"
+                size={22}
+                color={Colors[theme].danger}
+              />
+            </TouchableOpacity>
+          </SectionCard>
+        </ScrollView>
+      </ThemedView>
+
+      <BottomSheetModal
+        ref={genderSheetRef}
+        index={0}
+        snapPoints={snapPoints}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: Colors[theme].cardBackground }}
+        handleIndicatorStyle={{ backgroundColor: Colors[theme].separator }}
+      >
+        <BottomSheetView>
+          <ThemedText type="defaultSemiBold" className="text-center mb-4 mt-2">
+            Select Gender
+          </ThemedText>
+          {GENDER_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              onPress={() => handleSelectGender(option.value)}
+              disabled={genderMutation.isPending}
+              className="flex-row items-center justify-between px-6 py-4 border-b"
+              style={{ borderBottomColor: Colors[theme].cardBorderColor }}
+            >
+              <ThemedText className="text-base">{option.label}</ThemedText>
+              {genderMutation.isPending && profile?.gender === option.value && (
+                <ActivityIndicator color={Colors[theme].accentBlue} />
+              )}
+            </TouchableOpacity>
+          ))}
+          <ThemedView style={{ height: insets.bottom + 16 }} />
+        </BottomSheetView>
+      </BottomSheetModal>
+    </>
   );
 }
