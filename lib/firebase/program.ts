@@ -38,7 +38,9 @@ export const addProgram = async (
 export const getPrograms = async (): Promise<ProgramWithId[]> => {
   const userId = getCurrentUserId();
 
-  const snapshot = await programsCollection(userId).get();
+  const snapshot = await programsCollection(userId)
+    .orderBy("createdAt", "desc")
+    .get();
 
   return snapshot.docs.map((doc) =>
     ProgramWithIdSchema.parse({ id: doc.id, ...doc.data() }),

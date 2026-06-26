@@ -161,7 +161,7 @@ export default function WeightDisplay() {
     <Card className="gap-4">
       <ThemedView className="flex-row items-center justify-between">
         <ThemedView>
-          <ThemedText className="text-xs uppercase tracking-[0.35em] opacity-60">
+          <ThemedText className="uppercase tracking-[0.35em] opacity-60">
             WEIGHT
           </ThemedText>
           <ThemedText type="subtitle" className="mt-1">

@@ -3,7 +3,7 @@ import firestore, {
 } from "@react-native-firebase/firestore";
 import { z } from "zod";
 
-// Update to use RN Firebase Timestamp
+// TODO: Update to use RN Firebase Timestamp
 const FirestoreTimestampSchema = z.union([
   z.date(),
   z
@@ -84,22 +84,16 @@ export const ProgramExerciseSchema = z.object({
   createdAt: FirestoreTimestampSchema.optional(),
 });
 
-export const WorkoutTemplateSchema = z.object({
-  labelId: z.string().min(1),
-  exercises: z.array(ProgramExerciseSchema),
-  createdAt: FirestoreTimestampSchema.optional(),
-});
-
 export const ProgramDaySchema = z.object({
-  index: z.number(),
   isRestDay: z.boolean(),
   label: LabelSchema.optional(),
-  workouts: z.array(WorkoutTemplateSchema).optional(),
+  exercises: z.array(ProgramExerciseSchema).optional(),
 });
 
 export const ProgramSchema = z.object({
   name: z.string().min(1),
   days: z.array(ProgramDaySchema),
+  createdAt: FirestoreTimestampSchema.optional(),
 });
 
 export const ExerciseNameListSchema = z.object({
@@ -117,6 +111,9 @@ export const WeightSchema = z.object({
 
 export const UserSettingsSchema = z.object({
   measure: WeightMeasureSchema,
+  activeProgramId: z.string().optional(),
+  activeProgramDay: z.number().int().min(0).optional(),
+  activeProgramDayDate: z.string().optional(),
 });
 
 export const GenderSchema = z.enum([

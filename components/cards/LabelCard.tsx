@@ -4,13 +4,14 @@ import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { deleteLabel, editLabel } from "@/lib/firebase/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { Alert, useColorScheme, View } from "react-native";
+import { Alert, useColorScheme } from "react-native";
 import { z } from "zod";
 import { LabelWithIdSchema } from "../../types/types";
 import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 import { ThemedTextInput } from "../ThemedTextInput";
 import { ThemedView } from "../ThemedView";
+import IconBadge from "../ui/IconBadge";
 import MutedCard from "./MuteCard";
 
 interface LabelCardProps {
@@ -141,14 +142,7 @@ export default function LabelCard({
       <ThemedView
         className={`flex-row items-center ${editable ? "flex-1" : ""} min-w-0 mr-2`}
       >
-        <View
-          className="w-14 h-14 rounded-2xl mr-4 justify-center items-center"
-          style={{
-            backgroundColor: `${Colors[theme].highlight}18`,
-            borderWidth: 1,
-            borderColor: `${Colors[theme].highlight}30`,
-          }}
-        >
+        <IconBadge className="mr-4">
           {isEditing ? (
             <ThemedTextInput
               value={editedLabel}
@@ -190,7 +184,7 @@ export default function LabelCard({
               {label.label}
             </ThemedText>
           )}
-        </View>
+        </IconBadge>
         {isEditing ? (
           <ThemedTextInput
             value={editedDescription}

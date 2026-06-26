@@ -8,7 +8,12 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
-import { Keyboard, Text, TouchableOpacity } from "react-native";
+import {
+  Keyboard,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+} from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 import Card from "../Card";
 import HorizontalWheelPicker from "../HorizontalWheelPicker";
@@ -19,12 +24,13 @@ type Props = {
   id: number;
   index: number;
   reps: string;
-  value: string;
+  value?: string;
   setType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr";
   measurement: "kg" | "lbs" | "time" | "distance" | "steps";
   repType: "fixed" | "range";
+  repsOnly?: boolean;
   onRepsChange: (id: number, newReps: string) => void;
-  onValueChange: (id: number, newValue: string) => void;
+  onValueChange?: (id: number, newValue: string) => void;
   onSetTypeChange: (
     id: number,
     newSetType: "warmup" | "normal" | "failure" | "drop" | "pr" | "failedpr",
@@ -41,6 +47,7 @@ export const AddSetCard: React.FC<Props> = ({
   setType,
   measurement,
   repType,
+  repsOnly,
   onRepsChange,
   onValueChange,
   onSetTypeChange,
@@ -48,6 +55,8 @@ export const AddSetCard: React.FC<Props> = ({
   onCopy,
 }) => {
   const theme = useColorScheme() ?? "light";
+  const { height } = useWindowDimensions();
+  const maxDynamicContentSize = height * 0.85;
   const repRange = useMemo(
     () => [
       "1",
@@ -86,7 +95,7 @@ export const AddSetCard: React.FC<Props> = ({
   const handleValueChange = (text: string) => {
     const clean = validateInput(text);
     if (clean === null) return;
-    onValueChange(id, clean);
+    onValueChange?.(id, clean);
   };
 
   const handleRepsChange = (text: string) => {
@@ -157,19 +166,7 @@ export const AddSetCard: React.FC<Props> = ({
   };
 
   const openDropdown = useCallback(() => {
-    try {
-      bottomSheetModalRef.current?.present();
-      // Force it to open at full height immediately
-      requestAnimationFrame(() => {
-        try {
-          bottomSheetModalRef.current?.snapToIndex(0);
-        } catch (error) {
-          console.error("Error snapping to index:", error);
-        }
-      });
-    } catch (error) {
-      console.error("Error opening dropdown:", error);
-    }
+    bottomSheetModalRef.current?.present();
   }, []);
 
   const renderBackdrop = useCallback(
@@ -190,7 +187,7 @@ export const AddSetCard: React.FC<Props> = ({
         <Card>
           <ThemedView className="flex-row items-center justify-between w-full rounded-lg">
             <ThemedView>
-              <TouchableOpacity className="p-3" onPress={openDropdown}>
+              <TouchableOpacity className="py-3 pr-3" onPress={openDropdown}>
                 {setTypeDisplay(setType)}
               </TouchableOpacity>
             </ThemedView>
@@ -198,10 +195,8 @@ export const AddSetCard: React.FC<Props> = ({
             <ThemedView className="flex-1 min-w-0">
               {/* Only show reps picker for kg and lbs measurements */}
               {(measurement === "kg" || measurement === "lbs") && (
-                <ThemedView className="flex-row items-center mb-4">
-                  <Text className="text-xl text-gray-500 w-[50px] mr-4">
-                    Reps:
-                  </Text>
+                <ThemedView className="flex-row items-center">
+                  <Text className="text-xl text-gray-500 w-16 mr-4">Reps:</Text>
                   <ThemedView className="justify-center flex-1 min-w-0 max-w-64">
                     {repType === "fixed" ? (
                       <ThemedTextInput
@@ -231,27 +226,43 @@ export const AddSetCard: React.FC<Props> = ({
                   </ThemedView>
                 </ThemedView>
               )}
-              <ThemedView className="flex-row items-center">
-                <Text className="text-xl text-gray-500 w-[50px] flex-shrink-0 mr-4">
-                  {measurement === "kg"
-                    ? "Kg:"
-                    : measurement === "lbs"
-                      ? "Lbs:"
-                      : measurement === "distance"
-                        ? "Km:"
-                        : measurement === "steps"
-                          ? "Steps"
-                          : ""}
-                </Text>
-                <ThemedView className="justify-center flex-1 min-w-0 max-w-64">
-                  {measurement === "time" ? (
-                    <>
+              {!repsOnly && (
+                <ThemedView className="flex-row items-center mt-4">
+                  <Text className="text-xl text-gray-500 w-16 flex-shrink-0 mr-4">
+                    {measurement === "kg"
+                      ? "Kg:"
+                      : measurement === "lbs"
+                        ? "Lbs:"
+                        : measurement === "distance"
+                          ? "Km:"
+                          : measurement === "steps"
+                            ? "Steps"
+                            : ""}
+                  </Text>
+                  <ThemedView className="justify-center flex-1 min-w-0 max-w-64">
+                    {measurement === "time" ? (
+                      <>
+                        <ThemedTextInput
+                          value={value}
+                          onChangeText={handleValueChange}
+                          onFocus={() => onValueChange?.(id, "")}
+                          onBlur={() => {
+                            if (!value) onValueChange?.(id, "0");
+                          }}
+                          keyboardType="decimal-pad"
+                          returnKeyType="done"
+                          onSubmitEditing={() => Keyboard.dismiss()}
+                          maxLength={6}
+                          className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
+                        />
+                      </>
+                    ) : (
                       <ThemedTextInput
                         value={value}
                         onChangeText={handleValueChange}
-                        onFocus={() => onValueChange(id, "")}
+                        onFocus={() => onValueChange?.(id, "")}
                         onBlur={() => {
-                          if (!value) onValueChange(id, "0");
+                          if (!value) onValueChange?.(id, "0");
                         }}
                         keyboardType="decimal-pad"
                         returnKeyType="done"
@@ -259,27 +270,17 @@ export const AddSetCard: React.FC<Props> = ({
                         maxLength={6}
                         className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
                       />
-                    </>
-                  ) : (
-                    <ThemedTextInput
-                      value={value}
-                      onChangeText={handleValueChange}
-                      onFocus={() => onValueChange(id, "")}
-                      onBlur={() => {
-                        if (!value) onValueChange(id, "0");
-                      }}
-                      keyboardType="decimal-pad"
-                      returnKeyType="done"
-                      onSubmitEditing={() => Keyboard.dismiss()}
-                      maxLength={6}
-                      className="bg-gray-200 dark:bg-gray-900 rounded-lg p-3 text-2xl leading-[24px] w-full text-center"
-                    />
-                  )}
+                    )}
+                  </ThemedView>
                 </ThemedView>
-              </ThemedView>
+              )}
             </ThemedView>
             <ThemedView className="flex-col items-center gap-2">
-              <RoundedButton icon="copy" type="blue" onPress={() => onCopy(id)} />
+              <RoundedButton
+                icon="copy"
+                type="blue"
+                onPress={() => onCopy(id)}
+              />
               <RoundedButton
                 type="danger"
                 icon="x"
@@ -295,6 +296,7 @@ export const AddSetCard: React.FC<Props> = ({
         ref={bottomSheetModalRef}
         index={0}
         snapPoints={snapPoints}
+        maxDynamicContentSize={maxDynamicContentSize}
         backdropComponent={renderBackdrop}
         backgroundStyle={{
           backgroundColor: Colors[theme].cardBackground,
@@ -303,10 +305,10 @@ export const AddSetCard: React.FC<Props> = ({
           backgroundColor: Colors[theme].separator,
         }}
       >
-        <ThemedText className="text-lg font-semibold text-center mb-6">
+        <ThemedText className="font-semibold text-center mb-6">
           Choose Set Type
         </ThemedText>
-        <BottomSheetView style={{ flex: 1 }}>
+        <BottomSheetView>
           <ThemedView
             lightColor={Colors[theme].cardBackground}
             darkColor={Colors[theme].cardBackground}
@@ -327,19 +329,15 @@ export const AddSetCard: React.FC<Props> = ({
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
                 >
-                  <ThemedText className="text-lg font-bold">
-                    {index + 1}
-                  </ThemedText>
+                  <ThemedText className="font-bold">{index + 1}</ThemedText>
                 </ThemedView>
                 <ThemedView
                   className="flex-1"
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
                 >
-                  <ThemedText className="text-lg font-semibold">
-                    Normal Set
-                  </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="font-semibold">Normal Set</ThemedText>
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Regular working set
                   </ThemedText>
                 </ThemedView>
@@ -364,7 +362,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].secondary }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     W
                   </ThemedText>
@@ -376,11 +374,11 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].secondary }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Warmup Set
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Light weight preparation
                   </ThemedText>
                 </ThemedView>
@@ -405,7 +403,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].highlight }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     F
                   </ThemedText>
@@ -417,11 +415,11 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].highlight }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Failure Set
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Pushed to muscle failure
                   </ThemedText>
                 </ThemedView>
@@ -446,7 +444,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].accentBlue }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     D
                   </ThemedText>
@@ -456,14 +454,13 @@ export const AddSetCard: React.FC<Props> = ({
                   lightColor={Colors[theme].cardBackground}
                   darkColor={Colors[theme].cardBackground}
                 >
-                  zz
                   <ThemedText
                     style={{ color: Colors[theme].accentBlue }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Drop Set
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Reduce weight and continue
                   </ThemedText>
                 </ThemedView>
@@ -488,7 +485,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].success }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     PR
                   </ThemedText>
@@ -500,11 +497,11 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].success }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Personal Record
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     New personal best achieved
                   </ThemedText>
                 </ThemedView>
@@ -529,7 +526,7 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].danger }}
-                    className="text-lg font-bold"
+                    className="font-bold"
                   >
                     FPR
                   </ThemedText>
@@ -541,11 +538,11 @@ export const AddSetCard: React.FC<Props> = ({
                 >
                   <ThemedText
                     style={{ color: Colors[theme].danger }}
-                    className="text-lg font-semibold"
+                    className="font-semibold"
                   >
                     Failed PR Attempt
                   </ThemedText>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                  <ThemedText className="text-gray-500 dark:text-gray-400">
                     Attempted but couldn&apos;t complete
                   </ThemedText>
                 </ThemedView>

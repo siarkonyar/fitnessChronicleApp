@@ -1,4 +1,4 @@
-import ShareExerciseCard from "@/components/exercise/ShareExerciseCard";
+import MiniExerciseCard from "@/components/exercise/MiniExerciseCard";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
@@ -248,7 +248,7 @@ export default function ShareDayModal({
                       timestampToMillis(b.createdAt),
                   )
                   .map((log) => (
-                    <ShareExerciseCard key={log.id} exercise={log} />
+                    <MiniExerciseCard key={log.id} exercise={log} />
                   ))}
               </View>
 

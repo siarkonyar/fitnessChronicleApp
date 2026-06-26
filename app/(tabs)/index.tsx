@@ -1,6 +1,8 @@
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import TodayLabelCard from "@/components/cards/TodayLabelCard";
+import ChooseProgram from "@/components/ChooseProgram";
+import ChooseProgramDay from "@/components/ChooseProgramDay";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
@@ -106,10 +108,11 @@ export default function HomeScreen() {
                 ercule
               </ThemedText>
             </View>
-            <ThemedText className="mt-1 text-base opacity-70">
+            <ThemedText className="text-sm opacity-70">
               {readableDate}
             </ThemedText>
           </View>
+          <ChooseProgram />
         </View>
       </View>
 
@@ -126,6 +129,8 @@ export default function HomeScreen() {
         }
       >
         <View className="px-4 pt-2">
+          <ChooseProgramDay />
+
           <Card>
             <View
               pointerEvents="none"
@@ -146,7 +151,7 @@ export default function HomeScreen() {
                 />
               )}
             </View>
-            <ThemedText type="subtitle" className="mt-2 mb-8">
+            <ThemedText type="subtitle" className="mb-8">
               Log the work. Keep the rhythm.
             </ThemedText>
             {logs && logs.length > 0 ? (
