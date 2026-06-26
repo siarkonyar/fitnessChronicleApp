@@ -187,7 +187,7 @@ export const AddSetCard: React.FC<Props> = ({
         <Card>
           <ThemedView className="flex-row items-center justify-between w-full rounded-lg">
             <ThemedView>
-              <TouchableOpacity className="p-3" onPress={openDropdown}>
+              <TouchableOpacity className="py-3 pr-3" onPress={openDropdown}>
                 {setTypeDisplay(setType)}
               </TouchableOpacity>
             </ThemedView>
@@ -196,9 +196,7 @@ export const AddSetCard: React.FC<Props> = ({
               {/* Only show reps picker for kg and lbs measurements */}
               {(measurement === "kg" || measurement === "lbs") && (
                 <ThemedView className="flex-row items-center">
-                  <Text className="text-xl text-gray-500 w-[50px] mr-4">
-                    Reps:
-                  </Text>
+                  <Text className="text-xl text-gray-500 w-16 mr-4">Reps:</Text>
                   <ThemedView className="justify-center flex-1 min-w-0 max-w-64">
                     {repType === "fixed" ? (
                       <ThemedTextInput
@@ -230,7 +228,7 @@ export const AddSetCard: React.FC<Props> = ({
               )}
               {!repsOnly && (
                 <ThemedView className="flex-row items-center mt-4">
-                  <Text className="text-xl text-gray-500 w-[50px] flex-shrink-0 mr-4">
+                  <Text className="text-xl text-gray-500 w-16 flex-shrink-0 mr-4">
                     {measurement === "kg"
                       ? "Kg:"
                       : measurement === "lbs"
