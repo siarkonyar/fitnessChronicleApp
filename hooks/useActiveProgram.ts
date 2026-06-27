@@ -101,7 +101,7 @@ export function useActiveProgram() {
   });
 
   const removeProgramSelectionMutation = useMutation({
-    mutationFn: (programId: string) =>
+    mutationFn: () =>
       updateUserSettings({
         activeProgramId: "",
         activeProgramDay: 0,

@@ -19,10 +19,17 @@ export default function ChooseProgram() {
   const palette = Colors[theme];
   const { height } = useWindowDimensions();
   const maxDynamicContentSize = height * 0.85;
-  const { activeProgram, selectProgram } = useActiveProgramContext();
+  const { activeProgram, selectProgram, removeProgramSelection } =
+    useActiveProgramContext();
 
   function handleSelectProgram(programId: string) {
     selectProgram(programId, {
+      onSuccess: () => bottomSheetModalRef.current?.dismiss(),
+    });
+  }
+
+  function handleRemoveProgramSelection() {
+    removeProgramSelection(undefined, {
       onSuccess: () => bottomSheetModalRef.current?.dismiss(),
     });
   }
@@ -75,7 +82,9 @@ export default function ChooseProgram() {
             </ThemedText>
           </View>
           <View className="flex-row items-center">
-            <Button type="danger">unselect</Button>
+            <Button type="danger" onPress={handleRemoveProgramSelection}>
+              unselect
+            </Button>
             <View>
               <RoundedButton
                 type="danger"
