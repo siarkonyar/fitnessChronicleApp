@@ -10,6 +10,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
 import { View, useColorScheme, useWindowDimensions } from "react-native";
+import { Button } from "./Button";
 import ProgramList from "./lists/ProgramList";
 import { RoundedButton } from "./RoundButton";
 
@@ -73,11 +74,16 @@ export default function ChooseProgram() {
               Pick the plan you want to follow
             </ThemedText>
           </View>
-          <RoundedButton
-            type="danger"
-            icon="x"
-            onPress={() => bottomSheetModalRef.current?.dismiss()}
-          />
+          <View className="flex-row items-center">
+            <Button type="danger">unselect</Button>
+            <View>
+              <RoundedButton
+                type="danger"
+                icon="x"
+                onPress={() => bottomSheetModalRef.current?.dismiss()}
+              />
+            </View>
+          </View>
         </View>
 
         <BottomSheetScrollView
