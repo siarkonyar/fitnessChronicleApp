@@ -12,6 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
+import { useActiveProgramContext } from "@/context/ActiveProgramContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { timestampToMillis } from "@/lib/dateUtils";
 import { getExerciseLogByDate } from "@/lib/firebase/exercise";
@@ -42,6 +43,7 @@ export default function HomeScreen() {
   const { handleQueryError } = useServerErrorHandler();
   const [refreshing, setRefreshing] = useState(false);
   const [shareDayVisible, setShareDayVisible] = useState(false);
+  const { activeProgram } = useActiveProgramContext();
 
   const {
     data: logs,
@@ -129,7 +131,7 @@ export default function HomeScreen() {
         }
       >
         <View className="px-4 pt-2">
-          <ChooseProgramDay />
+          {activeProgram ? <ChooseProgramDay /> : null}
 
           <Card>
             <View
