@@ -52,7 +52,7 @@ export default function ProgramList({
 
   const listContent =
     programs && programs.length > 0 ? (
-      <ThemedView className="gap-3 mb-3">
+      <ThemedView className="gap-3 mb-3 py-3">
         {programs.map((program) => (
           <ProgramCard
             key={program.id}
@@ -128,9 +128,10 @@ export default function ProgramList({
 
   return (
     <Card>
-      <ThemedText type="subtitle" className="text-center my-4">
-        Your Programs
-      </ThemedText>
+      <ThemedView className="mb-2">
+        <ThemedText type="label">PROGRAMS</ThemedText>
+        <ThemedText type="subtitle">Your Programs</ThemedText>
+      </ThemedView>
       <ThemedView>
         <ScrollView className="max-h-96" keyboardShouldPersistTaps="handled">
           {listContent}

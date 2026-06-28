@@ -102,25 +102,24 @@ export default function UserLabelList({
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center py-8">
-        <ThemedText className="text-center opacity-70">
-          Loading...
-        </ThemedText>
+        <ThemedText className="text-center opacity-70">Loading...</ThemedText>
       </View>
     );
   }
 
   return (
     <Card>
-      <ThemedText type="subtitle" className="text-center my-4">
-        Your Label Collection
-      </ThemedText>
+      <ThemedView className="mb-2">
+        <ThemedText type="label">LABELS</ThemedText>
+        <ThemedText type="subtitle">Your Label Collection</ThemedText>
+      </ThemedView>
       <ThemedView>
         <ScrollView
           className="max-h-96"
           keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
         >
-          <View className="p-6">
+          <View className="p-3">
             {labels.length > 0 ? (
               <View className="flex-col gap-3 mb-6">
                 {labels.map((item, index) => (
@@ -185,11 +184,11 @@ export default function UserLabelList({
           </View>
         </ScrollView>
         <Button
-          className="my-2"
+          className="mt-6"
           disabled={isAddingLabel}
           onPress={handleAddLabelPress}
         >
-          Add Labels
+          Add Label
         </Button>
       </ThemedView>
     </Card>
