@@ -126,7 +126,7 @@ export default function GetExerciseCard({
           </ThemedView>
         </ThemedView>
         <ThemedView className="flex-col items-center justify-between w-full px-6 rounded-lg">
-          <ThemedText className="text-xl font-bold shrink">
+          <ThemedText className="text-lg font-bold shrink">
             {exercise.activity.toUpperCase()}
           </ThemedText>
           <ThemedView className="w-full flex-row items-start">
