@@ -144,8 +144,13 @@ export default function HomeScreen() {
               className="absolute -left-14 -bottom-14 h-32 w-32 rounded-full opacity-10"
               style={{ backgroundColor: Colors[theme].secondary }}
             />
-            <View className="flex-row items-center justify-between">
-              <ThemedText type="label">Training dashboard</ThemedText>
+            <View className="flex-row items-center justify-between mb-8">
+              <View>
+                <ThemedText type="label">Training dashboard</ThemedText>
+                <ThemedText type="subtitle">
+                  Log the work. Keep the rhythm.
+                </ThemedText>
+              </View>
               {logs && logs.length > 0 && (
                 <RoundedButton
                   icon="upload"
@@ -153,9 +158,6 @@ export default function HomeScreen() {
                 />
               )}
             </View>
-            <ThemedText type="subtitle" className="mb-8">
-              Log the work. Keep the rhythm.
-            </ThemedText>
             {logs && logs.length > 0 ? (
               <ThemedView>
                 {logs

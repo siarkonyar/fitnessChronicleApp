@@ -56,8 +56,9 @@ export default function ChooseProgramDay() {
   return (
     <>
       <Card>
-        <ThemedText type="label" className="mb-3">
-          Today&apos;s program
+        <ThemedText type="label">Today&apos;s program</ThemedText>
+        <ThemedText type="subtitle" className="mb-4">
+          Today&apos;s label
         </ThemedText>
 
         <TouchableOpacity
