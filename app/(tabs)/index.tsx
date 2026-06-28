@@ -131,7 +131,7 @@ export default function HomeScreen() {
         }
       >
         <View className="px-4 pt-2">
-          {activeProgram ? <ChooseProgramDay /> : null}
+          <StreakDisplay />
 
           <Card>
             <View
@@ -188,9 +188,9 @@ export default function HomeScreen() {
             </View>
           </Card>
 
-          <TodayLabelCard />
+          {activeProgram ? <ChooseProgramDay /> : null}
 
-          <StreakDisplay />
+          <TodayLabelCard />
         </View>
       </ScrollView>
       {logs && logs.length > 0 && (
