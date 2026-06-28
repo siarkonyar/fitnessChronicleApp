@@ -19,7 +19,7 @@ type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
 
 type GetExerciseCardProps = {
   exercise: ExerciseLog;
-  index?: number; // Optional index for styling or display purposes
+  index?: number;
   deletable?: boolean;
   editable?: boolean;
   copyable?: boolean;
@@ -177,10 +177,20 @@ export default function GetExerciseCard({
                       {" set: "}
                     </ThemedText>
                     <ThemedText>
-                      {set.value ?? "?"}
-                      {set.measure}{" "}
-                      <Feather name="x" size={12} color={Colors[theme].text} />{" "}
-                      {"reps" in set ? (set.reps ?? "?") : "?"}
+                      {set.value ? (
+                        <>
+                          {set.value}
+                          {set.measure}{" "}
+                          <Feather
+                            name="x"
+                            size={12}
+                            color={Colors[theme].text}
+                          />
+                        </>
+                      ) : (
+                        ""
+                      )}{" "}
+                      {"reps" in set ? (set.reps ?? "?") : "?"} {"reps"}
                     </ThemedText>
                   </ThemedView>
                 );
