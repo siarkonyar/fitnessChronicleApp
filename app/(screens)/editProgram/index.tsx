@@ -1,55 +1,48 @@
 import ProgramForm from "@/components/ProgramForm";
+import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
-import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
-import { getProgram, updateProgram } from "@/lib/firebase/program";
-import { ProgramDaySchema } from "@/types/types";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { updateProgram } from "@/lib/firebase/program";
+import { ProgramDaySchema, ProgramWithIdSchema } from "@/types/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect } from "react";
-import { ActivityIndicator } from "react-native";
+import { useMemo } from "react";
 import { z } from "zod";
 
 type ProgramDay = z.infer<typeof ProgramDaySchema>;
+type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
 
 export default function EditProgramScreen() {
-  const { programId } = useLocalSearchParams<{ programId: string }>();
-  const theme = useColorScheme() ?? "light";
+  const { program: programParam } = useLocalSearchParams<{ program: string }>();
   const queryClient = useQueryClient();
-  const { handleQueryError, handleMutationError } = useServerErrorHandler();
+  const { handleMutationError } = useServerErrorHandler();
 
-  const {
-    data: program,
-    isLoading,
-    error,
-  } = useQuery({
-    queryFn: () => getProgram(programId),
-    queryKey: queryKeys.programs.byId(programId),
-  });
-
-  useEffect(() => {
-    if (error) {
-      handleQueryError(error);
+  const program = useMemo<ProgramWithId | null>(() => {
+    if (!programParam) return null;
+    try {
+      return JSON.parse(programParam) as ProgramWithId;
+    } catch {
+      return null;
     }
-  }, [error, handleQueryError]);
+  }, [programParam]);
 
   const updateProgramMutation = useMutation({
-    mutationFn: ({ name, days }: { name: string; days: ProgramDay[] }) =>
-      updateProgram(programId, { name, days }),
+    mutationFn: ({ name, days }: { name: string; days: ProgramDay[] }) => {
+      if (!program) throw new Error("Program not found.");
+      return updateProgram(program.id, { name, days });
+    },
     onError: (mutationError) => {
       handleMutationError(mutationError);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.programs.all });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.programs.byId(programId),
-      });
+      if (program) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.programs.byId(program.id),
+        });
+      }
     },
   });
 
@@ -62,10 +55,16 @@ export default function EditProgramScreen() {
     }
   };
 
-  if (isLoading || !program) {
+  if (!program) {
     return (
-      <ThemedView className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color={Colors[theme].highlight} />
+      <ThemedView className="flex-1 items-center justify-center px-8">
+        <ThemedText
+          className="text-center text-base font-semibold"
+          lightColor={Colors.light.mutedText}
+          darkColor={Colors.dark.mutedText}
+        >
+          Program not found
+        </ThemedText>
       </ThemedView>
     );
   }

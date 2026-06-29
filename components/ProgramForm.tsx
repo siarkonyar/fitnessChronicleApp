@@ -75,8 +75,15 @@ export default function ProgramForm({
   };
 
   function selectLabelForDay(dayIndex: number, label: Label) {
+    // Only the name and description belong on a program day. dates,
+    // muscleGroups and createdAt are optional, so we just don't carry them.
+    const { label: name, description } = label;
     setDays((prev) =>
-      prev.map((day, i) => (i === dayIndex ? { ...day, label } : day)),
+      prev.map((day, i) =>
+        i === dayIndex
+          ? { ...day, label: { label: name, description } }
+          : day,
+      ),
     );
   }
 

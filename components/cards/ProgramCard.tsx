@@ -8,6 +8,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ProgramWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import { TouchableOpacity } from "react-native";
 import { z } from "zod";
@@ -73,6 +74,16 @@ export default function ProgramCard({
               </ThemedText>
             </ThemedView>
           </ThemedView>
+          <RoundedButton
+            type="blue"
+            icon="edit"
+            onPress={() =>
+              router.push({
+                pathname: "/(screens)/editProgram",
+                params: { program: JSON.stringify(program) },
+              })
+            }
+          />
           {onDelete && (
             <RoundedButton
               type="danger"
