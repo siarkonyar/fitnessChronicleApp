@@ -51,9 +51,11 @@ export default function ProgramForm({
   const theme = useColorScheme() ?? "light";
   const [programName, setProgramName] = useState(initialName);
   const [nameError, setNameError] = useState(false);
+  const [daysError, setDaysError] = useState(false);
   const [days, setDays] = useState<ProgramDay[]>(initialDays);
 
   function addDay(isRestDay: boolean) {
+    setDaysError(false);
     setDays((prev) => [...prev, { isRestDay }]);
     setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
@@ -135,6 +137,12 @@ export default function ProgramForm({
     if (!programName.trim()) {
       setNameError(true);
       console.warn("Please enter a program name");
+      return;
+    }
+
+    if (days.length === 0) {
+      setDaysError(true);
+      console.warn("Please add at least one day to the program");
       return;
     }
 
@@ -220,6 +228,11 @@ export default function ProgramForm({
                 Tap &quot;Add day&quot; or &quot;Add rest day&quot; above to
                 start building your program.
               </ThemedText>
+              {daysError && (
+                <Text className="text-red-500 text-center mt-4">
+                  Please add at least one day to your program
+                </Text>
+              )}
             </ThemedView>
           )}
           {days.map((day, i) => (
