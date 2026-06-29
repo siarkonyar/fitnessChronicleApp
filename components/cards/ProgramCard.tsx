@@ -1,11 +1,11 @@
 import Card from "@/components/Card";
+import ProgramDetailsModal from "@/components/modals/ProgramDetailsModal";
 import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import IconBadge from "@/components/ui/IconBadge";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import ProgramDetailsModal from "@/components/modals/ProgramDetailsModal";
 import { ProgramWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
@@ -91,37 +91,41 @@ export default function ProgramCard({
           >
             <ThemedView className="flex-row flex-wrap gap-2 flex-1 min-w-0">
               {program.days.map((day, index) =>
-              day.isRestDay ? (
-                <ThemedView
-                  key={index}
-                  className="w-8 h-8 rounded-lg items-center justify-center"
-                  style={{
-                    backgroundColor: `${Colors[theme].secondary}18`,
-                    borderWidth: 1,
-                    borderColor: `${Colors[theme].secondary}30`,
-                  }}
-                >
-                  <Feather
-                    name="moon"
-                    size={13}
-                    color={Colors[theme].secondary}
-                  />
-                </ThemedView>
-              ) : (
-                <ThemedView
-                  key={index}
-                  className="w-8 h-8 rounded-lg items-center justify-center"
-                  style={{
-                    backgroundColor: `${Colors[theme].highlight}18`,
-                    borderWidth: 1,
-                    borderColor: `${Colors[theme].highlight}30`,
-                  }}
-                >
-                  <ThemedText className="font-bold">
-                    {day.label?.label ?? "?"}
-                  </ThemedText>
-                </ThemedView>
-              ),
+                day.isRestDay ? (
+                  <ThemedView
+                    key={index}
+                    className="w-8 h-8 rounded-lg items-center justify-center"
+                    style={{
+                      backgroundColor: `${Colors[theme].secondary}18`,
+                      borderWidth: 1,
+                      borderColor: `${Colors[theme].secondary}30`,
+                    }}
+                  >
+                    <Feather
+                      name="moon"
+                      size={13}
+                      color={Colors[theme].secondary}
+                    />
+                  </ThemedView>
+                ) : (
+                  <ThemedView
+                    key={index}
+                    className="w-8 h-8 rounded-lg items-center justify-center"
+                    style={{
+                      backgroundColor: `${Colors[theme].highlight}18`,
+                      borderWidth: 1,
+                      borderColor: `${Colors[theme].highlight}30`,
+                    }}
+                  >
+                    <ThemedText
+                      className="font-bold text-xs"
+                      lightColor={Colors.light.highlight}
+                      darkColor={Colors.dark.highlight}
+                    >
+                      {day.label?.label ?? index + 1}
+                    </ThemedText>
+                  </ThemedView>
+                ),
               )}
             </ThemedView>
             <Feather
