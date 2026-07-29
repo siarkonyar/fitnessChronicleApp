@@ -49,6 +49,15 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="ai"
+          options={{
+            title: "",
+            tabBarIcon: ({ color }) => (
+              <Ionicons size={28} name="sparkles-outline" color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="calendar"
           options={{
             title: "",
