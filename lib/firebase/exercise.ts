@@ -90,6 +90,42 @@ export const getExerciseLogByDate = async (date: string) => {
   });
 };
 
+export const getExerciseLogsByDateRange = async (
+  startDate: string,
+  endDate: string,
+) => {
+  const userId = GetCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const snapshot = await firestore()
+    .collection("users")
+    .doc(userId)
+    .collection("fitnessLogs")
+    .where("date", ">=", startDate)
+    .where("date", "<=", endDate)
+    .get();
+
+  const logs = snapshot.docs.map((doc) => {
+    return ExerciseLogWithIdSchema.parse({
+      id: doc.id,
+      ...doc.data(),
+    });
+  });
+
+  // Extract unique dates from logs
+  const uniqueDatesSet = new Set<string>();
+  logs.forEach((log) => {
+    if (log.date) uniqueDatesSet.add(log.date);
+  });
+
+  const uniqueDates = Array.from(uniqueDatesSet).sort(); // Sort ascending
+
+  return {
+    logs,
+    uniqueDates,
+  };
+};
+
 export const getExerciseLogsByMonth = async (month: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
