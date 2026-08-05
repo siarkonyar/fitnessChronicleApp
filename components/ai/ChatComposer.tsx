@@ -25,7 +25,7 @@ export default function ChatComposer({
 
   return (
     <View
-      className="flex-row items-end gap-2 border-t px-4 py-3"
+      className="flex-row items-center gap-2 border-t px-4 py-3"
       style={{
         backgroundColor: Colors[theme].background,
         borderTopColor: Colors[theme].cardBorderColor,

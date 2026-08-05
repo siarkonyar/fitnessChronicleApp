@@ -4,13 +4,24 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
-import { View, useColorScheme } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  View,
+  useColorScheme,
+} from "react-native";
 
 export default function AIStackLayout() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
   return (
-    <View className="flex-1 flex-col bg-transparent">
+    // KeyboardAvoidingView measures its own frame relative to its parent, so it
+    // has to sit above the header for the offset to come out right.
+    // NativeWind has no className interop for it, hence the inline flex style.
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       {/* Fixed left header */}
       {/* <BlurView intensity={50} tint={"dark"}>
         <View className="px-4 py-3">
@@ -42,6 +53,6 @@ export default function AIStackLayout() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
       </Stack>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
