@@ -3,7 +3,7 @@ import {
   getAI,
   getGenerativeModel,
   GoogleAIBackend,
-  type ChatSession,
+  type Content,
   type GenerativeModel,
 } from "@react-native-firebase/ai";
 import { getApp } from "@react-native-firebase/app";
@@ -62,11 +62,17 @@ const getChatModel = (): GenerativeModel => {
   return cachedModel;
 };
 
-export const startChatSession = (history: ChatMessage[]): ChatSession => {
-  return getChatModel().startChat({
-    history: history.map((message) => ({
-      role: message.role,
-      parts: [{ text: message.text }],
-    })),
-  });
-};
+export const getCoachModel = (): GenerativeModel => getChatModel();
+
+/**
+ * Our chat state -> the shape the model API takes.
+ *
+ * We build `Content[]` by hand rather than using `ChatSession`, because
+ * ChatSession stamps function responses with `role: "function"`
+ * (request-helpers.ts:65) and this backend only accepts user/model/system.
+ */
+export const toContents = (messages: ChatMessage[]): Content[] =>
+  messages.map((message) => ({
+    role: message.role,
+    parts: [{ text: message.text }],
+  }));
