@@ -3,7 +3,7 @@ import ChatComposer from "@/components/ai/ChatComposer";
 import TypingIndicator from "@/components/ai/TypingIndicator";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
-import { useChatBox } from "@/hooks/useChatBox";
+import { useChatContext } from "@/context/ChatContext";
 import React, { useRef, useState } from "react";
 import { ScrollView, useColorScheme, View } from "react-native";
 
@@ -11,7 +11,7 @@ export default function AIScreen() {
   const theme = useColorScheme() ?? "light";
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<ScrollView>(null);
-  const { messages, sendMessage, isSending } = useChatBox();
+  const { messages, sendMessage, isSending } = useChatContext();
 
   const handleSend = () => {
     const text = draft.trim();

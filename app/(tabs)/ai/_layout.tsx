@@ -2,8 +2,10 @@ import { Stack } from "expo-router";
 import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
+import { useChatContext } from "@/context/ChatContext";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,10 +16,8 @@ import {
 export default function AIStackLayout() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
+  const { clearChat } = useChatContext();
   return (
-    // KeyboardAvoidingView measures its own frame relative to its parent, so it
-    // has to sit above the header for the offset to come out right.
-    // NativeWind has no className interop for it, hence the inline flex style.
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -30,7 +30,7 @@ export default function AIStackLayout() {
       </BlurView> */}
 
       <View
-        className="px-4 py-3"
+        className="px-4 py-3 justify-between items-center flex-row"
         style={{
           paddingTop: insets.top,
           backgroundColor: Colors[theme].highlight,
@@ -43,6 +43,7 @@ export default function AIStackLayout() {
         >
           AI
         </ThemedText>
+        <RoundedButton icon="radio" onPress={clearChat} />
       </View>
 
       <Stack
