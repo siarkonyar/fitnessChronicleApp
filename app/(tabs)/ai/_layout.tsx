@@ -2,13 +2,15 @@ import { Stack } from "expo-router";
 import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { RoundedButton } from "@/components/RoundButton";
+import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useChatContext } from "@/context/ChatContext";
+import { Feather } from "@expo/vector-icons";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   View,
   useColorScheme,
 } from "react-native";
@@ -36,14 +38,24 @@ export default function AIStackLayout() {
           backgroundColor: Colors[theme].highlight,
         }}
       >
-        <ThemedText
-          lightColor={Colors.light.cardBackground}
-          darkColor={Colors.dark.cardBackground}
-          type="title"
-        >
-          AI
-        </ThemedText>
-        <RoundedButton icon="radio" onPress={clearChat} />
+        <View className="flex-row items-center">
+          <MyIcon size={32} color={Colors[theme].cardBackground} />
+          <ThemedText
+            lightColor={Colors[theme].cardBackground}
+            darkColor={Colors[theme].cardBackground}
+            type="title"
+            className="ml-1"
+          >
+            ercule AI
+          </ThemedText>
+        </View>
+        <Pressable onPress={clearChat} className="p-2 active:opacity-70">
+          <Feather
+            name="refresh-cw"
+            size={20}
+            color={Colors[theme].cardBackground}
+          />
+        </Pressable>
       </View>
 
       <Stack
