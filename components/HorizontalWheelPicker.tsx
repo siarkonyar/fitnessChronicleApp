@@ -11,7 +11,7 @@ import {
 } from "react-native";
 
 type Props = {
-  items: string[];
+  items: readonly string[];
   value: string;
   onChange: (value: string) => void;
   itemWidth?: number;
