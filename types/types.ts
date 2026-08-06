@@ -129,6 +129,14 @@ export const UserProfileSchema = z.object({
   gender: GenderSchema.optional(),
 });
 
+export const ChatRoleSchema = z.enum(["user", "model"]);
+
+export const ChatMessageSchema = z.object({
+  role: ChatRoleSchema,
+  text: z.string(),
+  createdAt: FirestoreTimestampSchema.optional(),
+});
+
 export const LabelWithIdSchema = LabelSchema.extend({
   id: z.string(),
 });
@@ -150,5 +158,9 @@ export const ProgramWithIdSchema = ProgramSchema.extend({
 });
 
 export const WeightWithIdSchema = WeightSchema.extend({
+  id: z.string(),
+});
+
+export const ChatMessageWithIdSchema = ChatMessageSchema.extend({
   id: z.string(),
 });
