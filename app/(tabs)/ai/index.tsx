@@ -1,5 +1,6 @@
 import ChatBubble from "@/components/ai/ChatBubble";
 import ChatComposer from "@/components/ai/ChatComposer";
+import ProgramProposalCard from "@/components/ai/ProgramProposalCard";
 import TypingIndicator from "@/components/ai/TypingIndicator";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
@@ -50,7 +51,19 @@ export default function AIScreen() {
           </View>
         ) : (
           messages.map((message, index) => (
-            <ChatBubble key={index} message={message} />
+            <React.Fragment key={index}>
+              <ChatBubble message={message} />
+              {message.program ? (
+                <ProgramProposalCard
+                  program={message.program}
+                  onAccept={() => {}}
+                  onRegenerate={() =>
+                    sendMessage("Regenerate that program with some variation.")
+                  }
+                  isDisabled={isSending}
+                />
+              ) : null}
+            </React.Fragment>
           ))
         )}
 
