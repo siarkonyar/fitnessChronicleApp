@@ -134,6 +134,7 @@ export const ChatRoleSchema = z.enum(["user", "model"]);
 export const ChatMessageSchema = z.object({
   role: ChatRoleSchema,
   text: z.string(),
+  program: ProgramSchema.optional(),
   createdAt: FirestoreTimestampSchema.optional(),
 });
 
