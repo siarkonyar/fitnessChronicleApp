@@ -19,6 +19,8 @@ import {
 import { z } from "zod";
 import { daysBetween } from "../dateUtils";
 import { formatLabel, formatLog, formatProgram } from "./formatWorkoutData";
+import { describeProgram, toProgram } from "./programDraft";
+import { getDefaultMeasurement, getDefaultRepType } from "../offlineStorage";
 
 /** Hard cap on logs returned in one call, so a wide range can't blow the context window. */
 const MAX_LOGS_RETURNED = 200;
@@ -201,6 +203,30 @@ const runGetPrograms = async (): Promise<object> => {
   return { programs: programs.map(formatProgram) };
 };
 
+const runProposeProgram = async (args: unknown): Promise<object> => {
+  const [isRepsFixed, measure] = await Promise.all([
+    getDefaultRepType(),
+    getDefaultMeasurement(),
+  ]);
+
+  const program = toProgram(args, {
+    repType: isRepsFixed ? "fixed" : "range",
+    measure,
+  });
+
+  if (!program) {
+    return {
+      error:
+        "Those arguments could not be read as a program. Check that every day " +
+        "has isRestDay, that training days have at least one exercise, that " +
+        "labelEmoji and labelDescription are sent together, that labelEmoji is " +
+        'one emoji or one letter, and that reps is a plain number like "8".',
+    };
+  }
+
+  return { ok: true, summary: describeProgram(program) };
+};
+
 /**
  * Runs a tool the model asked for. Always resolves to an object, because that
  * is what a Gemini functionResponse requires.
@@ -216,6 +242,8 @@ export const runCoachTool = async (
       return runGetLabels();
     case "getPrograms":
       return runGetPrograms();
+    case "proposeProgram":
+      return runProposeProgram(args);
     default:
       return { error: `Unknown tool: ${name}` };
   }
