@@ -1,5 +1,7 @@
 import { runCoachTool } from "@/lib/ai/coachTools";
 import { getCoachModel, toContents } from "@/lib/ai/gemini";
+import { ProgramDraftPrefs, toProgram } from "@/lib/ai/programDraft";
+import { getDefaultMeasurement, getDefaultRepType } from "@/lib/offlineStorage";
 import { ChatMessageSchema } from "@/types/types";
 import type {
   Content,
@@ -14,10 +16,14 @@ import { useServerErrorHandler } from "./useServerErrorHandler";
 type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 /** Stops a model that keeps asking for tools from hanging the UI forever. */
-const MAX_TOOL_ROUNDS = 3;
+const MAX_TOOL_ROUNDS = 5;
 
 const FALLBACK_REPLY =
   "Sorry, I couldn't work that one out. Try asking a different way.";
+
+/** Used when a program came back but the model wrote no text alongside it. */
+const PROGRAM_FALLBACK_REPLY =
+  "Here's a program to look over. Tell me what you'd change.";
 
 /**
  * Runs one tool call, turning any failure into a result the model can read.
@@ -43,9 +49,15 @@ const runToolSafely = async (call: FunctionCall): Promise<object> => {
 const runCoachTurn = async (
   model: GenerativeModel,
   baseContents: Content[],
-): Promise<{ reply: string; contents: Content[] }> => {
+  prefs: ProgramDraftPrefs,
+): Promise<{
+  reply: string;
+  contents: Content[];
+  program: ChatMessage["program"];
+}> => {
   let contents = baseContents;
   let result = await model.generateContent({ contents });
+  let program: ChatMessage["program"];
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     // Keep the model's own turn — including its functionCall parts — or it
@@ -55,6 +67,12 @@ const runCoachTurn = async (
 
     const calls = result.response.functionCalls();
     if (!calls || calls.length === 0) break;
+
+    for (const call of calls) {
+      if (call.name === "proposeProgram") {
+        program = toProgram(call.args, prefs) ?? program;
+      }
+    }
 
     // Gemini can ask for several tools in one turn, so run them together.
     const responseParts = await Promise.all(
@@ -73,7 +91,10 @@ const runCoachTurn = async (
 
   // text() is "" when the model only emitted tool calls — which is what we get
   // if it is still asking for tools after MAX_TOOL_ROUNDS.
-  return { reply: result.response.text() || FALLBACK_REPLY, contents };
+  const text = result.response.text();
+  const fallback = program ? PROGRAM_FALLBACK_REPLY : FALLBACK_REPLY;
+
+  return { reply: text || fallback, contents, program };
 };
 
 export function useChatBox() {
@@ -84,26 +105,37 @@ export function useChatBox() {
   const { handleMutationError } = useServerErrorHandler();
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (text: string): Promise<string> => {
+    mutationFn: async (
+      text: string,
+    ): Promise<{ reply: string; program: ChatMessage["program"] }> => {
       // First send of a conversation (or the first after Clear chat) rebuilds
       // the list from what is already on screen.
       const history = historyRef.current ?? toContents(messages);
 
-      const { reply, contents } = await runCoachTurn(getCoachModel(), [
-        ...history,
-        { role: "user", parts: [{ text }] },
+      const [isRepsFixed, measure] = await Promise.all([
+        getDefaultRepType(),
+        getDefaultMeasurement(),
       ]);
+
+      const { reply, contents, program } = await runCoachTurn(
+        getCoachModel(),
+        [...history, { role: "user", parts: [{ text }] }],
+        { repType: isRepsFixed ? "fixed" : "range", measure },
+      );
 
       // Only commit on success, so a failed turn leaves the history untouched
       // and in step with the messages that onError rolls back.
       historyRef.current = contents;
-      return reply;
+      return { reply, program };
     },
     onMutate: (text: string) => {
       setMessages((prev) => [...prev, { role: "user", text }]);
     },
-    onSuccess: (reply) => {
-      setMessages((prev) => [...prev, { role: "model", text: reply }]);
+    onSuccess: ({ reply, program }) => {
+      setMessages((prev) => [
+        ...prev,
+        { role: "model", text: reply, ...(program && { program }) },
+      ]);
     },
     onError: (error) => {
       setMessages((prev) => prev.slice(0, -1));

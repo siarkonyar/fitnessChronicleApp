@@ -19,6 +19,8 @@ import {
 import { z } from "zod";
 import { daysBetween } from "../dateUtils";
 import { formatLabel, formatLog, formatProgram } from "./formatWorkoutData";
+import { describeProgram, toProgram } from "./programDraft";
+import { getDefaultMeasurement, getDefaultRepType } from "../offlineStorage";
 
 /** Hard cap on logs returned in one call, so a wide range can't blow the context window. */
 const MAX_LOGS_RETURNED = 200;
@@ -38,6 +40,58 @@ const WorkoutLogsArgsSchema = z.object({
 // ---------------------------------------------------------------------------
 // Declarations — what the model is told it can call
 // ---------------------------------------------------------------------------
+
+const SetParamsSchema = Schema.object({
+  properties: {
+    setType: Schema.enumString({
+      enum: ["warmup", "normal", "drop", "failure"],
+      description: 'Almost always "normal".',
+    }),
+    reps: Schema.string({
+      description:
+        'A plain number like "8". Never a range like "6-8" — the app converts it.',
+    }),
+  },
+});
+
+const ExerciseParamsSchema = Schema.object({
+  properties: {
+    activity: Schema.string({
+      description: 'The exercise name, for example "Barbell Bench Press".',
+    }),
+    notes: Schema.string({
+      description:
+        'Optional one-line cue, for example "slow eccentric". Never a weight.',
+    }),
+    sets: Schema.array({
+      items: SetParamsSchema,
+      minItems: 1,
+      description: "One entry per set — three or four is typical.",
+    }),
+  },
+  optionalProperties: ["notes"],
+});
+
+const DayParamsSchema = Schema.object({
+  properties: {
+    isRestDay: Schema.boolean({
+      description: "True for a rest day, which has no label and no exercises.",
+    }),
+    labelEmoji: Schema.string({
+      description:
+        'One emoji or one letter, for example "🏋️". Never a word — the readable name goes in labelDescription.',
+    }),
+    labelDescription: Schema.string({
+      description:
+        'The day name, for example "Push". Call getLabels first and reuse an existing label\'s description exactly when one fits.',
+    }),
+    exercises: Schema.array({
+      items: ExerciseParamsSchema,
+      description: "The day's exercises. Omit entirely on a rest day.",
+    }),
+  },
+  optionalProperties: ["labelEmoji", "labelDescription", "exercises"],
+});
 
 export const coachTools: FunctionDeclarationsTool[] = [
   {
@@ -76,6 +130,30 @@ export const coachTools: FunctionDeclarationsTool[] = [
           "Get the user's saved workout program templates: the planned " +
           "exercises and sets for each day. Use this to compare what they " +
           "planned against what they actually logged.",
+      },
+      {
+        name: "proposeProgram",
+        description:
+          "Propose a workout program for the user to review. Only call this " +
+          "once you know their goal and how many days a week they train. " +
+          "Programs are sets and reps only — never weights. Reps are a plain " +
+          "number the app converts to the user's preferred format. " +
+          "labelEmoji is one emoji or one letter, never a word. Call getLabels " +
+          "first and reuse an existing label's description exactly when one fits.",
+        parameters: Schema.object({
+          properties: {
+            name: Schema.string({
+              description:
+                'A short program name, for example "Upper/Lower Split".',
+            }),
+            days: Schema.array({
+              items: DayParamsSchema,
+              minItems: 1,
+              description:
+                "One entry per day of the week's cycle, in order, including rest days.",
+            }),
+          },
+        }) as ObjectSchemaInterface,
       },
     ],
   },
@@ -125,6 +203,30 @@ const runGetPrograms = async (): Promise<object> => {
   return { programs: programs.map(formatProgram) };
 };
 
+const runProposeProgram = async (args: unknown): Promise<object> => {
+  const [isRepsFixed, measure] = await Promise.all([
+    getDefaultRepType(),
+    getDefaultMeasurement(),
+  ]);
+
+  const program = toProgram(args, {
+    repType: isRepsFixed ? "fixed" : "range",
+    measure,
+  });
+
+  if (!program) {
+    return {
+      error:
+        "Those arguments could not be read as a program. Check that every day " +
+        "has isRestDay, that training days have at least one exercise, that " +
+        "labelEmoji and labelDescription are sent together, that labelEmoji is " +
+        'one emoji or one letter, and that reps is a plain number like "8".',
+    };
+  }
+
+  return { ok: true, summary: describeProgram(program) };
+};
+
 /**
  * Runs a tool the model asked for. Always resolves to an object, because that
  * is what a Gemini functionResponse requires.
@@ -140,6 +242,8 @@ export const runCoachTool = async (
       return runGetLabels();
     case "getPrograms":
       return runGetPrograms();
+    case "proposeProgram":
+      return runProposeProgram(args);
     default:
       return { error: `Unknown tool: ${name}` };
   }
