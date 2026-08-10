@@ -5,6 +5,7 @@ import TypingIndicator from "@/components/ai/TypingIndicator";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
+import { useActiveProgramContext } from "@/context/ActiveProgramContext";
 import { useChatContext } from "@/context/ChatContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { addLabel, getAllLabels } from "@/lib/firebase/label";
@@ -12,6 +13,7 @@ import { addProgram } from "@/lib/firebase/program";
 import { reconcileProgramLabels } from "@/lib/programLabels";
 import { ProgramSchema } from "@/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import { ScrollView, useColorScheme, View } from "react-native";
 import { z } from "zod";
@@ -51,6 +53,23 @@ export default function AIScreen() {
     },
   });
 
+  const { selectProgram } = useActiveProgramContext();
+  const [acceptedIndices, setAcceptedIndices] = useState<Set<number>>(
+    new Set(),
+  );
+
+  const handleAccept = async (index: number, program: Program) => {
+    try {
+      const programId = await acceptProgramMutation.mutateAsync(program);
+
+      selectProgram(programId);
+      setAcceptedIndices((prev) => new Set(prev).add(index));
+      router.push("/(tabs)/profile");
+    } catch {
+      // handleMutationError already showed the message — just don't navigate.
+    }
+  };
+
   const handleSend = () => {
     const text = draft.trim();
     if (!text || isSending) return;
@@ -87,21 +106,31 @@ export default function AIScreen() {
             </ThemedText>
           </View>
         ) : (
-          messages.map((message, index) => (
-            <React.Fragment key={index}>
-              <ChatBubble message={message} />
-              {message.program ? (
-                <ProgramProposalCard
-                  program={message.program}
-                  onAccept={() => {}}
-                  onRegenerate={() =>
-                    sendMessage("Regenerate that program with some variation.")
-                  }
-                  isDisabled={isSending}
-                />
-              ) : null}
-            </React.Fragment>
-          ))
+          messages.map((message, index) => {
+            const program = message.program;
+            const isAccepted = acceptedIndices.has(index);
+
+            return (
+              <React.Fragment key={index}>
+                <ChatBubble message={message} />
+                {program ? (
+                  <ProgramProposalCard
+                    program={program}
+                    onAccept={() => handleAccept(index, program)}
+                    onRegenerate={() =>
+                      sendMessage(
+                        "Regenerate that program with some variation.",
+                      )
+                    }
+                    isDisabled={
+                      isSending || acceptProgramMutation.isPending || isAccepted
+                    }
+                    isAccepted={isAccepted}
+                  />
+                ) : null}
+              </React.Fragment>
+            );
+          })
         )}
 
         {isSending ? <TypingIndicator /> : null}
