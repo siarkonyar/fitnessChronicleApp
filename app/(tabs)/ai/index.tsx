@@ -4,15 +4,52 @@ import ProgramProposalCard from "@/components/ai/ProgramProposalCard";
 import TypingIndicator from "@/components/ai/TypingIndicator";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useChatContext } from "@/context/ChatContext";
+import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { addLabel, getAllLabels } from "@/lib/firebase/label";
+import { addProgram } from "@/lib/firebase/program";
+import { reconcileProgramLabels } from "@/lib/programLabels";
+import { ProgramSchema } from "@/types/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useRef, useState } from "react";
 import { ScrollView, useColorScheme, View } from "react-native";
+import { z } from "zod";
+
+type Program = z.infer<typeof ProgramSchema>;
 
 export default function AIScreen() {
   const theme = useColorScheme() ?? "light";
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<ScrollView>(null);
   const { messages, sendMessage, isSending } = useChatContext();
+
+  const queryClient = useQueryClient();
+  const { handleMutationError } = useServerErrorHandler();
+
+  const acceptProgramMutation = useMutation({
+    mutationFn: async (program: Program) => {
+      const existingLabels = await getAllLabels();
+
+      const { days, missingLabels } = reconcileProgramLabels(
+        program.days,
+        existingLabels,
+      );
+
+      await Promise.all(missingLabels.map((label) => addLabel(label)));
+
+      return addProgram(program.name, days);
+    },
+    onError: (error) => {
+      handleMutationError(error);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.labels.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.programs.all }),
+      ]);
+    },
+  });
 
   const handleSend = () => {
     const text = draft.trim();
