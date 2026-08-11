@@ -73,7 +73,7 @@ export default function AIScreen() {
     }
   };
 
-  const handleSend = () => {
+  const handleSend = () => {gigit push
     const text = draft.trim();
     if (!text || isSending) return;
 
