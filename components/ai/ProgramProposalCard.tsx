@@ -16,6 +16,7 @@ interface ProgramProposalCardProps {
   onAccept: () => void;
   onRegenerate: () => void;
   isDisabled?: boolean;
+  isAccepted: boolean;
 }
 
 export default function ProgramProposalCard({
@@ -23,6 +24,7 @@ export default function ProgramProposalCard({
   onAccept,
   onRegenerate,
   isDisabled,
+  isAccepted,
 }: ProgramProposalCardProps) {
   const theme = useColorScheme() ?? "light";
   const palette = Colors[theme];
@@ -56,22 +58,30 @@ export default function ProgramProposalCard({
         className="flex-row gap-3 pt-4 border-t"
         style={{ borderTopColor: palette.separator }}
       >
-        <ThemedView className="flex-1">
-          <TintedButton onPress={onRegenerate} disabled={isDisabled}>
-            Regenerate
-          </TintedButton>
-        </ThemedView>
+        {isAccepted ? null : (
+          <ThemedView className="flex-1">
+            <TintedButton onPress={onRegenerate} disabled={isDisabled}>
+              Regenerate
+            </TintedButton>
+          </ThemedView>
+        )}
         <ThemedView className="flex-1">
           <TintedButton
             onPress={onAccept}
             disabled={isDisabled}
-            style={{
-              backgroundColor: palette.highlight,
-              borderColor: palette.highlight,
+            style={
+              isAccepted
+                ? undefined
+                : {
+                    backgroundColor: palette.highlight,
+                    borderColor: palette.highlight,
+                  }
+            }
+            textStyle={{
+              color: isAccepted ? palette.success : palette.background,
             }}
-            textStyle={{ color: palette.background }}
           >
-            Accept
+            {isAccepted ? "Saved" : "Accept"}
           </TintedButton>
         </ThemedView>
       </ThemedView>

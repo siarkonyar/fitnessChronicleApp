@@ -9,10 +9,11 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserProfile } from "@/lib/firebase/user";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Image,
+  LayoutChangeEvent,
   RefreshControl,
   ScrollView,
   TouchableOpacity,
@@ -43,7 +44,18 @@ function calculateAge(birthday: string): number {
 export default function Profile() {
   const [refreshing, setRefreshing] = useState(false);
   const theme = useColorScheme() ?? "light";
+  const scrollRef = useRef<ScrollView>(null);
+  const [programsY, setProgramsY] = useState(0);
   const { user } = useAuth();
+
+  const { scrollTo } = useLocalSearchParams<{ scrollTo?: string }>();
+
+  useEffect(() => {
+    if (scrollTo !== "programs" || programsY === 0) return;
+
+    scrollRef.current?.scrollTo({ y: programsY, animated: true });
+    router.setParams({ scrollTo: "" });
+  }, [scrollTo, programsY]);
 
   const { data: profile } = useQuery({
     queryKey: ["userProfile"],
@@ -57,6 +69,7 @@ export default function Profile() {
   return (
     <ScrollView
       className="px-4 py-6"
+      ref={scrollRef}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -161,7 +174,13 @@ export default function Profile() {
 
       <UserLabelList labelOnPress={() => {}} />
 
-      <ProgramList />
+      <View
+        onLayout={(event: LayoutChangeEvent) => {
+          setProgramsY(event.nativeEvent.layout.y);
+        }}
+      >
+        <ProgramList />
+      </View>
     </ScrollView>
   );
 }
