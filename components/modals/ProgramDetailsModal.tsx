@@ -1,4 +1,3 @@
-import ProgramDayCard from "@/components/cards/ProgramDayCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
@@ -15,6 +14,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useWindowDimensions, View } from "react-native";
 import { z } from "zod";
 import { RoundedButton } from "../RoundButton";
+import ProgramDayCard from "../cards/ProgramDayCard";
 
 type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
 

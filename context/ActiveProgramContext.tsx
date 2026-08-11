@@ -19,6 +19,8 @@ export function ActiveProgramProvider({
     selectProgramDay,
     isSelecting,
     isLoading,
+    removeProgramSelection,
+    isRemovingSelection,
   } = useActiveProgram();
 
   const value: ActiveProgramContextType = {
@@ -28,6 +30,8 @@ export function ActiveProgramProvider({
     selectProgramDay,
     isSelecting,
     isLoading,
+    removeProgramSelection,
+    isRemovingSelection,
   };
 
   return (

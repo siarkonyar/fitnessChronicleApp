@@ -1,6 +1,7 @@
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { REP_RANGE_OPTIONS } from "@/constants/RepRanges";
 import { useColorScheme } from "@/hooks/useColorScheme.web";
 import {
   BottomSheetBackdrop,
@@ -57,22 +58,6 @@ export const AddSetCard: React.FC<Props> = ({
   const theme = useColorScheme() ?? "light";
   const { height } = useWindowDimensions();
   const maxDynamicContentSize = height * 0.85;
-  const repRange = useMemo(
-    () => [
-      "1",
-      "2",
-      "3-4",
-      "5-6",
-      "7-8",
-      "9-10",
-      "10-12",
-      "12-15",
-      "15-20",
-      "20+",
-    ],
-    [],
-  );
-
   // Bottom sheet ref
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
@@ -216,7 +201,7 @@ export const AddSetCard: React.FC<Props> = ({
                     ) : (
                       <ThemedView className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                         <HorizontalWheelPicker
-                          items={repRange}
+                          items={REP_RANGE_OPTIONS}
                           value={reps}
                           onChange={(v) => onRepsChange(id, v)}
                           itemWidth={flatListItemWidth}

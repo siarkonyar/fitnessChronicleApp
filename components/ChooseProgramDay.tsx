@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import Card from "./Card";
 import ProgramDayCard from "./cards/ProgramDayCard";
+import GetExerciseCard from "./exercise/GetExerciseCard";
 import { RoundedButton } from "./RoundButton";
 import IconBadge from "./ui/IconBadge";
 
@@ -52,11 +53,14 @@ export default function ChooseProgramDay() {
 
   const currentDay =
     programDay !== undefined ? activeProgram?.days[programDay] : undefined;
+  const currentExercises = currentDay?.exercises ?? [];
+  const today = new Date().toLocaleDateString("en-CA");
 
   return (
     <>
       <Card>
-        <ThemedText type="label" className="mb-3">
+        <ThemedText type="label">program</ThemedText>
+        <ThemedText type="subtitle" className="mb-4">
           Today&apos;s program
         </ThemedText>
 
@@ -109,6 +113,47 @@ export default function ChooseProgramDay() {
             <Feather name="chevron-right" size={16} color={palette.highlight} />
           </View>
         </TouchableOpacity>
+
+        {currentDay && !currentDay.isRestDay && (
+          <View className="mt-4">
+            <View
+              className="mb-4"
+              style={{ height: 1, backgroundColor: palette.separator }}
+            />
+
+            <View className="flex-row items-center gap-2 mb-3">
+              <Feather name="list" size={13} color={palette.mutedText} />
+              <ThemedText className="uppercase tracking-[0.35em] opacity-60">
+                Exercises
+              </ThemedText>
+            </View>
+
+            {currentExercises.length > 0 ? (
+              currentExercises.map((exercise, index) => (
+                <GetExerciseCard
+                  key={index}
+                  exercise={{
+                    ...exercise,
+                    id: `program-${programDay}-${index}`,
+                    date: today,
+                  }}
+                  index={index}
+                  copyable
+                />
+              ))
+            ) : (
+              <View className="items-center py-4 gap-1">
+                <ThemedText
+                  className="opacity-50"
+                  lightColor={Colors.light.mutedText}
+                  darkColor={Colors.dark.mutedText}
+                >
+                  No exercises in this day
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        )}
       </Card>
 
       <BottomSheetModal

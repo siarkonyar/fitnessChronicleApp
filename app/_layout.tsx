@@ -62,6 +62,9 @@ export default function RootLayout() {
         apple: {
           // real devices attest; falls back to DeviceCheck on older hardware
           provider: __DEV__ ? "debug" : "appAttestWithDeviceCheckFallback",
+          debugToken: __DEV__
+            ? process.env.EXPO_PUBLIC_APPCHECK_DEBUG_TOKEN
+            : undefined,
         },
         android: {
           provider: __DEV__ ? "debug" : "playIntegrity",

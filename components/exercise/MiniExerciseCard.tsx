@@ -107,7 +107,7 @@ export default function MiniExerciseCard({
               </View>
               {/* TODO make the sets text dynamic if it is only one set it should write set instead of sets */}
               <Text className={setTextSize} style={{ color: palette.text }}>
-                {formatSetValue(set, variant)} sets
+                {formatSetValue(set, variant)} reps
               </Text>
             </View>
           );

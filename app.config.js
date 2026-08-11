@@ -39,6 +39,7 @@ export default {
       "expo-router",
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
+      "@react-native-firebase/app-check",
       "@react-native-firebase/crashlytics",
       "@react-native-google-signin/google-signin",
       "./plugins/ios/withFmtFix",

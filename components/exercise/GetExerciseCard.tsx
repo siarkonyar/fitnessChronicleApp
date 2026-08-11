@@ -19,7 +19,7 @@ type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
 
 type GetExerciseCardProps = {
   exercise: ExerciseLog;
-  index?: number; // Optional index for styling or display purposes
+  index?: number;
   deletable?: boolean;
   editable?: boolean;
   copyable?: boolean;
@@ -126,7 +126,7 @@ export default function GetExerciseCard({
           </ThemedView>
         </ThemedView>
         <ThemedView className="flex-col items-center justify-between w-full px-6 rounded-lg">
-          <ThemedText className="text-xl font-bold shrink">
+          <ThemedText className="text-lg font-bold shrink">
             {exercise.activity.toUpperCase()}
           </ThemedText>
           <ThemedView className="w-full flex-row items-start">
@@ -177,10 +177,20 @@ export default function GetExerciseCard({
                       {" set: "}
                     </ThemedText>
                     <ThemedText>
-                      {set.value ?? "?"}
-                      {set.measure}{" "}
-                      <Feather name="x" size={12} color={Colors[theme].text} />{" "}
-                      {"reps" in set ? (set.reps ?? "?") : "?"}
+                      {set.value ? (
+                        <>
+                          {set.value}
+                          {set.measure}{" "}
+                          <Feather
+                            name="x"
+                            size={12}
+                            color={Colors[theme].text}
+                          />
+                        </>
+                      ) : (
+                        ""
+                      )}{" "}
+                      {"reps" in set ? (set.reps ?? "?") : "?"} {"reps"}
                     </ThemedText>
                   </ThemedView>
                 );

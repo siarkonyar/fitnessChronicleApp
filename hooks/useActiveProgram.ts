@@ -100,12 +100,29 @@ export function useActiveProgram() {
     },
   });
 
+  const removeProgramSelectionMutation = useMutation({
+    mutationFn: () =>
+      updateUserSettings({
+        activeProgramId: "",
+        activeProgramDay: 0,
+        activeProgramDayDate: getTodayString(),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.userSettings.all });
+    },
+    onError: (error) => {
+      handleMutationError(error);
+    },
+  });
+
   return {
     activeProgram,
     programDay,
     selectProgram: selectProgramMutation.mutate,
     selectProgramDay: selectProgramDayMutation.mutate,
+    removeProgramSelection: removeProgramSelectionMutation.mutate,
     isSelecting: selectProgramMutation.isPending,
     isLoading: isLoadingSettings || isLoadingPrograms,
+    isRemovingSelection: removeProgramSelectionMutation.isPending,
   };
 }
