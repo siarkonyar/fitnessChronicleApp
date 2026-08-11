@@ -64,7 +64,10 @@ export default function AIScreen() {
 
       selectProgram(programId);
       setAcceptedIndices((prev) => new Set(prev).add(index));
-      router.push("/(tabs)/profile");
+      router.push({
+        pathname: "/(tabs)/profile",
+        params: { scrollTo: "programs" },
+      });
     } catch {
       // handleMutationError already showed the message — just don't navigate.
     }
