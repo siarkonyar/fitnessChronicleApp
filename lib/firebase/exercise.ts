@@ -103,6 +103,7 @@ export const getExerciseLogsByDateRange = async (
     .collection("fitnessLogs")
     .where("date", ">=", startDate)
     .where("date", "<=", endDate)
+    .limit(200)
     .get();
 
   const logs = snapshot.docs.map((doc) => {
