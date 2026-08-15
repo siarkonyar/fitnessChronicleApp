@@ -22,6 +22,7 @@ export const tellJokeFlow = ai.defineFlow(
       joke: z.string(),
       inputTokens: z.number(),
       outputTokens: z.number(),
+      thoughtsTokens: z.number(),
       totalTokens: z.number(),
     }),
   },
@@ -36,6 +37,7 @@ export const tellJokeFlow = ai.defineFlow(
       joke: response.text,
       inputTokens: usage?.inputTokens ?? 0,
       outputTokens: usage?.outputTokens ?? 0,
+      thoughtsTokens: usage?.thoughtsTokens ?? 0,
       totalTokens: usage?.totalTokens ?? 0,
     };
   }
