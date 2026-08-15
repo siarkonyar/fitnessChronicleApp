@@ -5,3 +5,4 @@
 
 import "./genkit.js";
 import "./flows/joke.js";
+import "./flows/coach.js";

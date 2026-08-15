@@ -2,6 +2,18 @@
 // Every deployed function must be re-exported from this file.
 
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/https";
+import { defineSecret } from "firebase-functions/params";
+import { coachFlow } from "./ai/flows/coach.js";
+import { CoachRequestSchema, isPlausibleToday } from "./types.js";
+
+/**
+ * The Gemini API key, held in Secret Manager.
+ *
+ * Declaring it here is what makes Firebase mount it as the GEMINI_API_KEY
+ * environment variable at runtime, which is where the Google AI plugin in
+ * src/ai/genkit.ts picks it up. The value is never in source.
+ */
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
 /**
  * Region for every function in this codebase.
@@ -46,5 +58,48 @@ export const ping = onCall(
       echo: request.data,
       receivedAt: new Date().toISOString(),
     };
+  }
+);
+
+interface CoachResponse {
+  reply: string;
+}
+
+/**
+ * One turn of the AI coach.
+ *
+ * The order below is deliberate and will matter more at step 6: authenticate,
+ * validate, THEN spend money. The quota gate slots in between validation and
+ * the flow call, so a blocked user never reaches Gemini — a gate that runs
+ * afterwards costs us on every rejection.
+ */
+export const chatWithCoach = onCall(
+  { region: REGION, secrets: [geminiApiKey], maxInstances: 10 },
+  async (request: CallableRequest): Promise<CoachResponse> => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "You must be signed in.");
+    }
+
+    // request.data is untrusted. Parse before anything reads a field off it.
+    const parsed = CoachRequestSchema.safeParse(request.data);
+    if (!parsed.success) {
+      throw new HttpsError("invalid-argument", "Malformed coach request.");
+    }
+
+    // A device's date can legitimately differ from UTC by up to a day; further
+    // than that is not a timezone, it is a bad value.
+    if (!isPlausibleToday(parsed.data.today)) {
+      throw new HttpsError("invalid-argument", "Bad date.");
+    }
+
+    // Step 6 inserts the quota check here, before the flow runs.
+
+    const result = await coachFlow(parsed.data);
+
+    // Step 6 records result.totalTokens here and returns percentUsed.
+
+    // Only the reply crosses the wire. Never token counts, never cost.
+    return { reply: result.reply };
   }
 );
