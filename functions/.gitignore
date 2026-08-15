@@ -1,0 +1,18 @@
+# Compiled output
+dist/
+
+# Dependencies
+node_modules/
+
+# Runtime config / secrets — never commit these
+.env
+.env.*
+.runtimeconfig.json
+*.local
+
+# Emulator artefacts
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
+firestore-debug.log
+.firebase/
