@@ -10,6 +10,10 @@ node_modules/
 .runtimeconfig.json
 *.local
 
+# Genkit local trace cache (written by `npm run genkit:ui`).
+# Contains prompt/response payloads — must never be committed.
+.genkit/
+
 # Emulator artefacts
 firebase-debug.log
 firebase-debug.*.log
