@@ -63,6 +63,7 @@ export const ping = onCall(
 
 interface CoachResponse {
   reply: string;
+  program?: unknown;
 }
 
 /**
@@ -95,11 +96,23 @@ export const chatWithCoach = onCall(
 
     // Step 6 inserts the quota check here, before the flow runs.
 
-    const result = await coachFlow(parsed.data);
+    // uid and prefs go in context, not in the flow input, so the model cannot
+    // see or influence them. The Admin SDK ignores security rules, so a uid the
+    // model chose would read a stranger's data.
+    const result = await coachFlow(parsed.data, {
+      context: {
+        auth: { uid },
+        prefs: parsed.data.prefs,
+      },
+    });
 
     // Step 6 records result.totalTokens here and returns percentUsed.
 
-    // Only the reply crosses the wire. Never token counts, never cost.
-    return { reply: result.reply };
+    // Only the reply and the proposed program cross the wire. Never token
+    // counts, never cost.
+    return {
+      reply: result.reply,
+      ...(result.program && { program: result.program }),
+    };
   }
 );

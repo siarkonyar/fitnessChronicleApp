@@ -4,6 +4,20 @@
 // functions/node_modules. Genkit flow schemas must be built with its own
 // instance, and one zod on the server beats two.
 import { z } from "genkit";
+import { ProgramSchema } from "./data/schemas.js";
+
+/**
+ * The user's rep and unit preferences.
+ *
+ * These live in AsyncStorage on the device (getDefaultRepType and
+ * getDefaultMeasurement, lib/offlineStorage.ts:195,213), so the server has no
+ * way to read them — they must come in the request, exactly like `today`.
+ * Only proposeProgram uses them.
+ */
+export const PrefsSchema = z.object({
+  repType: z.enum(["fixed", "range"]),
+  measure: z.enum(["kg", "lbs"]),
+});
 
 /**
  * How many past messages we keep.
@@ -45,10 +59,16 @@ export const CoachRequestSchema = z.object({
   message: z.string().min(1).max(MAX_MESSAGE_CHARS),
   history: z.array(HistoryMessageSchema).default([]),
   today: TodaySchema,
+  prefs: PrefsSchema,
 });
 
 export const CoachResultSchema = z.object({
   reply: z.string(),
+  /**
+   * Set when the coach called proposeProgram with usable arguments. The app
+   * shows it for the user to accept; nothing is saved server-side.
+   */
+  program: ProgramSchema.optional(),
   /**
    * Internal only. The callable strips this before replying — the plan sends
    * the app a percentage and nothing else, never token counts and never money.
