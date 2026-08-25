@@ -5,6 +5,8 @@ import { onCall, HttpsError, CallableRequest } from "firebase-functions/https";
 import { defineSecret } from "firebase-functions/params";
 import { coachFlow } from "./ai/flows/coach.js";
 import { CoachRequestSchema, isPlausibleToday } from "./types.js";
+import { checkQuota, toPercentUsed } from "./quota/check.js";
+import { recordUsage } from "./quota/record.js";
 
 /**
  * The Gemini API key, held in Secret Manager.
@@ -64,15 +66,16 @@ export const ping = onCall(
 interface CoachResponse {
   reply: string;
   program?: unknown;
+  /** 0-100. The only usage figure the app is ever told — never tokens, never cost. */
+  percentUsed: number;
 }
 
 /**
  * One turn of the AI coach.
  *
- * The order below is deliberate and will matter more at step 6: authenticate,
- * validate, THEN spend money. The quota gate slots in between validation and
- * the flow call, so a blocked user never reaches Gemini — a gate that runs
- * afterwards costs us on every rejection.
+ * Order is deliberate: authenticate, validate, check quota, THEN spend money.
+ * The quota gate runs before the flow call, so a blocked user never reaches
+ * Gemini — a gate that ran afterwards would cost us on every rejection.
  */
 export const chatWithCoach = onCall(
   { region: REGION, secrets: [geminiApiKey], maxInstances: 10 },
@@ -94,7 +97,16 @@ export const chatWithCoach = onCall(
       throw new HttpsError("invalid-argument", "Bad date.");
     }
 
-    // Step 6 inserts the quota check here, before the flow runs.
+    // Checked before Gemini is ever called. remaining is compared against a
+    // headroom buffer, not zero, because the cost of THIS turn is unknown
+    // until it has already run.
+    const quota = await checkQuota(uid);
+    if (!quota.allowed) {
+      throw new HttpsError(
+        "resource-exhausted",
+        "You've used up your AI coach allowance for this period."
+      );
+    }
 
     // uid and prefs go in context, not in the flow input, so the model cannot
     // see or influence them. The Admin SDK ignores security rules, so a uid the
@@ -106,13 +118,19 @@ export const chatWithCoach = onCall(
       },
     });
 
-    // Step 6 records result.totalTokens here and returns percentUsed.
+    // Recorded only after the flow succeeds — a failed turn must not be billed
+    // against the user's allowance.
+    await recordUsage(uid, result.totalTokens);
 
-    // Only the reply and the proposed program cross the wire. Never token
-    // counts, never cost.
+    // Only the reply, the proposed program, and a percentage cross the wire.
+    // Never token counts, never cost.
     return {
       reply: result.reply,
       ...(result.program && { program: result.program }),
+      percentUsed: toPercentUsed(
+        quota.tokensUsed + result.totalTokens,
+        quota.cap
+      ),
     };
   }
 );

@@ -27,3 +27,18 @@ export const labelsCollection = (uid: string) =>
 
 export const programsCollection = (uid: string) =>
   userDoc(uid).collection("programs");
+
+/**
+ * The user's AI usage counter.
+ *
+ * Deliberately TOP-LEVEL, not under users/{uid}/. The catch-all deny at
+ * firestore.rules:26-28 covers every path outside /users/{userId}, so no client
+ * can read or write this document — while the Admin SDK, which bypasses rules
+ * entirely, writes it freely.
+ *
+ * That placement is what lets this feature ship without touching the security
+ * rules. Under users/{uid}/ it would fall to the blanket allow at
+ * firestore.rules:18, and a user who can edit their own usage counter — or
+ * their own tier — has no quota at all.
+ */
+export const aiUsageDoc = (uid: string) => db.collection("aiUsage").doc(uid);
