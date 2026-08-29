@@ -30,5 +30,27 @@ export const PERIOD_DAYS = 30;
 
 export type Tier = "free" | "premium";
 
+/**
+ * How many turns a user may fire back-to-back before the drip rate takes over.
+ *
+ * This is the BURST allowance, not the rate. A real user genuinely does send a
+ * few messages in a row — asking a follow-up, correcting a typo, retrying after
+ * a bad reply — and refusing that would read as the app being broken. Five is
+ * comfortably above what a person does by hand and far below what a script does.
+ */
+export const BUCKET_CAPACITY = 5;
+
+/**
+ * How long one turn's allowance takes to come back.
+ *
+ * 60_000 / 5 = 12_000, so once the burst is spent the sustained ceiling is
+ * five turns per minute, forever. The division is written out because "12
+ * seconds" on its own tells you nothing about where it came from.
+ *
+ * That ceiling is what makes the token cap hard to drain: at five turns a
+ * minute, a script would need days to burn a premium allowance, not minutes.
+ */
+export const REFILL_INTERVAL_MS = 12_000;
+
 export const capForTier = (tier: Tier): number =>
   tier === "premium" ? PREMIUM_TOKEN_CAP : FREE_TOKEN_CAP;
