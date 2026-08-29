@@ -1,13 +1,13 @@
-import { ai } from "../genkit.js";
-import { buildSystemInstruction } from "../prompt.js";
-import { coachTools } from "../tools.js";
-import { toProgram } from "../programDraft.js";
 import type { Program } from "../../data/schemas.js";
 import {
   CoachRequestSchema,
   CoachResultSchema,
   MAX_HISTORY_MESSAGES,
 } from "../../types.js";
+import { ai } from "../genkit.js";
+import { toProgram } from "../programDraft.js";
+import { buildSystemInstruction } from "../prompt.js";
+import { coachTools } from "../tools.js";
 
 /** Ported from useChatBox.ts:21. Used when the model returns no text at all. */
 const FALLBACK_REPLY =
@@ -37,14 +37,15 @@ const MAX_TOOL_ROUNDS = 5;
  */
 const extractProposedProgram = (
   messages: readonly { role: string; content: readonly unknown[] }[],
-  prefs: { repType: "fixed" | "range"; measure: "kg" | "lbs" }
+  prefs: { repType: "fixed" | "range"; measure: "kg" | "lbs" },
 ): Program | undefined => {
   let program: Program | undefined;
 
   for (const message of messages) {
     for (const part of message.content) {
-      const request = (part as { toolRequest?: { name?: string; input?: unknown } })
-        .toolRequest;
+      const request = (
+        part as { toolRequest?: { name?: string; input?: unknown } }
+      ).toolRequest;
 
       if (request?.name !== "proposeProgram") continue;
 
@@ -90,6 +91,7 @@ export const coachFlow = ai.defineFlow(
       prompt: message,
       tools: coachTools,
       maxTurns: MAX_TOOL_ROUNDS,
+      config: { thinkingConfig: { thinkingLevel: "MINIMAL" } },
     });
 
     const program = extractProposedProgram(response.messages, prefs);
@@ -104,5 +106,5 @@ export const coachFlow = ai.defineFlow(
       // tokens, which were 93-97% of every call measured at step 3.
       totalTokens: response.usage?.totalTokens ?? 0,
     };
-  }
+  },
 );

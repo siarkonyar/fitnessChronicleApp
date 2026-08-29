@@ -28,7 +28,7 @@ export const tellJokeFlow = ai.defineFlow(
   },
   async ({ subject }) => {
     const response = await ai.generate(
-      `Tell me one short joke about ${subject}.`
+      `Tell me one short joke about ${subject}.`,
     );
 
     const usage = response.usage;
@@ -40,5 +40,5 @@ export const tellJokeFlow = ai.defineFlow(
       thoughtsTokens: usage?.thoughtsTokens ?? 0,
       totalTokens: usage?.totalTokens ?? 0,
     };
-  }
+  },
 );
