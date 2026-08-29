@@ -2,7 +2,6 @@ import { Stack } from "expo-router";
 import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import UsageBar from "@/components/ai/UsageBar";
 import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
@@ -19,7 +18,7 @@ import {
 export default function AIStackLayout() {
   const theme = useColorScheme() ?? "light";
   const insets = useSafeAreaInsets();
-  const { clearChat, percentUsed } = useChatContext();
+  const { clearChat } = useChatContext();
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -58,7 +57,6 @@ export default function AIStackLayout() {
           />
         </Pressable>
       </View>
-      <UsageBar percentUsed={percentUsed} />
 
       <Stack
         screenOptions={{
