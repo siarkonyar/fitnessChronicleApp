@@ -102,9 +102,16 @@ export const chatWithCoach = onCall(
     // until it has already run.
     const quota = await checkQuota(uid);
     if (!quota.allowed) {
+      // Firebase has no distinct too-many-requests code, so both refusals come
+      // back as resource-exhausted and the app tells them apart by
+      // details.reason. Without it a user who simply typed too fast would be
+      // told they are out of allowance for the month.
       throw new HttpsError(
         "resource-exhausted",
-        "You've used up your AI coach allowance for this period.",
+        quota.reason === "rate_limit"
+          ? "You're sending messages too quickly. Give it a moment."
+          : "You've used up your AI coach allowance for this period.",
+        { reason: quota.reason },
       );
     }
 
@@ -143,7 +150,11 @@ export const getUsagePercentage = onCall(
       throw new HttpsError("unauthenticated", "You must be signed in.");
     }
 
-    const quota = await checkQuota(uid);
+    // spendRateToken: false — this is a read, not a turn. The app calls it
+    // every time the chat box opens, so charging it against the rate-limit
+    // bucket would let a user lock themselves out of the coach by opening and
+    // closing the chat five times without ever sending a message.
+    const quota = await checkQuota(uid, new Date(), { spendRateToken: false });
 
     return toPercentUsed(quota.tokensUsed, quota.cap);
   },
