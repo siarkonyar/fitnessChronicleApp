@@ -13,7 +13,11 @@
     "serve": "npm run build && firebase emulators:start --only functions,firestore,auth",
     "shell": "npm run build && firebase functions:shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "firebase emulators:exec --only auth,firestore,functions --project demo-hercule \"vitest run test/integration\"",
+    "test": "npm run build && npm run test:unit && npm run test:integration"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.41.0",
@@ -24,8 +28,10 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "firebase": "^12.18.0",
     "genkit-cli": "^1.41.0",
     "tsx": "^4.23.12",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.11"
   }
 }

@@ -1,0 +1,14 @@
+{
+  // Typechecking-only config. The build (tsconfig.json) compiles src/ into
+  // dist/ and must never see test/ — test files would end up deployed.
+  // This one sees both, so CI can catch type errors in tests too.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // The base sets rootDir to "src". test/ sits outside it, which TypeScript
+    // rejects when a rootDir is in force. Widened to the package root here;
+    // harmless because nothing is emitted from this config.
+    "rootDir": "."
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}
