@@ -1,0 +1,129 @@
+# CI/CD for the server-side AI coach in functions/.
+#
+# Scope is functions/ only. The Expo app keeps its separate EAS pipeline, and
+# nothing here builds or ships the mobile app.
+#
+# One file, two jobs, because a job can only `needs:` another job in the same
+# workflow — and deploy must never run on a red test suite. chatWithCoach
+# spends real money per call, so its guard rails are the thing worth gating on.
+name: functions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "functions/**"
+      - ".github/workflows/functions.yml"
+  pull_request:
+    paths:
+      - "functions/**"
+      - ".github/workflows/functions.yml"
+
+# A second push to the same branch cancels the first. Without this, two
+# deploys could race to Firebase and the older one could land last.
+concurrency:
+  group: functions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches "engines": { "node": "22" } in functions/package.json. A
+          # different major here would test against a runtime we never deploy.
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      # The Firestore emulator is a Java process. firebase-tools rejects Java
+      # 17 outright; 21 is the lowest LTS it accepts. If a future CLI raises
+      # the floor again, bump this — the failure is loud and immediate.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Typechecks src/ AND test/, which the build config deliberately cannot
+      # see (test files must never compile into dist/ and get deployed).
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      # chatWithCoach declares secrets: [geminiApiKey], and googleAI() is
+      # constructed at module load in src/ai/genkit.ts. With no key present the
+      # functions emulator can fail to load index.js, which would fail EVERY
+      # test including the auth one. This value is never used: every guard
+      # under test rejects before Gemini is called.
+      - name: Write throwaway emulator secret
+        run: echo "GEMINI_API_KEY=not-a-real-key-tests-never-reach-gemini" > .secret.local
+
+      # Pure bucket arithmetic. No emulator, no network.
+      - name: Unit tests
+        run: npm run test:unit
+
+      # Boots auth + firestore + functions emulators under project
+      # demo-hercule. The demo- prefix forces fully offline mode, so no
+      # credential is read and nothing can reach the real project.
+      - name: Integration tests
+        run: npm run test:integration
+
+  deploy:
+    name: deploy
+    needs: test
+    # Pull requests must never deploy, and neither must a push to any branch
+    # but main. needs: test already blocks a red suite.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Gives this deploy a visible history in the GitHub UI, and a place to hang
+    # a required reviewer later without touching this file.
+    environment: production
+    permissions:
+      contents: read
+      # Required for Workload Identity Federation: it lets the job mint a
+      # short-lived OIDC token. No long-lived service account key is stored in
+      # GitHub, so there is no credential here to leak or rotate.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install dependencies
+        working-directory: functions
+        run: npm ci
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      # Runs from the repo root because that is where firebase.json lives. The
+      # binary is addressed by path so the deploy uses the version pinned in
+      # functions/package-lock.json rather than whatever npx would fetch.
+      #
+      # GEMINI_API_KEY is not passed here. It already lives in Secret Manager
+      # and is referenced by defineSecret — the deploy needs permission to bind
+      # it, never its value.
+      - name: Deploy functions
+        run: >-
+          ./functions/node_modules/.bin/firebase deploy
+          --only functions
+          --project fitnesschronicle-d9080
+          --non-interactive

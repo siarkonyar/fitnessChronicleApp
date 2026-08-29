@@ -40,7 +40,20 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Firebase emulator artefacts (written wherever emulators:start is run)
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+database-debug.log
+pubsub-debug.log
+ui-debug.log
+.firebase/
+
 app-example
 
 # Claude Code worktrees (local only, should never be committed)
 .claude/worktrees/
+
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json

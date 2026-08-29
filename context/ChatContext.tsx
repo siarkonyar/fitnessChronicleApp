@@ -5,14 +5,8 @@ type ChatContextType = ReturnType<typeof useChatBox>;
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
-  const { messages, sendMessage, isSending, clearChat } = useChatBox();
+  const value = useChatBox();
 
-  const value: ChatContextType = {
-    messages,
-    sendMessage,
-    isSending,
-    clearChat,
-  };
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }
 

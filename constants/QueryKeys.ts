@@ -52,4 +52,8 @@ export const queryKeys = {
     all: ["weightLogs"] as const,
     todayStatus: (today: string) => [today] as const,
   },
+
+  aiUsage: {
+    all: ["aiUsage"] as const,
+  },
 } as const;
