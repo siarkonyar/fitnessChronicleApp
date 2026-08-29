@@ -21,17 +21,3 @@ export const REP_RANGE_OPTIONS = [
   "15-20",
   "20+",
 ] as const;
-
-/**
- * The numeric bounds a bucket covers: "3-4" → 3..4, "20+" → 20..Infinity,
- * "1" → 1..1. Parsed from the string so the list above stays the only place the
- * vocabulary is written down.
- */
-export function bucketBounds(option: string): { min: number; max: number } {
-  if (option.endsWith("+")) {
-    return { min: Number(option.slice(0, -1)), max: Infinity };
-  } else {
-    const arr = option.split("-");
-    return { min: Number(arr[0]), max: Number(arr[arr.length - 1]) };
-  }
-}
