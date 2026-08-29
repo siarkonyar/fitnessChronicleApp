@@ -43,3 +43,14 @@ export const callCoach = async (
 
   return CoachResponseSchema.parse(result.data);
 };
+
+export const callUsagePercentage = async (): Promise<number> => {
+  const usagePercentage = httpsCallable<undefined, unknown>(
+    getFunctions(getApp(), REGION),
+    "getUsagePercentage",
+  );
+
+  const result = await usagePercentage();
+
+  return z.number().parse(result.data);
+};

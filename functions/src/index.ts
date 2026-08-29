@@ -1,12 +1,12 @@
 // Entry point for the Hercule Cloud Functions codebase.
 // Every deployed function must be re-exported from this file.
 
-import { onCall, HttpsError, CallableRequest } from "firebase-functions/https";
+import { CallableRequest, HttpsError, onCall } from "firebase-functions/https";
 import { defineSecret } from "firebase-functions/params";
 import { coachFlow } from "./ai/flows/coach.js";
-import { CoachRequestSchema, isPlausibleToday } from "./types.js";
 import { checkQuota, toPercentUsed } from "./quota/check.js";
 import { recordUsage } from "./quota/record.js";
+import { CoachRequestSchema, isPlausibleToday } from "./types.js";
 
 /**
  * The Gemini API key, held in Secret Manager.
@@ -60,7 +60,7 @@ export const ping = onCall(
       echo: request.data,
       receivedAt: new Date().toISOString(),
     };
-  }
+  },
 );
 
 interface CoachResponse {
@@ -104,7 +104,7 @@ export const chatWithCoach = onCall(
     if (!quota.allowed) {
       throw new HttpsError(
         "resource-exhausted",
-        "You've used up your AI coach allowance for this period."
+        "You've used up your AI coach allowance for this period.",
       );
     }
 
@@ -129,8 +129,22 @@ export const chatWithCoach = onCall(
       ...(result.program && { program: result.program }),
       percentUsed: toPercentUsed(
         quota.tokensUsed + result.totalTokens,
-        quota.cap
+        quota.cap,
       ),
     };
-  }
+  },
+);
+
+export const getUsagePercentage = onCall(
+  { region: REGION, secrets: [geminiApiKey], maxInstances: 10 },
+  async (request: CallableRequest): Promise<number> => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "You must be signed in.");
+    }
+
+    const quota = await checkQuota(uid);
+
+    return toPercentUsed(quota.tokensUsed, quota.cap);
+  },
 );

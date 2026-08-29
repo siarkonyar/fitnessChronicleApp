@@ -2,6 +2,7 @@ import ChatBubble from "@/components/ai/ChatBubble";
 import ChatComposer from "@/components/ai/ChatComposer";
 import ProgramProposalCard from "@/components/ai/ProgramProposalCard";
 import TypingIndicator from "@/components/ai/TypingIndicator";
+import UsageBar from "@/components/ai/UsageBar";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
@@ -24,7 +25,7 @@ export default function AIScreen() {
   const theme = useColorScheme() ?? "light";
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<ScrollView>(null);
-  const { messages, sendMessage, isSending } = useChatContext();
+  const { messages, sendMessage, isSending, percentUsed } = useChatContext();
 
   const queryClient = useQueryClient();
   const { handleMutationError } = useServerErrorHandler();
@@ -88,6 +89,7 @@ export default function AIScreen() {
       className="flex-1"
       style={{ backgroundColor: Colors[theme].background }}
     >
+      <UsageBar percentUsed={percentUsed} />
       <ScrollView
         ref={scrollRef}
         className="flex-1 px-4"
