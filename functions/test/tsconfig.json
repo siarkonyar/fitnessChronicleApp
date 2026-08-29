@@ -1,0 +1,25 @@
+{
+  // Exists solely so Vitest's transformer stops looking for a tsconfig HERE.
+  //
+  // Vite resolves the nearest tsconfig whose `include` matches the file being
+  // transformed. ../tsconfig.json only includes "src", so test files did not
+  // match it and the search walked up to the repo root — where tsconfig.json
+  // extends "expo/tsconfig.base". That resolves fine on a dev machine, and not
+  // at all in CI, where only functions/ gets an npm install and no expo
+  // package exists.
+  //
+  // The root config's `"exclude": ["functions"]` does not help: a tsconfig has
+  // to be LOADED (following `extends`) before its exclude can be evaluated, so
+  // it fails on the missing expo package first.
+  //
+  // Typechecking is not this file's job — ../tsconfig.test.json covers src and
+  // test together, and that is what `npm run typecheck` and CI use.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // The base pins rootDir to "src"; test/ sits outside it. Nothing is
+    // emitted from here, so widening it is free.
+    "rootDir": "..",
+    "noEmit": true
+  },
+  "include": ["."]
+}
