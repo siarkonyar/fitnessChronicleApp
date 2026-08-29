@@ -3,9 +3,11 @@
  * over exact reps. This is a closed vocabulary, not a format: a value that is
  * not in this list has nothing for the picker to land on.
  *
- * Order matters — `toReps` scans it top to bottom and takes the first bucket
- * that contains the number, which is how overlaps like 10 ("9-10" vs "10-12")
- * resolve.
+ * Order matters — `toReps` (functions/src/ai/programDraft.ts) scans it top to
+ * bottom and takes the first bucket that contains the number, which is how
+ * overlaps like 10 ("9-10" vs "10-12") resolve. That copy is the one the coach
+ * uses; keep the two lists identical or a proposed program lands on a bucket
+ * the picker cannot show.
  */
 export const REP_RANGE_OPTIONS = [
   "1",
