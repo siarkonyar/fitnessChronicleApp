@@ -159,8 +159,35 @@ export const readUsage = async (
 ): Promise<FirebaseFirestore.DocumentData | undefined> =>
   (await usageDoc(uid).get()).data();
 
+/**
+ * Third lock, and the one that sits closest to the danger.
+ *
+ * The other two — the FIRESTORE_EMULATOR_HOST check at the top of this file,
+ * and the `--project demo-hercule` flag in the test:integration script — are
+ * both far away from the delete, and both can be bypassed by editing one line
+ * somewhere else. This one guards the destructive call itself.
+ *
+ * Note what randomUUID does NOT do here. It randomises test users' emails, so
+ * seedUsage and readUsage can only ever touch a uid this run just created. But
+ * clearUsage wipes the WHOLE aiUsage collection with no uid filter — pointed
+ * at the real project it would delete every user's quota document, and no
+ * amount of randomness in the test data would prevent that.
+ */
+const assertSafeToDelete = (): void => {
+  const projectId = adminApp.options.projectId;
+
+  if (!projectId?.startsWith("demo-")) {
+    throw new Error(
+      `Refusing to wipe aiUsage: connected project "${projectId}" is not a demo project. ` +
+        "Only project ids starting with `demo-` are fake; anything else is real data.",
+    );
+  }
+};
+
 /** Wipes aiUsage between suites so one test's seed cannot leak into another. */
 export const clearUsage = async (): Promise<void> => {
+  assertSafeToDelete();
+
   const snapshot = await adminDb.collection("aiUsage").get();
   await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
 };
