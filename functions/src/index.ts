@@ -4,6 +4,7 @@
 import { CallableRequest, HttpsError, onCall } from "firebase-functions/https";
 import { defineSecret } from "firebase-functions/params";
 import { coachFlow } from "./ai/flows/coach.js";
+import { onConsentChanged } from "./consent/recordConsentChange.js";
 import { checkQuota, toPercentUsed } from "./quota/check.js";
 import { recordUsage } from "./quota/record.js";
 import { CoachRequestSchema, isPlausibleToday } from "./types.js";
@@ -24,6 +25,13 @@ const geminiApiKey = defineSecret("GEMINI_API_KEY");
  * reads stay inside one region instead of crossing the Atlantic per query.
  */
 export const REGION = "europe-west2";
+
+/**
+ * Re-exported so it deploys. Defined in ./consent/recordConsentChange.ts —
+ * it is a Firestore trigger, not a callable, so nothing in the app calls it
+ * directly and it would silently never run if this line were missing.
+ */
+export { onConsentChanged };
 
 interface PingResponse {
   uid: string;
