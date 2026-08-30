@@ -108,7 +108,10 @@ export type AnalyticsEventMap = {
 
   // ---- Offline ------------------------------------------------------------
   offline_mode_entered: Record<string, never>;
-  offline_sync_completed: { synced_count: number };
+  // No offline_sync_completed. syncOfflineExercises (lib/firebase/exercise.ts)
+  // is exported and never called from anywhere, so offline logs are saved to
+  // the device and never uploaded — there is no sync to report. Declaring the
+  // event anyway would suggest the number exists and is simply zero.
 
   // ---- Settings -----------------------------------------------------------
   /** `value` is stringified enum/boolean state, never free text. */

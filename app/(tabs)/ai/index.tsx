@@ -89,6 +89,13 @@ export default function AIScreen() {
         labels_created: labelsCreated,
       });
 
+      // Also a program_created, so the programs funnel counts every program
+      // however it was made. source is what keeps the two paths comparable.
+      logEvent("program_created", {
+        day_count: program.days.length,
+        source: "ai",
+      });
+
       router.push({
         pathname: "/(tabs)/profile",
         params: { scrollTo: "programs" },

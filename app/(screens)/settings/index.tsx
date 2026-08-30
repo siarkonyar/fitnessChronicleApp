@@ -6,8 +6,9 @@ import { IconBox } from "@/components/ui/IconBox";
 import { RowDivider } from "@/components/ui/RowDivider";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Colors } from "@/constants/Colors";
-import { useAuth } from "@/context/AuthContext";
 import { queryKeys } from "@/constants/QueryKeys";
+import { useAuth } from "@/context/AuthContext";
+import { logEvent } from "@/lib/analytics/client";
 import { setAnalyticsConsent } from "@/lib/analytics/consent";
 import {
   getUserProfile,
@@ -134,17 +135,25 @@ export default function Settings() {
 
   const handleHapticsToggle = async (value: boolean) => {
     setHapticsEnabled(value);
+    // Logged before the reload below, which tears the JS context down and
+    // would take an unsent event with it.
+    logEvent("settings_changed", { setting: "haptics", value: String(value) });
     await saveHapticsEnabled(value);
     await Updates.reloadAsync();
   };
 
   const handleDefaultRepTypeToggle = async (value: boolean) => {
     setDefaultFixedReps(value);
+    logEvent("settings_changed", {
+      setting: "fixed_reps",
+      value: String(value),
+    });
     await saveDefaultRepType(value);
   };
 
   const handleDefaultMeasurementChange = async (value: "kg" | "lbs") => {
     setDefaultMeasurement(value);
+    logEvent("settings_changed", { setting: "measurement", value });
     await saveDefaultMeasurement(value);
   };
 
@@ -160,6 +169,13 @@ export default function Settings() {
   const analyticsEnabled = userSettings?.analyticsConsent ?? true;
 
   const handleAnalyticsToggle = (value: boolean) => {
+    // Sent before collection is switched off, so an opt-out is the last thing
+    // recorded rather than the one change that never gets reported.
+    logEvent("settings_changed", {
+      setting: "analytics_consent",
+      value: String(value),
+    });
+
     setAnalyticsConsent(value);
 
     // Moves the switch now. setAnalyticsConsent deliberately does not wait for

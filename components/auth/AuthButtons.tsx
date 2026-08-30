@@ -1,10 +1,12 @@
 import { Colors } from "@/constants/Colors";
+import { logEvent } from "@/lib/analytics/client";
 import { appleAuth } from "@invertase/react-native-apple-authentication";
 import {
   AppleAuthProvider,
   getAuth,
   GoogleAuthProvider,
   signInWithCredential,
+  type FirebaseAuthTypes,
 } from "@react-native-firebase/auth";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { BlurView } from "expo-blur";
@@ -47,6 +49,8 @@ export default function AuthButtons() {
         googleCredential,
       );
 
+      reportSignIn(userCredential, "google");
+
       return userCredential;
     } catch (error) {
       console.error("Google Sign-In Error:", error);
@@ -54,6 +58,29 @@ export default function AuthButtons() {
     } finally {
       setLoading(false);
     }
+  }
+
+  /**
+   * Reports a completed sign-in as either a first one or a return.
+   *
+   * Firebase answers this for us: isNewUser is true only on the credential
+   * that created the account. Without it every sign-in looks identical and
+   * there is no way to tell growth from habit — which is the one thing these
+   * two events exist to separate.
+   *
+   * login and sign_up are GA4's own recommended names, so they feed the
+   * built-in acquisition reports instead of sitting as custom events.
+   */
+  function reportSignIn(
+    credential: FirebaseAuthTypes.UserCredential,
+    method: "google" | "apple",
+  ) {
+    if (credential.additionalUserInfo?.isNewUser) {
+      logEvent("sign_up", { method });
+      return;
+    }
+
+    logEvent("login", { method });
   }
 
   async function onAppleButtonPress() {
@@ -80,7 +107,14 @@ export default function AuthButtons() {
       );
 
       // Sign the user in with the credential
-      return signInWithCredential(getAuth(), appleCredential);
+      const userCredential = await signInWithCredential(
+        getAuth(),
+        appleCredential,
+      );
+
+      reportSignIn(userCredential, "apple");
+
+      return userCredential;
     } catch (error) {
       console.error("Apple Sign-In Error:", error);
       console.error("Error Code:", (error as any).code);

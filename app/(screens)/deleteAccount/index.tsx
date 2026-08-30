@@ -4,6 +4,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
+import { logEvent } from "@/lib/analytics/client";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,6 +35,11 @@ export default function Index() {
           onPress: async () => {
             try {
               setIsDeleting(true);
+
+              // Fired here, at the point of no return, rather than when the
+              // screen opens. Paired with account_deleted it separates people
+              // who confirmed and hit a failure from people who backed out.
+              logEvent("account_delete_started", {});
 
               queryClient.clear();
 

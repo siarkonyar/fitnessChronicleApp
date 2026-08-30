@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
 } from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
+import { logEvent } from "@/lib/analytics/client";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -51,6 +52,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Sign out from Firebase
       await firebaseSignOut(getAuth());
+
+      // Before useAnalyticsConsent reacts to the auth change and switches
+      // collection off — after that point nothing can be reported.
+      logEvent("logout", {});
     } catch (error) {
       console.error("Firebase Sign-Out Error:", error);
       throw error;
@@ -142,6 +147,10 @@ export const deleteAccount = async () => {
 
     // Delete the Firebase Auth user
     await deleteUser(currentUser);
+
+    // Fired last, once the account is actually gone. Paired with
+    // account_delete_started it shows how many people begin this and stop.
+    logEvent("account_deleted", {});
   } catch (error) {
     console.error("Error deleting user account:", error);
     throw error;

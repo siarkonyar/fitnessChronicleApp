@@ -1,11 +1,12 @@
 import Card from "@/components/Card";
-import ProgramCard from "@/components/cards/ProgramCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import ProgramCard from "@/components/cards/ProgramCard";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { logEvent } from "@/lib/analytics/client";
 import { deleteProgram, getPrograms } from "@/lib/firebase/program";
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,6 +47,8 @@ export default function ProgramList({
       handleMutationError(error);
     },
     onSuccess: () => {
+      logEvent("program_deleted", {});
+
       queryClient.invalidateQueries({ queryKey: queryKeys.programs.all });
     },
   });

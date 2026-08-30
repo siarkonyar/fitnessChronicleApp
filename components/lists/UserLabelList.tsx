@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { logEvent } from "@/lib/analytics/client";
 import { addLabel, getAllLabels } from "@/lib/firebase/label";
 import { LabelWithIdSchema } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -54,6 +55,8 @@ export default function UserLabelList({
       handleMutationError(error);
     },
     onSuccess: async () => {
+      logEvent("label_created", {});
+
       await queryClient.invalidateQueries({
         queryKey: queryKeys.labels.all,
       });

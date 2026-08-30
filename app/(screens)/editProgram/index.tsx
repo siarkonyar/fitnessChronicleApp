@@ -4,6 +4,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { logEvent } from "@/lib/analytics/client";
 import { updateProgram } from "@/lib/firebase/program";
 import { ProgramDaySchema, ProgramWithIdSchema } from "@/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -36,7 +37,9 @@ export default function EditProgramScreen() {
     onError: (mutationError) => {
       handleMutationError(mutationError);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      logEvent("program_edited", { day_count: variables.days.length });
+
       queryClient.invalidateQueries({ queryKey: queryKeys.programs.all });
       if (program) {
         queryClient.invalidateQueries({
