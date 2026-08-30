@@ -10,5 +10,5 @@
     // harmless because nothing is emitted from this config.
     "rootDir": "."
   },
-  "include": ["src", "test", "vitest.config.mts"]
+  "include": ["src", "test", "scripts", "vitest.config.mts"]
 }

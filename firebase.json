@@ -16,6 +16,7 @@
         "firebase-debug.*.log",
         "*.local",
         "test",
+        "scripts",
         "vitest.config.ts",
         "tsconfig.test.json"
       ],

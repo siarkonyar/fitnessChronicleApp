@@ -41,6 +41,7 @@ export default {
       "@react-native-firebase/auth",
       "@react-native-firebase/app-check",
       "@react-native-firebase/crashlytics",
+      "@react-native-firebase/analytics",
       "@react-native-google-signin/google-signin",
       "./plugins/ios/withFmtFix",
       [
