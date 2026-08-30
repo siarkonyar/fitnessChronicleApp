@@ -23,6 +23,14 @@ import {
   saveDefaultRepType,
   saveHapticsEnabled,
 } from "@/lib/offlineStorage";
+import {
+  GENDER_OPTIONS,
+  formatDisplayBirthday,
+  genderLabel,
+  toIsoBirthday,
+  validateBirthday,
+  type GenderValue,
+} from "@/lib/profile";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   BottomSheetBackdrop,
@@ -51,49 +59,6 @@ import {
   useColorScheme,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const CURRENT_YEAR = new Date().getFullYear();
-
-const GENDER_OPTIONS = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-  { value: "non_binary", label: "Non-binary" },
-  { value: "prefer_not_to_say", label: "Prefer not to say" },
-] as const;
-
-type GenderValue = (typeof GENDER_OPTIONS)[number]["value"];
-
-function validateBirthday(
-  day: string,
-  month: string,
-  year: string,
-): string | null {
-  if (!day || !month || !year) return "Please fill in all fields.";
-  const d = parseInt(day, 10);
-  const m = parseInt(month, 10);
-  const y = parseInt(year, 10);
-  if (isNaN(d) || d < 1 || d > 31) return "Day must be between 01 and 31.";
-  if (isNaN(m) || m < 1 || m > 12) return "Month must be between 01 and 12.";
-  if (isNaN(y) || y < 1900 || y > CURRENT_YEAR)
-    return `Year must be between 1900 and ${CURRENT_YEAR}.`;
-  const date = new Date(y, m - 1, d);
-  if (
-    date.getFullYear() !== y ||
-    date.getMonth() !== m - 1 ||
-    date.getDate() !== d
-  )
-    return "Invalid date.";
-  return null;
-}
-
-function formatDisplayBirthday(isoDate: string): string {
-  const [year, month, day] = isoDate.split("-");
-  return `${day} / ${month} / ${year}`;
-}
-
-function genderLabel(value: string): string {
-  return GENDER_OPTIONS.find((o) => o.value === value)?.label ?? value;
-}
 
 export default function Settings() {
   const theme = useColorScheme() ?? "light";
@@ -242,8 +207,9 @@ export default function Settings() {
       setBirthdayError(error);
       return;
     }
-    const isoDate = `${birthYear}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}`;
-    birthdayMutation.mutate({ birthday: isoDate });
+    birthdayMutation.mutate({
+      birthday: toIsoBirthday(birthDay, birthMonth, birthYear),
+    });
   };
 
   const handleCancelBirthday = () => {

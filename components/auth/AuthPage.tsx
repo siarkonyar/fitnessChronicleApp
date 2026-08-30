@@ -9,6 +9,8 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Link, router } from "expo-router";
 import { Colors } from "../../constants/Colors";
+import { getUserProfile } from "../../lib/firebase/user";
+import { isProfileComplete } from "../../lib/profile";
 import MyIcon from "../LogoIcon";
 import { ThemedView } from "../ThemedView";
 import AuthButtons from "./AuthButtons";
@@ -30,11 +32,31 @@ export default function AuthPage() {
   );
 
   useEffect(() => {
+    let isActive = true;
+
     if (user) {
-      router.push("/(tabs)");
+      // A newly created account has no name or gender yet, so it lands on
+      // onboarding; a returning user goes straight into the app. replace()
+      // rather than push(), so sign-in is not left on the back stack for the
+      // onboarding screen to be dismissed back into.
+      getUserProfile()
+        .then((profile) => {
+          if (!isActive) return;
+          router.replace(
+            isProfileComplete(profile) ? "/(tabs)" : "/(screens)/onboarding",
+          );
+        })
+        .catch((error) => {
+          console.warn("Could not read profile after sign-in:", error);
+          if (isActive) router.replace("/(tabs)");
+        });
     }
+
     const subscriber = onAuthStateChanged(getAuth(), handleAuthStateChanged);
-    return subscriber;
+    return () => {
+      isActive = false;
+      subscriber();
+    };
   }, [user, handleAuthStateChanged]);
 
   return (
