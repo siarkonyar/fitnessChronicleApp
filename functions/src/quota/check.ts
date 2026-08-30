@@ -46,14 +46,32 @@ export interface CheckQuotaOptions {
   spendRateToken?: boolean;
 }
 
-/** 0-100. Clamped, because a turn can overshoot the cap by design. */
+/**
+ * 0-100, measured against what a user can actually SPEND, not the raw cap.
+ *
+ * The gate below refuses a turn while MIN_HEADROOM_TOKENS still remain, so the
+ * cap itself is unreachable: a free user is cut off at 35_000 of a 40_000 cap,
+ * and dividing by the cap froze the bar at 88% forever. The bar then claimed
+ * "12% left" while the coach refused to answer, which reads as the app being
+ * broken rather than as the allowance being spent.
+ *
+ * Dividing by `cap - MIN_HEADROOM_TOKENS` makes the bar reach 100% at exactly
+ * the point the gate starts refusing, so the number the user sees and the
+ * behaviour they get agree.
+ *
+ * Clamped, because a turn can overshoot the budget by design.
+ */
 export const toPercentUsed = (tokensUsed: number, cap: number): number => {
-  // A zero cap — which is exactly today's FREE_TOKEN_CAP — makes the division
-  // below 0/0, i.e. NaN. NaN is not valid JSON, so it reaches the app as null
-  // and renders as a blank usage bar. No allowance at all is 100% used.
-  if (cap <= 0) return 100;
+  const spendable = cap - MIN_HEADROOM_TOKENS;
 
-  return Math.min(100, Math.round((tokensUsed / cap) * 100));
+  // A cap at or below the headroom means nothing can ever be spent — which is
+  // exactly what FREE_TOKEN_CAP was back when it was 0. It also makes the
+  // division below 0/0, i.e. NaN, or negative. NaN is not valid JSON, so it
+  // reaches the app as null and renders as a blank usage bar. That is the
+  // opposite of the truth: no spendable allowance is 100% used.
+  if (spendable <= 0) return 100;
+
+  return Math.min(100, Math.round((tokensUsed / spendable) * 100));
 };
 
 const isExpired = (periodStart: Timestamp, now: Date): boolean =>

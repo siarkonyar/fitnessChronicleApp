@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MyIcon from "@/components/LogoIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
+import BetaBadge from "@/components/ui/BetaBadge";
 import { useChatContext } from "@/context/ChatContext";
 import { Feather } from "@expo/vector-icons";
 import {
@@ -48,6 +49,7 @@ export default function AIStackLayout() {
           >
             ercule AI
           </ThemedText>
+          <BetaBadge className="ml-2" />
         </View>
         <Pressable onPress={clearChat} className="p-2 active:opacity-70">
           <Feather

@@ -1,6 +1,7 @@
 import ChatBubble from "@/components/ai/ChatBubble";
 import ChatComposer from "@/components/ai/ChatComposer";
 import ProgramProposalCard from "@/components/ai/ProgramProposalCard";
+import SuggestionPills from "@/components/ai/SuggestionPills";
 import TypingIndicator from "@/components/ai/TypingIndicator";
 import UsageBar from "@/components/ai/UsageBar";
 import { ThemedText } from "@/components/ThemedText";
@@ -25,7 +26,14 @@ export default function AIScreen() {
   const theme = useColorScheme() ?? "light";
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<ScrollView>(null);
-  const { messages, sendMessage, isSending, percentUsed } = useChatContext();
+  const {
+    messages,
+    sendMessage,
+    isSending,
+    percentUsed,
+    sendError,
+    isQuotaExhausted,
+  } = useChatContext();
 
   const queryClient = useQueryClient();
   const { handleMutationError } = useServerErrorHandler();
@@ -76,7 +84,15 @@ export default function AIScreen() {
 
   const handleSend = () => {
     const text = draft.trim();
-    if (!text || isSending) return;
+    if (!text || isSending || isQuotaExhausted) return;
+
+    sendMessage(text);
+    setDraft("");
+  };
+
+  /** A pill sends straight away — the text is already complete. */
+  const handleSuggestion = (text: string) => {
+    if (isSending || isQuotaExhausted) return;
 
     sendMessage(text);
     setDraft("");
@@ -109,6 +125,10 @@ export default function AIScreen() {
             <ThemedText className="mt-2 text-center opacity-60">
               Form, programming, nutrition. Start typing below.
             </ThemedText>
+            <SuggestionPills
+              onSelect={handleSuggestion}
+              disabled={isSending || isQuotaExhausted}
+            />
           </View>
         ) : (
           messages.map((message, index) => {
@@ -128,7 +148,12 @@ export default function AIScreen() {
                       )
                     }
                     isDisabled={
-                      isSending || acceptProgramMutation.isPending || isAccepted
+                      isSending ||
+                      acceptProgramMutation.isPending ||
+                      isAccepted ||
+                      // Regenerate sends a message, so it is gated by the same
+                      // allowance as the composer.
+                      isQuotaExhausted
                     }
                     isAccepted={isAccepted}
                   />
@@ -145,7 +170,8 @@ export default function AIScreen() {
         value={draft}
         onChangeText={setDraft}
         onSend={handleSend}
-        disabled={isSending}
+        disabled={isSending || isQuotaExhausted}
+        errorMessage={sendError}
       />
     </View>
   );

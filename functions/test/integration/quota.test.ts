@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   BUCKET_CAPACITY,
+  FREE_TOKEN_CAP,
   MIN_HEADROOM_TOKENS,
   PREMIUM_TOKEN_CAP,
 } from "../../src/quota/caps.js";
@@ -28,8 +29,15 @@ describe("token quota", () => {
     await clearUsage();
   });
 
-  it("refuses a free-tier user, whose allowance is zero", async () => {
-    await createTestUser();
+  it("refuses a free-tier user who has spent their allowance", async () => {
+    const { uid } = await createTestUser();
+    // Free users have a real allowance now, so the interesting case is one who
+    // has used it up — this used to pass merely because FREE_TOKEN_CAP was 0
+    // and every free user was refused on contact.
+    await seedUsage(uid, {
+      tier: "free",
+      tokensUsed: FREE_TOKEN_CAP - (MIN_HEADROOM_TOKENS - 100),
+    });
 
     const failure = await catchCallableError(() =>
       callCoach(validCoachRequest()),
@@ -60,7 +68,14 @@ describe("token quota", () => {
     const { uid } = await createTestUser();
     expect(await readUsage(uid)).toBeUndefined();
 
-    await catchCallableError(() => callCoach(validCoachRequest()));
+    // Deliberately the usage endpoint rather than the coach. The document is
+    // created inside checkQuota, which both callers run, so this proves the
+    // same thing — and it cannot be seeded first, because the whole point is
+    // that no document exists yet. Calling the coach here would send a real
+    // turn to Gemini now that free users have an allowance to spend.
+    // getUsagePercentage is genuine first contact anyway: the app hits it every
+    // time the chat box opens.
+    await callUsagePercentage();
 
     const usage = await readUsage(uid);
     expect(usage).toBeDefined();
@@ -73,6 +88,13 @@ describe("token quota", () => {
 
   it("spends one bucket token on a turn, even one it goes on to refuse", async () => {
     const { uid } = await createTestUser();
+    // Seeded over the allowance so the quota gate is what refuses this turn.
+    // Without the seed a free user now has a real budget, sails through both
+    // gates, and the "refusal" this test names becomes a live Gemini call.
+    await seedUsage(uid, {
+      tier: "free",
+      tokensUsed: FREE_TOKEN_CAP - (MIN_HEADROOM_TOKENS - 100),
+    });
 
     await catchCallableError(() => callCoach(validCoachRequest()));
 
@@ -82,15 +104,17 @@ describe("token quota", () => {
     expect((await readUsage(uid))?.rateTokens).toBe(BUCKET_CAPACITY - 1);
   });
 
-  it("reports 100% for a free user rather than NaN", async () => {
+  it("reports 0% for a free user who has spent nothing", async () => {
     await createTestUser();
 
-    // FREE_TOKEN_CAP is 0, so the percentage is 0/0 unless toPercentUsed
-    // guards it. NaN is not valid JSON and reaches the app as null, which the
-    // usage bar renders as empty — the opposite of the truth.
+    // FREE_TOKEN_CAP is a real allowance now, so a fresh free user sits at the
+    // bottom of their bar rather than the top. Back when the cap was 0 this
+    // asserted 100, which was the 0/0 guard inside toPercentUsed showing
+    // through — that guard is covered directly in test/unit/percent.test.ts
+    // now, so it no longer rides on the free cap happening to be zero.
     const result = (await callUsagePercentage()) as { data: unknown };
 
-    expect(result.data).toBe(100);
+    expect(result.data).toBe(0);
   });
 
   it("does not spend a bucket token when only reading the percentage", async () => {
