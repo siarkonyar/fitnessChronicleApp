@@ -144,7 +144,7 @@ export default function ProgramCard({
               size={18}
               color={Colors[theme].mutedText}
               style={{ marginLeft: 8 }}
-            />
+            /> 
           </TouchableOpacity>
         )}
       </TouchableOpacity>

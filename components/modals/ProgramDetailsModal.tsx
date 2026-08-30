@@ -49,11 +49,19 @@ export default function ProgramDetailsModal({
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => [], []);
+  const hasPresentedRef = useRef(false);
 
+  // Bridge the controlled `visible` prop to the imperative sheet API.
+  // Dismissing a sheet that was never presented strands it in a "dismissing"
+  // state it can never leave, which silently swallows every later present().
   useEffect(() => {
     if (visible) {
+      hasPresentedRef.current = true;
       bottomSheetModalRef.current?.present();
-    } else {
+      return;
+    }
+
+    if (hasPresentedRef.current) {
       bottomSheetModalRef.current?.dismiss();
     }
   }, [visible]);
@@ -76,6 +84,10 @@ export default function ProgramDetailsModal({
       index={0}
       snapPoints={snapPoints}
       maxDynamicContentSize={maxDynamicContentSize}
+      // This sheet is opened from inside another sheet (ChooseProgram). The
+      // default "switch" behaviour minimizes that parent, which can unmount it
+      // and take this sheet's portal down with it. "push" leaves it untouched.
+      stackBehavior="push"
       onDismiss={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: palette.background }}
