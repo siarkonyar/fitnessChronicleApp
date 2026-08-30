@@ -81,6 +81,28 @@ const toParamValue = (value: unknown): ParamValue | null => {
 };
 
 /**
+ * The analytics instance, or null if it cannot be reached.
+ *
+ * getAnalytics() throws SYNCHRONOUSLY when the native module is missing — a
+ * build made before the package was installed, a stale dev client, a failed
+ * link. A .catch() on the returned promise does not help, because there is no
+ * promise: the throw escapes into whichever React effect made the call and red
+ * screens the app.
+ *
+ * That is exactly the failure this file claims at the top it will never cause.
+ * Every entry point below goes through here and gives up quietly instead, so a
+ * missing module costs telemetry and nothing else.
+ */
+const getAnalyticsSafely = (): ReturnType<typeof getAnalytics> | null => {
+  try {
+    return getAnalytics();
+  } catch (error) {
+    reportFailure("getAnalytics", error);
+    return null;
+  }
+};
+
+/**
  * Drops empty values and anything past GA4's ceilings.
  *
  * Returns a new object rather than editing the caller's params — the caller
@@ -116,7 +138,10 @@ export const logEvent = <K extends AnalyticsEventName>(
     console.log(`[analytics] ${name}`, safeParams);
   }
 
-  sendEvent(getAnalytics(), name, safeParams).catch((error: unknown) =>
+  const instance = getAnalyticsSafely();
+  if (!instance) return;
+
+  sendEvent(instance, name, safeParams).catch((error: unknown) =>
     reportFailure(`logEvent(${name})`, error),
   );
 };
@@ -136,7 +161,10 @@ export const logScreenView = (screenName: string): void => {
     console.log("[analytics] screen_view", name);
   }
 
-  sendEvent(getAnalytics(), "screen_view", {
+  const instance = getAnalyticsSafely();
+  if (!instance) return;
+
+  sendEvent(instance, "screen_view", {
     screen_name: name,
     screen_class: name,
   }).catch((error: unknown) => reportFailure("logScreenView", error));
@@ -150,15 +178,21 @@ export const logScreenView = (screenName: string): void => {
  * GA4 and would put the property at risk of deletion.
  */
 export const setUserId = (uid: string | null): void => {
-  firebaseSetUserId(getAnalytics(), uid).catch((error: unknown) =>
+  const instance = getAnalyticsSafely();
+  if (!instance) return;
+
+  firebaseSetUserId(instance, uid).catch((error: unknown) =>
     reportFailure("setUserId", error),
   );
 };
 
 /** Sets one user property. Same privacy rule as setUserId: no personal data. */
 export const setUserProperty = (key: string, value: string | null): void => {
+  const instance = getAnalyticsSafely();
+  if (!instance) return;
+
   firebaseSetUserProperty(
-    getAnalytics(),
+    instance,
     key.slice(0, MAX_PARAM_NAME_LENGTH),
     value === null ? null : value.slice(0, MAX_STRING_VALUE_LENGTH),
   ).catch((error: unknown) => reportFailure(`setUserProperty(${key})`, error));
@@ -172,7 +206,10 @@ export const setUserProperty = (key: string, value: string | null): void => {
  * this file sends.
  */
 export const setCollectionEnabled = (enabled: boolean): void => {
-  firebaseSetCollectionEnabled(getAnalytics(), enabled).catch((error: unknown) =>
+  const instance = getAnalyticsSafely();
+  if (!instance) return;
+
+  firebaseSetCollectionEnabled(instance, enabled).catch((error: unknown) =>
     reportFailure("setCollectionEnabled", error),
   );
 };

@@ -7,7 +7,13 @@ import { RowDivider } from "@/components/ui/RowDivider";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
-import { getUserProfile, updateUserProfile } from "@/lib/firebase/user";
+import { queryKeys } from "@/constants/QueryKeys";
+import { setAnalyticsConsent } from "@/lib/analytics/consent";
+import {
+  getUserProfile,
+  getUserSettings,
+  updateUserProfile,
+} from "@/lib/firebase/user";
 import {
   getDefaultMeasurement,
   getDefaultRepType,
@@ -140,6 +146,30 @@ export default function Settings() {
   const handleDefaultMeasurementChange = async (value: "kg" | "lbs") => {
     setDefaultMeasurement(value);
     await saveDefaultMeasurement(value);
+  };
+
+  // Firestore-backed, unlike the three preferences above — the choice has to
+  // follow the user to their other devices, and the server needs to see it
+  // change so it can write the consent record.
+  const { data: userSettings } = useQuery({
+    queryKey: queryKeys.userSettings.all,
+    queryFn: getUserSettings,
+  });
+
+  // Nothing stored means never asked, which is not the same as refused.
+  const analyticsEnabled = userSettings?.analyticsConsent ?? true;
+
+  const handleAnalyticsToggle = (value: boolean) => {
+    setAnalyticsConsent(value);
+
+    // Moves the switch now. setAnalyticsConsent deliberately does not wait for
+    // the server, so without this the row would snap back to the old value
+    // until the query happened to refetch.
+    queryClient.setQueryData(
+      queryKeys.userSettings.all,
+      (previous: typeof userSettings) =>
+        previous ? { ...previous, analyticsConsent: value } : previous,
+    );
   };
 
   useEffect(() => {
@@ -575,6 +605,36 @@ export default function Settings() {
                 </View>
               </View>
             </TouchableOpacity>
+
+            <RowDivider />
+
+            <View className="flex-row px-4 py-4">
+              <View className="justify-center">
+                <IconBox name="insights" color={Colors[theme].secondary} />
+              </View>
+              <View className="flex-1 ml-3">
+                <ThemedText className="text-base">Share Usage Data</ThemedText>
+                <ThemedText
+                  lightColor={Colors.light.mutedText}
+                  darkColor={Colors.dark.mutedText}
+                >
+                  Anonymous stats that help improve Hercule. Never your
+                  workouts, weights, or messages.
+                </ThemedText>
+              </View>
+              <View className="justify-center">
+                <Switch
+                  value={analyticsEnabled}
+                  onValueChange={handleAnalyticsToggle}
+                  trackColor={{
+                    false: Colors[theme].inputBackground,
+                    true: Colors[theme].highlight,
+                  }}
+                  thumbColor={Colors[theme].background}
+                  ios_backgroundColor={Colors[theme].inputBackground}
+                />
+              </View>
+            </View>
           </SectionCard>
 
           {/* ── Account ── */}
