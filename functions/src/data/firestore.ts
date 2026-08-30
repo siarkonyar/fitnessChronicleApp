@@ -42,3 +42,24 @@ export const programsCollection = (uid: string) =>
  * their own tier — has no quota at all.
  */
 export const aiUsageDoc = (uid: string) => db.collection("aiUsage").doc(uid);
+
+/**
+ * The append-only record of every analytics consent change.
+ *
+ * TOP-LEVEL for the same reason as aiUsage, and the reason matters more here,
+ * because this is evidence. Firestore rules only ever GRANT access — a narrower
+ * rule cannot take back what a broader one allows — so anything stored under
+ * users/{uid}/ falls to the blanket allow at firestore.rules:18-20 and the user
+ * can delete it. A consent log the user can delete proves nothing, which is the
+ * entire point of keeping one. Out here the catch-all deny at
+ * firestore.rules:26-28 applies and only the Admin SDK can write.
+ *
+ * Deliberately survives account deletion. The moment this record is needed is
+ * exactly when someone who has deleted their account disputes having consented,
+ * so removing it with the account would destroy the evidence precisely when it
+ * matters. What makes that defensible is that it holds nothing personal: a uid,
+ * a flag, and a timestamp. No name, no email, no content.
+ *
+ * Nothing here is ever updated or deleted. One document per change, forever.
+ */
+export const consentEventsCollection = () => db.collection("consentEvents");

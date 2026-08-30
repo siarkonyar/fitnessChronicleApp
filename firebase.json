@@ -1,4 +1,8 @@
 {
+  "react-native": {
+    "analytics_auto_collection_enabled": false,
+    "google_analytics_automatic_screen_reporting_enabled": false
+  },
   "firestore": {
     "database": "(default)",
     "location": "europe-west2",
@@ -16,6 +20,7 @@
         "firebase-debug.*.log",
         "*.local",
         "test",
+        "scripts",
         "vitest.config.ts",
         "tsconfig.test.json"
       ],

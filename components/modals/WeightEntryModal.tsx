@@ -2,6 +2,7 @@ import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { logEvent } from "@/lib/analytics/client";
 import { getTodayString } from "@/lib/dateUtils";
 import { getUserSettings } from "@/lib/firebase/user";
 import { addWeightLog } from "@/lib/firebase/weight";
@@ -38,6 +39,8 @@ export default function WeightEntryModal({
       handleMutationError(error);
     },
     onSuccess: (data, variables) => {
+      logEvent("weight_logged", { measure: weightMeasure });
+
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({
         queryKey: queryKeys.weightLogs.all,

@@ -1,9 +1,11 @@
+import { logEvent } from "@/lib/analytics/client";
 import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
 import React, {
   createContext,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -91,6 +93,23 @@ export function ConnectivityProvider({
 
     return () => unsubscribe();
   }, [refreshTick, isForced]);
+
+  // Reported on the TRANSITION into offline, not while offline. An effect that
+  // simply checked `!isOnline` would fire again on every unrelated re-render
+  // and turn one dropped connection into a stream of identical events.
+  //
+  // Seeded true because isOnline starts true: someone who opens the app with
+  // no signal at all is a first render, not a user who lost connection, and
+  // counting it as one would overstate how often the app drops out.
+  const wasOnlineRef = useRef(true);
+
+  useEffect(() => {
+    if (wasOnlineRef.current && !isOnline) {
+      logEvent("offline_mode_entered", {});
+    }
+
+    wasOnlineRef.current = isOnline;
+  }, [isOnline]);
 
   const value = useMemo<ConnectivityContextValue>(
     () => ({

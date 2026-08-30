@@ -2,6 +2,7 @@ import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { logEvent } from "@/lib/analytics/client";
 import { deleteExerciseLog } from "@/lib/firebase/exercise";
 import { deleteOfflineExercise } from "@/lib/offlineStorage";
 import { ExerciseLogWithIdSchema } from "@/types/types"; // path doğruysa sıkıntı yok
@@ -43,6 +44,8 @@ export default function GetExerciseCard({
       handleMutationError(error);
     },
     onSuccess: () => {
+      logEvent("exercise_deleted", {});
+
       queryClient.invalidateQueries({
         queryKey: queryKeys.exerciseLogs.byDate(exercise.date),
       });
