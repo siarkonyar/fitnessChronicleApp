@@ -7,6 +7,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
 import { getUserProfile } from "@/lib/firebase/user";
+import { genderLabel } from "@/lib/profile";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
@@ -20,17 +21,6 @@ import {
   useColorScheme,
   View,
 } from "react-native";
-
-const GENDER_LABELS: Record<string, string> = {
-  male: "Male",
-  female: "Female",
-  non_binary: "Non-binary",
-  prefer_not_to_say: "Prefer not to say",
-};
-
-function genderLabel(value: string): string {
-  return GENDER_LABELS[value] ?? value;
-}
 
 function calculateAge(birthday: string): number {
   const today = new Date();
