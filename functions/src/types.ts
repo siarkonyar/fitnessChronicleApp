@@ -74,6 +74,31 @@ export const CoachResultSchema = z.object({
    * the app a percentage and nothing else, never token counts and never money.
    */
   totalTokens: z.number(),
+  /**
+   * The same spend, split by what it was spent on. Metering still uses
+   * totalTokens; this exists to answer WHY a turn cost what it did, which one
+   * number cannot. Thinking dominated every measurement taken so far, and a
+   * total alone would never have shown that.
+   *
+   * Defaulted rather than required: response.usage is optional in the SDK, and
+   * a turn that reports no breakdown is still a turn worth recording.
+   */
+  inputTokens: z.number().default(0),
+  outputTokens: z.number().default(0),
+  thoughtsTokens: z.number().default(0),
+  /**
+   * Names of every tool the model invoked, in call order, with repeats.
+   *
+   * Nothing else on the server sees this — tool calls happen inside Genkit's
+   * loop and never reach the callable. Order and repetition are kept because
+   * the interesting failure is a model calling getWorkoutLogs four times in one
+   * turn, which a de-duplicated set would hide.
+   */
+  toolCalls: z.array(z.string()).default([]),
+  /** Wall-clock time inside ai.generate, in milliseconds. */
+  latencyMs: z.number().default(0),
+  /** True when the model produced no text and a canned reply was substituted. */
+  usedFallbackReply: z.boolean().default(false),
 });
 
 export type CoachRequest = z.infer<typeof CoachRequestSchema>;

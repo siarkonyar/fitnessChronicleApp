@@ -4,7 +4,9 @@
 import { CallableRequest, HttpsError, onCall } from "firebase-functions/https";
 import { defineSecret } from "firebase-functions/params";
 import { coachFlow } from "./ai/flows/coach.js";
+import { COACH_MODEL, COACH_THINKING_LEVEL } from "./ai/genkit.js";
 import { onConsentChanged } from "./consent/recordConsentChange.js";
+import { recordTurn } from "./telemetry/aiTurn.js";
 import { checkQuota, toPercentUsed } from "./quota/check.js";
 import { recordUsage } from "./quota/record.js";
 import { CoachRequestSchema, isPlausibleToday } from "./types.js";
@@ -109,7 +111,23 @@ export const chatWithCoach = onCall(
     // headroom buffer, not zero, because the cost of THIS turn is unknown
     // until it has already run.
     const quota = await checkQuota(uid);
+
+    // Shared by every recordTurn call below. Message CHARS, never the message.
+    const turnContext = {
+      uid,
+      tier: quota.tier,
+      messageChars: parsed.data.message.length,
+      historyLength: parsed.data.history.length,
+    };
+
     if (!quota.allowed) {
+      // Safe on this path only because recordTurn writes to logs and not to
+      // Firestore — this is the branch a flood hits over and over.
+      recordTurn({
+        ...turnContext,
+        outcome: quota.reason === "rate_limit" ? "rate_limit" : "quota",
+      });
+
       // Firebase has no distinct too-many-requests code, so both refusals come
       // back as resource-exhausted and the app tells them apart by
       // details.reason. Without it a user who simply typed too fast would be
@@ -126,16 +144,43 @@ export const chatWithCoach = onCall(
     // uid and prefs go in context, not in the flow input, so the model cannot
     // see or influence them. The Admin SDK ignores security rules, so a uid the
     // model chose would read a stranger's data.
-    const result = await coachFlow(parsed.data, {
-      context: {
-        auth: { uid },
-        prefs: parsed.data.prefs,
-      },
-    });
+    let result;
+    try {
+      result = await coachFlow(parsed.data, {
+        context: {
+          auth: { uid },
+          prefs: parsed.data.prefs,
+        },
+      });
+    } catch (error) {
+      // A failed turn still cost time and may have cost tokens we cannot see,
+      // and it is invisible in the usage counter because recordUsage never
+      // runs. Logging it here is the only way a rising failure rate shows up
+      // anywhere at all.
+      recordTurn({ ...turnContext, outcome: "error" });
+      throw error;
+    }
 
     // Recorded only after the flow succeeds — a failed turn must not be billed
     // against the user's allowance.
     await recordUsage(uid, result.totalTokens);
+
+    // After recordUsage, so the log line is never written for a turn whose
+    // cost failed to register against the allowance.
+    recordTurn({
+      ...turnContext,
+      outcome: "ok",
+      model: COACH_MODEL,
+      thinkingLevel: COACH_THINKING_LEVEL,
+      totalTokens: result.totalTokens,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      thoughtsTokens: result.thoughtsTokens,
+      latencyMs: result.latencyMs,
+      toolCalls: result.toolCalls,
+      hasProgram: Boolean(result.program),
+      usedFallbackReply: result.usedFallbackReply,
+    });
 
     // Only the reply, the proposed program, and a percentage cross the wire.
     // Never token counts, never cost.

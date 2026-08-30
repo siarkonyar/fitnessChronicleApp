@@ -23,8 +23,14 @@ type ExerciseMeasure = "kg" | "lbs" | "time" | "distance" | "steps";
 /** Mirrors WeightMeasureSchema (types/types.ts:104). */
 type WeightMeasure = "kg" | "lbs";
 
-/** Which affordance produced a coach message. */
-type AiMessageSource = "composer" | "pill" | "regenerate";
+/**
+ * Which affordance produced a coach message.
+ *
+ * Exported because useChatBox threads it through the send mutation. Declaring
+ * the union twice would let the two copies drift, and a value the event map
+ * rejects is a compile error at the wrong end of the app.
+ */
+export type AiMessageSource = "composer" | "pill" | "regenerate";
 
 /**
  * Why a coach turn failed.
@@ -46,7 +52,14 @@ type AiFailureReason = "quota" | "rate_limit" | "offline" | "unknown";
  */
 export type AnalyticsEventMap = {
   // ---- AI coach -----------------------------------------------------------
-  ai_chat_opened: { percent_used: number };
+  //
+  // There is deliberately no ai_chat_opened. useChatBox mounts with the tab bar
+  // rather than with the AI tab, and the screen itself can stay mounted across
+  // tab switches, so any "opened" count taken here would be wrong in a way that
+  // is invisible once it reaches a dashboard. screen_view on /(tabs)/ai already
+  // counts opens correctly, and comparing it against ai_message_sent answers
+  // the funnel question — how many people look at the coach and never ask it
+  // anything — without a second, less reliable number for the same thing.
   ai_message_sent: {
     source: AiMessageSource;
     message_length: number;

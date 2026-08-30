@@ -10,6 +10,7 @@ import { queryKeys } from "@/constants/QueryKeys";
 import { useActiveProgramContext } from "@/context/ActiveProgramContext";
 import { useChatContext } from "@/context/ChatContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { logEvent } from "@/lib/analytics/client";
 import { addLabel, getAllLabels } from "@/lib/firebase/label";
 import { addProgram } from "@/lib/firebase/program";
 import { reconcileProgramLabels } from "@/lib/programLabels";
@@ -49,7 +50,13 @@ export default function AIScreen() {
 
       await Promise.all(missingLabels.map((label) => addLabel(label)));
 
-      return addProgram(program.name, days);
+      const programId = await addProgram(program.name, days);
+
+      // labelsCreated is returned rather than recounted by the caller: only
+      // reconcileProgramLabels knows which labels were missing, and any guess
+      // made outside this function would be a different number wearing the
+      // same name.
+      return { programId, labelsCreated: missingLabels.length };
     },
     onError: (error) => {
       handleMutationError(error);
@@ -69,32 +76,54 @@ export default function AIScreen() {
 
   const handleAccept = async (index: number, program: Program) => {
     try {
-      const programId = await acceptProgramMutation.mutateAsync(program);
+      const { programId, labelsCreated } =
+        await acceptProgramMutation.mutateAsync(program);
 
       selectProgram(programId);
       setAcceptedIndices((prev) => new Set(prev).add(index));
+
+      // The event the whole feature is judged on. Proposing a program is cheap;
+      // proposing one somebody actually keeps is the thing worth measuring.
+      logEvent("ai_program_accepted", {
+        day_count: program.days.length,
+        labels_created: labelsCreated,
+      });
+
       router.push({
         pathname: "/(tabs)/profile",
         params: { scrollTo: "programs" },
       });
     } catch {
       // handleMutationError already showed the message — just don't navigate.
+      logEvent("ai_program_accept_failed", {});
     }
   };
 
   const handleSend = () => {
     const text = draft.trim();
-    if (!text || isSending || isQuotaExhausted) return;
+    if (!text) return;
 
-    sendMessage(text);
+    // Someone pressed send and nothing happened. The composer is disabled so
+    // this is rare, but a user out of allowance jabbing at a dead button is
+    // exactly the frustration that never reaches us any other way.
+    if (isSending || isQuotaExhausted) {
+      logEvent("ai_send_blocked", {
+        reason: isQuotaExhausted ? "quota" : "sending",
+      });
+      return;
+    }
+
+    sendMessage({ text, source: "composer" });
     setDraft("");
   };
 
   /** A pill sends straight away — the text is already complete. */
-  const handleSuggestion = (text: string) => {
+  const handleSuggestion = (text: string, index: number) => {
     if (isSending || isQuotaExhausted) return;
 
-    sendMessage(text);
+    logEvent("ai_suggestion_tapped", { suggestion_index: index });
+
+    sendMessage({ text, source: "pill" });
     setDraft("");
   };
 
@@ -142,11 +171,13 @@ export default function AIScreen() {
                   <ProgramProposalCard
                     program={program}
                     onAccept={() => handleAccept(index, program)}
-                    onRegenerate={() =>
-                      sendMessage(
-                        "Regenerate that program with some variation.",
-                      )
-                    }
+                    onRegenerate={() => {
+                      logEvent("ai_program_regenerated", {});
+                      sendMessage({
+                        text: "Regenerate that program with some variation.",
+                        source: "regenerate",
+                      });
+                    }}
                     isDisabled={
                       isSending ||
                       acceptProgramMutation.isPending ||

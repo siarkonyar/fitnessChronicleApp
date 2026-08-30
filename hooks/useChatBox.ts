@@ -7,8 +7,10 @@ import {
 import { getTodayString } from "@/lib/dateUtils";
 import { getDefaultMeasurement, getDefaultRepType } from "@/lib/offlineStorage";
 import { ChatMessageSchema } from "@/types/types";
+import { logEvent } from "@/lib/analytics/client";
+import type { AiMessageSource } from "@/lib/analytics/events";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { useServerErrorHandler } from "./useServerErrorHandler";
 
@@ -19,6 +21,20 @@ type ChatError = {
   /** Quota is terminal for the period; a rate limit clears on its own. */
   isQuota: boolean;
 };
+
+/**
+ * What sendMessage takes.
+ *
+ * `source` exists only for analytics, which is why it travels beside the text
+ * rather than inside it. Knowing that a message came from a suggestion pill
+ * rather than the composer is the difference between "people use the coach" and
+ * "people tap the shortcuts we wrote for them" — and only the caller knows
+ * which affordance was used.
+ */
+export interface SendMessageInput {
+  text: string;
+  source: AiMessageSource;
+}
 
 const QUOTA_ERROR_CODE = "functions/resource-exhausted";
 
@@ -67,8 +83,17 @@ export function useChatBox() {
     if (usageError) handleQueryError(usageError);
   }, [usageError, handleQueryError]);
 
+  // A ref, not state: this is written and read inside mutation callbacks and
+  // must never trigger a render. Storing it in state would re-render the whole
+  // chat twice per message purely to time it.
+  const sentAtRef = useRef<number | null>(null);
+
+  /** Milliseconds since the send that is currently in flight, or 0. */
+  const elapsedMs = () =>
+    sentAtRef.current === null ? 0 : Date.now() - sentAtRef.current;
+
   const sendMessageMutation = useMutation({
-    mutationFn: async (text: string) => {
+    mutationFn: async ({ text }: SendMessageInput) => {
       const [isRepsFixed, measure] = await Promise.all([
         getDefaultRepType(),
         getDefaultMeasurement(),
@@ -86,9 +111,18 @@ export function useChatBox() {
         prefs: { repType: isRepsFixed ? "fixed" : "range", measure },
       });
     },
-    onMutate: (text: string) => {
+    onMutate: ({ text, source }: SendMessageInput) => {
       setMessages((prev) => [...prev, { role: "user", text }]);
       setSendError(null);
+
+      sentAtRef.current = Date.now();
+
+      // Length, never the text. What someone asks their coach is theirs.
+      logEvent("ai_message_sent", {
+        source,
+        message_length: text.length,
+        history_length: messages.length,
+      });
     },
     onSuccess: ({ reply, program, percentUsed: nextPercentUsed }) => {
       setMessages((prev) => [
@@ -99,6 +133,12 @@ export function useChatBox() {
       // matches what's on screen — otherwise the next open rehydrates the old
       // figure and the bar reads stale until another message is sent.
       queryClient.setQueryData(queryKeys.aiUsage.all, nextPercentUsed);
+
+      logEvent("ai_response_received", {
+        latency_ms: elapsedMs(),
+        has_program: Boolean(program),
+        percent_used: nextPercentUsed,
+      });
     },
     onError: (error) => {
       setMessages((prev) => prev.slice(0, -1));
@@ -106,6 +146,11 @@ export function useChatBox() {
       const reason = readRejectionReason(error);
 
       if (reason) {
+        logEvent("ai_response_failed", {
+          reason,
+          latency_ms: elapsedMs(),
+        });
+
         setSendError({
           message: reason === "rate_limit" ? RATE_LIMIT_MESSAGE : QUOTA_MESSAGE,
           isQuota: reason === "quota",
@@ -119,13 +164,23 @@ export function useChatBox() {
       if (!wasHandled) {
         setSendError({ message: GENERIC_ERROR_MESSAGE, isQuota: false });
       }
+
+      // handleMutationError returning true means it recognised the failure as
+      // being offline, which is the one cause worth separating from the rest —
+      // it says nothing about the coach.
+      logEvent("ai_response_failed", {
+        reason: wasHandled ? "offline" : "unknown",
+        latency_ms: elapsedMs(),
+      });
     },
   });
 
   const clearChat = useCallback(() => {
+    logEvent("ai_chat_cleared", { message_count: messages.length });
+
     setMessages([]);
     setSendError(null);
-  }, []);
+  }, [messages.length]);
 
   // Derived, not stored: a boolean kept in state would need to be re-synced every
   // time percentUsed moves, and would drift the moment one update was missed.

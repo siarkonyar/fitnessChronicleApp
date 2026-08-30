@@ -20,8 +20,14 @@ const SUGGESTIONS = [
 ] as const;
 
 type SuggestionPillsProps = {
-  /** Called with the pill's text — the caller sends it as a chat message. */
-  onSelect: (text: string) => void;
+  /**
+   * Called with the pill's text — the caller sends it as a chat message.
+   *
+   * `index` is its position in SUGGESTIONS, passed so analytics can record
+   * which starter was tapped without shipping the sentence itself. Positions
+   * also stay comparable when the wording is reworded.
+   */
+  onSelect: (text: string, index: number) => void;
   disabled?: boolean;
 };
 
@@ -37,10 +43,10 @@ export default function SuggestionPills({
       className="mt-6 w-full flex-row flex-wrap items-center justify-center gap-2"
       style={{ opacity: disabled ? DISABLED_OPACITY : 1 }}
     >
-      {SUGGESTIONS.map((suggestion) => (
+      {SUGGESTIONS.map((suggestion, index) => (
         <TouchableOpacity
           key={suggestion}
-          onPress={() => onSelect(suggestion)}
+          onPress={() => onSelect(suggestion, index)}
           disabled={disabled}
           accessibilityRole="button"
           accessibilityLabel={suggestion}
