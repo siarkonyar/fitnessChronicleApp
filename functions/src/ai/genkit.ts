@@ -7,7 +7,7 @@ import { googleAI } from "@genkit-ai/google-genai";
  * Matches GEMINI_MODEL in lib/ai/gemini.ts:17, so moving the coach to the
  * server does not silently change which model answers the user.
  */
-export const COACH_MODEL = "gemini-3.6-flash";
+export const COACH_MODEL = "gemini-3.1-flash-lite";
 
 /**
  * The single Genkit instance for this codebase.

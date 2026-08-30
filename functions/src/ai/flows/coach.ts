@@ -91,7 +91,7 @@ export const coachFlow = ai.defineFlow(
       prompt: message,
       tools: coachTools,
       maxTurns: MAX_TOOL_ROUNDS,
-      config: { thinkingConfig: { thinkingLevel: "LOW" } }, //"MINIMAL" | "LOW" | "MEDIUM" | "HIGH"
+      config: { thinkingConfig: { thinkingLevel: "MINIMAL" } }, //"MINIMAL" | "LOW" | "MEDIUM" | "HIGH"
     });
 
     const program = extractProposedProgram(response.messages, prefs);
