@@ -2,9 +2,43 @@ import {
   GENDER_OPTIONS,
   formatDisplayBirthday,
   genderLabel,
+  isProfileComplete,
   toIsoBirthday,
   validateBirthday,
 } from "../profile";
+
+describe("isProfileComplete", () => {
+  test("is complete when both name and gender are set", () => {
+    expect(isProfileComplete({ name: "Alex", gender: "female" })).toBe(true);
+  });
+
+  test("ignores birthday, which is optional", () => {
+    // Arrange: no birthday at all, versus one that is present.
+    const withoutBirthday = { name: "Alex", gender: "male" as const };
+    const withBirthday = { ...withoutBirthday, birthday: "1998-06-05" };
+
+    // Act + Assert
+    expect(isProfileComplete(withoutBirthday)).toBe(true);
+    expect(isProfileComplete(withBirthday)).toBe(true);
+  });
+
+  test("is incomplete when the name is missing", () => {
+    expect(isProfileComplete({ gender: "male" })).toBe(false);
+  });
+
+  test("is incomplete when the gender is missing", () => {
+    expect(isProfileComplete({ name: "Alex" })).toBe(false);
+  });
+
+  test("treats a whitespace-only name as missing", () => {
+    expect(isProfileComplete({ name: "   ", gender: "male" })).toBe(false);
+  });
+
+  test("is incomplete for a brand-new user with no profile document", () => {
+    // getUserProfile returns {} when the Firestore doc does not parse.
+    expect(isProfileComplete({})).toBe(false);
+  });
+});
 
 describe("genderLabel", () => {
   test("returns the readable label for every known gender value", () => {

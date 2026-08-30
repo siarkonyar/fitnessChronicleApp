@@ -8,9 +8,10 @@ import { updateUserProfile, updateUserSettings } from "@/lib/firebase/user";
 import { saveDefaultMeasurement } from "@/lib/offlineStorage";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
+  BackHandler,
   Keyboard,
   Pressable,
   TextInput,
@@ -118,6 +119,16 @@ export default function Onboarding() {
     setError(null);
     saveMutation.mutate();
   };
+
+  // The header and swipe-back are already off in _layout, but Android's
+  // hardware back would otherwise still work as a skip button.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => true,
+    );
+    return () => subscription.remove();
+  }, []);
 
   const underlineColor = (field: FocusableField) =>
     focused === field ? palette.highlight : palette.cardBorderColor;

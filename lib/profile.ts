@@ -1,7 +1,19 @@
 import { z } from "zod";
-import { GenderSchema } from "../types/types";
+import { GenderSchema, UserProfileSchema } from "../types/types";
 
 export type GenderValue = z.infer<typeof GenderSchema>;
+type UserProfile = z.infer<typeof UserProfileSchema>;
+
+/**
+ * Whether the user has answered the questions onboarding exists to ask.
+ *
+ * Birthday is deliberately not part of this: it is optional, so requiring it
+ * would trap anyone who chose to leave it blank on the onboarding screen
+ * forever. Name and gender are the two the screen refuses to submit without.
+ */
+export function isProfileComplete(profile: UserProfile): boolean {
+  return Boolean(profile.name?.trim() && profile.gender);
+}
 
 const EARLIEST_BIRTH_YEAR = 1900;
 const MIN_MONTH = 1;
