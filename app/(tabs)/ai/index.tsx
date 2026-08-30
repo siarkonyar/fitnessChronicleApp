@@ -1,6 +1,7 @@
 import ChatBubble from "@/components/ai/ChatBubble";
 import ChatComposer from "@/components/ai/ChatComposer";
 import ProgramProposalCard from "@/components/ai/ProgramProposalCard";
+import SuggestionPills from "@/components/ai/SuggestionPills";
 import TypingIndicator from "@/components/ai/TypingIndicator";
 import UsageBar from "@/components/ai/UsageBar";
 import { ThemedText } from "@/components/ThemedText";
@@ -89,6 +90,14 @@ export default function AIScreen() {
     setDraft("");
   };
 
+  /** A pill sends straight away — the text is already complete. */
+  const handleSuggestion = (text: string) => {
+    if (isSending || isQuotaExhausted) return;
+
+    sendMessage(text);
+    setDraft("");
+  };
+
   const scrollToEnd = () => scrollRef.current?.scrollToEnd({ animated: true });
 
   return (
@@ -116,6 +125,10 @@ export default function AIScreen() {
             <ThemedText className="mt-2 text-center opacity-60">
               Form, programming, nutrition. Start typing below.
             </ThemedText>
+            <SuggestionPills
+              onSelect={handleSuggestion}
+              disabled={isSending || isQuotaExhausted}
+            />
           </View>
         ) : (
           messages.map((message, index) => {
