@@ -1,5 +1,7 @@
 import { ConnectivityProvider } from "@/context/ConnectivityContext";
+import { useAnalyticsConsent } from "@/hooks/useAnalyticsConsent";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
@@ -109,6 +111,12 @@ export default function RootLayout() {
 function AppSetup() {
   const { isAuthenticated } = useAuth();
   const colorScheme = useColorScheme();
+
+  // Both live here rather than in RootLayout because they need what only this
+  // component is inside: useScreenTracking reads the router via usePathname,
+  // which resolves only within the Stack tree below.
+  useAnalyticsConsent();
+  useScreenTracking();
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>

@@ -1,4 +1,5 @@
 import { ThemedText } from "@/components/ThemedText";
+import { logEvent } from "@/lib/analytics/client";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
@@ -64,7 +65,10 @@ export default function DateLabelAssignment({
     onError: (error) => {
       handleMutationError(error);
     },
-    onSuccess: invalidateLabelCaches,
+    onSuccess: () => {
+      logEvent("label_assigned", {});
+      invalidateLabelCaches();
+    },
   });
   const deleteAssignedLabelMutation = useMutation({
     mutationFn: deleteAssignment,

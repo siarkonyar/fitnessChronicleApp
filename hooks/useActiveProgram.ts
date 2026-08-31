@@ -1,4 +1,5 @@
 import { queryKeys } from "@/constants/QueryKeys";
+import { logEvent } from "@/lib/analytics/client";
 import { daysBetween, getTodayString } from "@/lib/dateUtils";
 import { getPrograms } from "@/lib/firebase/program";
 import { getUserSettings, updateUserSettings } from "@/lib/firebase/user";
@@ -80,6 +81,8 @@ export function useActiveProgram() {
         activeProgramDayDate: getTodayString(),
       }),
     onSuccess: () => {
+      logEvent("program_selected", {});
+
       queryClient.invalidateQueries({ queryKey: queryKeys.userSettings.all });
     },
     onError: (error) => {

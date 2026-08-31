@@ -61,6 +61,7 @@ export default function ShareDayModal({
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => [], []);
+  const hasPresentedRef = useRef(false);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -75,10 +76,16 @@ export default function ShareDayModal({
   );
 
   // Bridge the controlled `visible` prop to the imperative sheet API.
+  // Dismissing a sheet that was never presented strands it in a "dismissing"
+  // state it can never leave, which silently swallows every later present().
   useEffect(() => {
     if (visible) {
+      hasPresentedRef.current = true;
       bottomSheetModalRef.current?.present();
-    } else {
+      return;
+    }
+
+    if (hasPresentedRef.current) {
       bottomSheetModalRef.current?.dismiss();
     }
   }, [visible]);

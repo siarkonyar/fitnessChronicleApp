@@ -6,8 +6,15 @@ import { IconBox } from "@/components/ui/IconBox";
 import { RowDivider } from "@/components/ui/RowDivider";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Colors } from "@/constants/Colors";
+import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
-import { getUserProfile, updateUserProfile } from "@/lib/firebase/user";
+import { logEvent } from "@/lib/analytics/client";
+import { setAnalyticsConsent } from "@/lib/analytics/consent";
+import {
+  getUserProfile,
+  getUserSettings,
+  updateUserProfile,
+} from "@/lib/firebase/user";
 import {
   getDefaultMeasurement,
   getDefaultRepType,
@@ -16,6 +23,14 @@ import {
   saveDefaultRepType,
   saveHapticsEnabled,
 } from "@/lib/offlineStorage";
+import {
+  GENDER_OPTIONS,
+  formatDisplayBirthday,
+  genderLabel,
+  toIsoBirthday,
+  validateBirthday,
+  type GenderValue,
+} from "@/lib/profile";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   BottomSheetBackdrop,
@@ -44,49 +59,6 @@ import {
   useColorScheme,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const CURRENT_YEAR = new Date().getFullYear();
-
-const GENDER_OPTIONS = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-  { value: "non_binary", label: "Non-binary" },
-  { value: "prefer_not_to_say", label: "Prefer not to say" },
-] as const;
-
-type GenderValue = (typeof GENDER_OPTIONS)[number]["value"];
-
-function validateBirthday(
-  day: string,
-  month: string,
-  year: string,
-): string | null {
-  if (!day || !month || !year) return "Please fill in all fields.";
-  const d = parseInt(day, 10);
-  const m = parseInt(month, 10);
-  const y = parseInt(year, 10);
-  if (isNaN(d) || d < 1 || d > 31) return "Day must be between 01 and 31.";
-  if (isNaN(m) || m < 1 || m > 12) return "Month must be between 01 and 12.";
-  if (isNaN(y) || y < 1900 || y > CURRENT_YEAR)
-    return `Year must be between 1900 and ${CURRENT_YEAR}.`;
-  const date = new Date(y, m - 1, d);
-  if (
-    date.getFullYear() !== y ||
-    date.getMonth() !== m - 1 ||
-    date.getDate() !== d
-  )
-    return "Invalid date.";
-  return null;
-}
-
-function formatDisplayBirthday(isoDate: string): string {
-  const [year, month, day] = isoDate.split("-");
-  return `${day} / ${month} / ${year}`;
-}
-
-function genderLabel(value: string): string {
-  return GENDER_OPTIONS.find((o) => o.value === value)?.label ?? value;
-}
 
 export default function Settings() {
   const theme = useColorScheme() ?? "light";
@@ -128,18 +100,57 @@ export default function Settings() {
 
   const handleHapticsToggle = async (value: boolean) => {
     setHapticsEnabled(value);
+    // Logged before the reload below, which tears the JS context down and
+    // would take an unsent event with it.
+    logEvent("settings_changed", { setting: "haptics", value: String(value) });
     await saveHapticsEnabled(value);
     await Updates.reloadAsync();
   };
 
   const handleDefaultRepTypeToggle = async (value: boolean) => {
     setDefaultFixedReps(value);
+    logEvent("settings_changed", {
+      setting: "fixed_reps",
+      value: String(value),
+    });
     await saveDefaultRepType(value);
   };
 
   const handleDefaultMeasurementChange = async (value: "kg" | "lbs") => {
     setDefaultMeasurement(value);
+    logEvent("settings_changed", { setting: "measurement", value });
     await saveDefaultMeasurement(value);
+  };
+
+  // Firestore-backed, unlike the three preferences above — the choice has to
+  // follow the user to their other devices, and the server needs to see it
+  // change so it can write the consent record.
+  const { data: userSettings } = useQuery({
+    queryKey: queryKeys.userSettings.all,
+    queryFn: getUserSettings,
+  });
+
+  // Nothing stored means never asked, which is not the same as refused.
+  const analyticsEnabled = userSettings?.analyticsConsent ?? true;
+
+  const handleAnalyticsToggle = (value: boolean) => {
+    // Sent before collection is switched off, so an opt-out is the last thing
+    // recorded rather than the one change that never gets reported.
+    logEvent("settings_changed", {
+      setting: "analytics_consent",
+      value: String(value),
+    });
+
+    setAnalyticsConsent(value);
+
+    // Moves the switch now. setAnalyticsConsent deliberately does not wait for
+    // the server, so without this the row would snap back to the old value
+    // until the query happened to refetch.
+    queryClient.setQueryData(
+      queryKeys.userSettings.all,
+      (previous: typeof userSettings) =>
+        previous ? { ...previous, analyticsConsent: value } : previous,
+    );
   };
 
   useEffect(() => {
@@ -196,8 +207,9 @@ export default function Settings() {
       setBirthdayError(error);
       return;
     }
-    const isoDate = `${birthYear}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}`;
-    birthdayMutation.mutate({ birthday: isoDate });
+    birthdayMutation.mutate({
+      birthday: toIsoBirthday(birthDay, birthMonth, birthYear),
+    });
   };
 
   const handleCancelBirthday = () => {
@@ -575,6 +587,36 @@ export default function Settings() {
                 </View>
               </View>
             </TouchableOpacity>
+
+            <RowDivider />
+
+            <View className="flex-row px-4 py-4">
+              <View className="justify-center">
+                <IconBox name="insights" color={Colors[theme].secondary} />
+              </View>
+              <View className="flex-1 ml-3">
+                <ThemedText className="text-base">Share Usage Data</ThemedText>
+                <ThemedText
+                  lightColor={Colors.light.mutedText}
+                  darkColor={Colors.dark.mutedText}
+                >
+                  Anonymous stats that help improve Hercule. Never your
+                  workouts, weights, or messages.
+                </ThemedText>
+              </View>
+              <View className="justify-center">
+                <Switch
+                  value={analyticsEnabled}
+                  onValueChange={handleAnalyticsToggle}
+                  trackColor={{
+                    false: Colors[theme].inputBackground,
+                    true: Colors[theme].highlight,
+                  }}
+                  thumbColor={Colors[theme].background}
+                  ios_backgroundColor={Colors[theme].inputBackground}
+                />
+              </View>
+            </View>
           </SectionCard>
 
           {/* ── Account ── */}

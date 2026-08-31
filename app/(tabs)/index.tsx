@@ -144,12 +144,10 @@ export default function HomeScreen() {
               className="absolute -left-14 -bottom-14 h-32 w-32 rounded-full opacity-10"
               style={{ backgroundColor: Colors[theme].secondary }}
             />
-            <View className="flex-row items-center justify-between mb-8">
+            <View className="flex-row items-center justify-between mb-4">
               <View>
                 <ThemedText type="label">Training dashboard</ThemedText>
-                <ThemedText type="subtitle">
-                  Log the work. Keep the rhythm.
-                </ThemedText>
+                <ThemedText type="subtitle">Log the work</ThemedText>
               </View>
               {logs && logs.length > 0 && (
                 <RoundedButton

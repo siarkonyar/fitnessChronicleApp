@@ -1,20 +1,18 @@
 import { Colors } from "@/constants/Colors";
-import { appleAuth } from "@invertase/react-native-apple-authentication";
+import { logEvent } from "@/lib/analytics/client";
 import {
-  AppleAuthProvider,
+  getAppleCredential,
+  getGoogleCredential,
+} from "@/lib/firebase/credentials";
+import {
   getAuth,
-  GoogleAuthProvider,
   signInWithCredential,
+  type FirebaseAuthTypes,
 } from "@react-native-firebase/auth";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { BlurView } from "expo-blur";
 import { useState } from "react";
 import { Platform, Pressable, Text, useColorScheme, View } from "react-native";
 import { SvgXml } from "react-native-svg";
-
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID!,
-});
 
 export default function AuthButtons() {
   const [loading, setLoading] = useState(false);
@@ -25,27 +23,16 @@ export default function AuthButtons() {
   async function onGoogleButtonPress() {
     try {
       setLoading(true);
-      // Check if your device supports Google Play
-      await GoogleSignin.hasPlayServices({
-        showPlayServicesUpdateDialog: true,
-      });
-      // Get the users ID token
-      const signInResult = await GoogleSignin.signIn();
 
-      // Get the ID token from the sign-in result (v13+ format)
-      const idToken = signInResult.data?.idToken;
-      if (!idToken) {
-        throw new Error("No ID token found");
-      }
-
-      // Create a Google credential with the token
-      const googleCredential = GoogleAuthProvider.credential(idToken);
+      const googleCredential = await getGoogleCredential();
 
       // Sign-in the user with the credential
       const userCredential = await signInWithCredential(
         getAuth(),
         googleCredential,
       );
+
+      reportSignIn(userCredential, "google");
 
       return userCredential;
     } catch (error) {
@@ -56,31 +43,44 @@ export default function AuthButtons() {
     }
   }
 
+  /**
+   * Reports a completed sign-in as either a first one or a return.
+   *
+   * Firebase answers this for us: isNewUser is true only on the credential
+   * that created the account. Without it every sign-in looks identical and
+   * there is no way to tell growth from habit — which is the one thing these
+   * two events exist to separate.
+   *
+   * login and sign_up are GA4's own recommended names, so they feed the
+   * built-in acquisition reports instead of sitting as custom events.
+   */
+  function reportSignIn(
+    credential: FirebaseAuthTypes.UserCredential,
+    method: "google" | "apple",
+  ) {
+    if (credential.additionalUserInfo?.isNewUser) {
+      logEvent("sign_up", { method });
+      return;
+    }
+
+    logEvent("login", { method });
+  }
+
   async function onAppleButtonPress() {
     try {
       setLoading(true);
-      // Start the sign-in request
-      const appleAuthRequestResponse = await appleAuth.performRequest({
-        requestedOperation: appleAuth.Operation.LOGIN,
-        // As per the FAQ of react-native-apple-authentication, the name should come first in the following array.
-        // See: https://github.com/invertase/react-native-apple-authentication#faqs
-        requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
-      });
 
-      // Ensure Apple returned a user identityToken
-      if (!appleAuthRequestResponse.identityToken) {
-        throw new Error("Apple Sign-In failed - no identify token returned");
-      }
-
-      // Create a Firebase credential from the response
-      const { identityToken, nonce } = appleAuthRequestResponse;
-      const appleCredential = AppleAuthProvider.credential(
-        identityToken,
-        nonce,
-      );
+      const appleCredential = await getAppleCredential();
 
       // Sign the user in with the credential
-      return signInWithCredential(getAuth(), appleCredential);
+      const userCredential = await signInWithCredential(
+        getAuth(),
+        appleCredential,
+      );
+
+      reportSignIn(userCredential, "apple");
+
+      return userCredential;
     } catch (error) {
       console.error("Apple Sign-In Error:", error);
       console.error("Error Code:", (error as any).code);

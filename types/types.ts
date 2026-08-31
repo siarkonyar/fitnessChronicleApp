@@ -114,6 +114,7 @@ export const UserSettingsSchema = z.object({
   activeProgramId: z.string().optional(),
   activeProgramDay: z.number().int().min(0).optional(),
   activeProgramDayDate: z.string().optional(),
+  analyticsConsent: z.boolean().optional(),
 });
 
 export const GenderSchema = z.enum([

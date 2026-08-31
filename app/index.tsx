@@ -16,6 +16,8 @@ import {
   getLabelAsignmentByDate,
 } from "@/lib/firebase/label";
 import { updateStreak } from "@/lib/firebase/streaks";
+import { getUserProfile } from "@/lib/firebase/user";
+import { isProfileComplete } from "@/lib/profile";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useCallback, useEffect } from "react";
@@ -102,16 +104,31 @@ export default function App() {
     }
   }, [authLoading, isAuthenticated, isOnline, queryClient, handleQueryError]);
 
-  const navigateAfterFade = useCallback(() => {
+  const navigateAfterFade = useCallback(async () => {
     // If offline, always land on the offline experience
     /* if (!isOnline) {
       router.replace("/offline");
       return;
     } */
-    if (isAuthenticated) {
-      router.replace("/(tabs)");
-    } else {
+    if (!isAuthenticated) {
       router.replace("/signin");
+      return;
+    }
+
+    // Checked on every launch rather than only at sign-up, so force-quitting
+    // part-way through onboarding brings the user back to it instead of
+    // dropping them into the app with a half-filled profile.
+    try {
+      const profile = await getUserProfile();
+      router.replace(
+        isProfileComplete(profile) ? "/(tabs)" : "/(screens)/onboarding",
+      );
+    } catch (error) {
+      // A failed read (usually offline) must not strand the user on the
+      // splash or trap them in onboarding they cannot submit. Let them in;
+      // the next launch will ask again.
+      console.warn("Could not read profile for onboarding check:", error);
+      router.replace("/(tabs)");
     }
   }, [isAuthenticated]);
 

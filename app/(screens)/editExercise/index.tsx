@@ -1,4 +1,5 @@
 import { Button } from "@/components/Button";
+import { logEvent } from "@/lib/analytics/client";
 import ExerciseNameInput from "@/components/exercise/ExerciseNameInput";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { ThemedText } from "@/components/ThemedText";
@@ -67,6 +68,11 @@ export default function Index() {
       handleMutationError(error);
     },
     onSuccess: (_data, variables) => {
+      logEvent("exercise_edited", {
+        measure: variables.sets[0]?.measure ?? "kg",
+        set_count: variables.sets.length,
+      });
+
       queryClient.invalidateQueries({
         queryKey: queryKeys.exerciseLogs.byDate(variables.date),
       });

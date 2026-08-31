@@ -1,15 +1,37 @@
 /**
  * How many tokens a user may spend on the coach per period.
  *
- * The unit is TOTAL tokens, which on gemini-3.6-flash includes thinking
- * tokens. Measured at step 3, reasoning was 93-97% of every call — a one-line
- * "tell me a joke" cost 479 to 1151 total against 33 of input plus output.
- * Metering input + output would undercount roughly 35-fold, so a cap expressed
- * against that number would be meaningless.
+ * The unit is TOTAL tokens, which includes thinking tokens. That choice was
+ * forced by measurement on gemini-3.6-flash at LOW thinking, where reasoning
+ * ran to 93-97% of every call — a one-line "tell me a joke" cost 479 to 1151
+ * total against 33 of input plus output. Metering input + output would have
+ * undercounted roughly 35-fold.
+ *
+ * The coach has since moved to gemini-3.1-flash-lite at MINIMAL thinking, so
+ * that 35-fold gap is now much smaller. Keep metering totals anyway: thinking
+ * is billed as output either way, and a meter that silently stops counting the
+ * expensive part the moment someone raises thinkingLevel is a trap.
  */
 
-/** Free tier allowance per period. */
-export const FREE_TOKEN_CAP = 0;
+/**
+ * Free tier allowance per period.
+ *
+ * Sized to buy three programs. Measured on gemini-3.1-flash-lite at MINIMAL
+ * thinking, one whole program conversation — the questions plus the proposal —
+ * costs at most 10,000 tokens.
+ *
+ * Note this is NOT the spendable amount. A turn is refused while a headroom's
+ * worth still remains, so what a user can actually spend is
+ * `cap - MIN_HEADROOM_TOKENS`:
+ *
+ *   40_000 cap - 5_000 headroom = 35_000 spendable = three programs, and change
+ *
+ * Three is the floor being bought here, not the exact figure — the spare 5_000
+ * absorbs a program that runs long without dropping anyone to two. Raise the
+ * headroom and this number has to rise with it, or the free tier quietly stops
+ * being three programs.
+ */
+export const FREE_TOKEN_CAP = 40_000;
 
 /** Paid tier allowance per period. */
 export const PREMIUM_TOKEN_CAP = 3_000_000;
@@ -19,11 +41,22 @@ export const PREMIUM_TOKEN_CAP = 3_000_000;
  *
  * The budget is checked before the call but the cost is only known after, so
  * without headroom a user sitting on 10 remaining tokens could still start a
- * turn that spends 20,000. Sized above the most expensive turn observed, with
- * room to spare: tool-using turns cost far more than plain ones, and the same
- * prompt varied 2.5x between runs, so this cannot be tuned tightly.
+ * turn that spends 20,000. This must therefore cover the most expensive single
+ * TURN, not the most expensive conversation.
+ *
+ * 10,000 is the whole-conversation cost of building a program, so it is a
+ * guaranteed-safe ceiling for one turn: a single turn cannot cost more than the
+ * conversation that contains it. It is deliberately loose. Tightening it needs
+ * per-turn measurements rather than per-program ones, and the win is small —
+ * every token cut here has to be added back to FREE_TOKEN_CAP to keep three
+ * programs, so the two move together and the user-visible allowance is
+ * unchanged.
+ *
+ * The previous value, 25_000, was measured on gemini-3.6-flash at LOW thinking
+ * where reasoning ran to 93-97% of every call. The coach now runs
+ * gemini-3.1-flash-lite at MINIMAL, so that figure no longer describes anything.
  */
-export const MIN_HEADROOM_TOKENS = 25_000;
+export const MIN_HEADROOM_TOKENS = 5_000;
 
 /** Length of a usage period, counted from periodStart. */
 export const PERIOD_DAYS = 30;

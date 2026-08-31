@@ -87,3 +87,5 @@ eas build --platform android --profile production
 eas build --platform ios --profile production --auto-submit
 
 eas submit --platform ios
+
+firebase deploy --only functions

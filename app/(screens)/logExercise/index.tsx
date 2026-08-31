@@ -1,4 +1,5 @@
 import { Button } from "@/components/Button";
+import { logEvent } from "@/lib/analytics/client";
 import ExerciseNameInput from "@/components/exercise/ExerciseNameInput";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import { ThemedText } from "@/components/ThemedText";
@@ -46,6 +47,14 @@ export default function Index() {
       handleMutationError(error);
     },
     onSuccess: (data, variables) => {
+      // measure comes off the first set: the form forces one measure for the
+      // whole log, so any set reports the same value.
+      logEvent("exercise_logged", {
+        measure: variables.sets[0]?.measure ?? "kg",
+        set_count: variables.sets.length,
+        source: "online",
+      });
+
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({
         queryKey: queryKeys.exerciseLogs.byDate(variables.date),
