@@ -14,7 +14,6 @@ import {
   getUserProfile,
   getUserSettings,
   updateUserProfile,
-  updateUserSettings,
 } from "@/lib/firebase/user";
 import {
   getDefaultMeasurement,
@@ -153,34 +152,6 @@ export default function Settings() {
       queryKeys.userSettings.all,
       (previous: typeof userSettings) =>
         previous ? { ...previous, analyticsConsent: value } : previous,
-    );
-  };
-
-  // Same "never asked means no" rule as analytics: nothing stored means the
-  // AI tab's gate has not been passed yet, so the switch defaults off.
-  const aiCoachConsentEnabled = userSettings?.aiCoachConsent ?? false;
-
-  const handleAiCoachConsentToggle = (value: boolean) => {
-    logEvent("settings_changed", {
-      setting: "ai_coach_consent",
-      value: String(value),
-    });
-
-    updateUserSettings({ aiCoachConsent: value }).catch(() => {
-      Alert.alert("Error", "Could not save your choice. Please try again.");
-      queryClient.setQueryData(
-        queryKeys.userSettings.all,
-        (previous: typeof userSettings) =>
-          previous ? { ...previous, aiCoachConsent: !value } : previous,
-      );
-    });
-
-    // Moved immediately, matching handleAnalyticsToggle above — the write is
-    // fire-and-forget, so without this the switch would lag the tap.
-    queryClient.setQueryData(
-      queryKeys.userSettings.all,
-      (previous: typeof userSettings) =>
-        previous ? { ...previous, aiCoachConsent: value } : previous,
     );
   };
 
@@ -649,35 +620,6 @@ export default function Settings() {
               </View>
             </View>
 
-            <RowDivider />
-
-            <View className="flex-row px-4 py-4">
-              <View className="justify-center">
-                <IconBox name="auto-awesome" color={Colors[theme].secondary} />
-              </View>
-              <View className="flex-1 ml-3">
-                <ThemedText className="text-base">AI Coach</ThemedText>
-                <ThemedText
-                  lightColor={Colors.light.mutedText}
-                  darkColor={Colors.dark.mutedText}
-                >
-                  Lets the coach send your messages and training data to
-                  Google&apos;s Gemini API to generate replies.
-                </ThemedText>
-              </View>
-              <View className="justify-center">
-                <Switch
-                  value={aiCoachConsentEnabled}
-                  onValueChange={handleAiCoachConsentToggle}
-                  trackColor={{
-                    false: Colors[theme].inputBackground,
-                    true: Colors[theme].highlight,
-                  }}
-                  thumbColor={Colors[theme].background}
-                  ios_backgroundColor={Colors[theme].inputBackground}
-                />
-              </View>
-            </View>
           </SectionCard>
 
           {/* ── Account ── */}

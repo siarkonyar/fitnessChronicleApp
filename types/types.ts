@@ -122,7 +122,6 @@ export const UserSettingsSchema = z.object({
    * higher-risk processing purpose that needs its own explicit opt-in rather
    * than riding along on a general "by signing in you agree" acceptance.
    */
-  aiCoachConsent: z.boolean().optional(),
 });
 
 export const GenderSchema = z.enum([

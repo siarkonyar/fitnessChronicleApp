@@ -6,16 +6,19 @@ import { consentEventsCollection } from "../data/firestore.js";
 /**
  * Every consent this trigger watches on users/{uid}.
  *
- * A list rather than one hardcoded field, because analytics was never going
- * to be the only consent — aiCoachConsent is the second, and marketing mail
- * or crash reporting could be a third. `setting` is the discriminator written
- * into each log row; it has to be assigned here, once, because the log is
- * append-only and a discriminator cannot be backfilled onto rows that already
- * exist.
+ * A list rather than one hardcoded field, because analytics is unlikely to
+ * stay the only consent — marketing mail or crash reporting could be a second.
+ * `setting` is the discriminator written into each log row; it has to be
+ * assigned here, once, because the log is append-only and a discriminator
+ * cannot be backfilled onto rows that already exist.
+ *
+ * Rows with setting "ai_coach" exist in the log from the period when the AI
+ * coach had its own opt-in. They are deliberately left in place: the log is
+ * append-only, and deleting the evidence of a consent that was genuinely given
+ * would defeat the only purpose it has.
  */
 const WATCHED_CONSENT_FIELDS: readonly { field: string; setting: string }[] = [
   { field: "analyticsConsent", setting: "analytics" },
-  { field: "aiCoachConsent", setting: "ai_coach" },
 ];
 
 const readConsent = (

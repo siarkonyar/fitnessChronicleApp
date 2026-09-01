@@ -5,10 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
 import { setCollectionEnabled } from "@/lib/analytics/client";
-import {
-  PRIVACY_POLICY_URL,
-  askForAnalyticsConsent,
-} from "@/lib/analytics/consentPrompt";
+import { askForAnalyticsConsent } from "@/lib/analytics/consentPrompt";
 import { flushPendingSignUp } from "@/lib/analytics/pendingSignUp";
 import { updateUserProfile, updateUserSettings } from "@/lib/firebase/user";
 import { saveDefaultMeasurement } from "@/lib/offlineStorage";
@@ -19,16 +16,17 @@ import {
   Alert,
   BackHandler,
   Keyboard,
-  Linking,
   Pressable,
   TextInput,
-  useColorScheme,
   View,
+  useColorScheme,
 } from "react-native";
 import Animated, { Easing, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   GENDER_OPTIONS,
+  MINIMUM_AGE_YEARS,
+  isUnderMinimumAge,
   toIsoBirthday,
   validateBirthday,
   type GenderValue,
@@ -78,17 +76,13 @@ export default function Onboarding() {
     // measurement. A second write would be a second chance to fail, and a
     // failure between them would leave a saved profile with no recorded answer.
     mutationFn: async (analyticsConsent: boolean) => {
-      const isBirthdayFilled = Boolean(birthDay && birthMonth && birthYear);
-
       // The measurement is deliberately written twice: AsyncStorage is what
       // the exercise logger reads for its default, while the Firestore copy is
       // what the weight modals read. Writing one leaves the other disagreeing.
       await Promise.all([
         updateUserProfile({
           name: name.trim(),
-          birthday: isBirthdayFilled
-            ? toIsoBirthday(birthDay, birthMonth, birthYear)
-            : undefined,
+          birthday: toIsoBirthday(birthDay, birthMonth, birthYear),
           gender: gender ?? undefined,
         }),
         updateUserSettings({ measure, analyticsConsent }),
@@ -132,15 +126,26 @@ export default function Onboarding() {
       return;
     }
 
-    // Birthday is optional, so it is only checked once the user has started
-    // filling it in — a half-typed date is a mistake, an empty one is a choice.
-    const isBirthdayTouched = Boolean(birthDay || birthMonth || birthYear);
-    if (isBirthdayTouched) {
-      const birthdayError = validateBirthday(birthDay, birthMonth, birthYear);
-      if (birthdayError) {
-        setError(birthdayError);
-        return;
-      }
+    // Required rather than optional because the account cannot be opened
+    // without it: analytics and the AI coach both run on consent, and consent
+    // from someone under MINIMUM_AGE_YEARS is not valid consent. A date is also
+    // a better gate than a tick-box — it asks for a fact, not an assertion.
+    const birthdayError = validateBirthday(birthDay, birthMonth, birthYear);
+    if (birthdayError) {
+      setError(birthdayError);
+      return;
+    }
+
+    // An Alert rather than the inline error the fields above use. This is not
+    // a typo to correct — there is no edit that makes the account allowed, so
+    // it gets a stop that has to be dismissed rather than a hint under a field.
+    if (isUnderMinimumAge(birthDay, birthMonth, birthYear)) {
+      setError(null);
+      Alert.alert(
+        "You need to be older to use Hercule",
+        `You have to be at least ${MINIMUM_AGE_YEARS} to have an account. If you entered your birthday incorrectly, correct it and try again.`,
+      );
+      return;
     }
 
     setError(null);
@@ -242,7 +247,7 @@ export default function Onboarding() {
           </Reveal>
 
           <Reveal step={3}>
-            <FieldLabel>birthday · optional</FieldLabel>
+            <FieldLabel>birthday</FieldLabel>
             <View
               className="flex-row items-center pb-2"
               style={{
@@ -385,24 +390,6 @@ export default function Onboarding() {
               {error}
             </ThemedText>
           )}
-
-          {/* Here rather than inside the consent alert: a native Alert cannot
-              hold a tappable link, and "informed" consent needs the policy to
-              be reachable at the moment the question is asked. */}
-          <Reveal step={6}>
-            <Pressable
-              onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
-              className="mb-4 self-center py-1 active:opacity-60"
-              hitSlop={8}
-            >
-              <ThemedText
-                className="text-xs underline"
-                style={{ color: palette.mutedText }}
-              >
-                Privacy Policy
-              </ThemedText>
-            </Pressable>
-          </Reveal>
 
           <Reveal step={6}>
             <Pressable

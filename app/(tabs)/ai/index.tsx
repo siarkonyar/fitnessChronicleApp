@@ -1,4 +1,3 @@
-import AiConsentGate from "@/components/ai/AiConsentGate";
 import ChatBubble from "@/components/ai/ChatBubble";
 import ChatComposer from "@/components/ai/ChatComposer";
 import CoachDisclaimer from "@/components/ai/CoachDisclaimer";
@@ -15,19 +14,12 @@ import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { logEvent } from "@/lib/analytics/client";
 import { addLabel, getAllLabels } from "@/lib/firebase/label";
 import { addProgram } from "@/lib/firebase/program";
-import { getUserSettings, updateUserSettings } from "@/lib/firebase/user";
 import { reconcileProgramLabels } from "@/lib/programLabels";
 import { ProgramSchema } from "@/types/types";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  useColorScheme,
-  View,
-} from "react-native";
+import { ScrollView, useColorScheme, View } from "react-native";
 import { z } from "zod";
 
 type Program = z.infer<typeof ProgramSchema>;
@@ -47,31 +39,6 @@ export default function AIScreen() {
 
   const queryClient = useQueryClient();
   const { handleMutationError } = useServerErrorHandler();
-
-  // Same query key Settings reads and writes, so granting consent here is
-  // reflected there immediately and vice versa, with one shared cache entry.
-  const { data: userSettings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: queryKeys.userSettings.all,
-    queryFn: getUserSettings,
-  });
-  const hasAiCoachConsent = userSettings?.aiCoachConsent === true;
-
-  const enableAiCoachMutation = useMutation({
-    mutationFn: () => updateUserSettings({ aiCoachConsent: true }),
-    onSuccess: () => {
-      logEvent("settings_changed", {
-        setting: "ai_coach_consent",
-        value: "true",
-      });
-      queryClient.setQueryData(
-        queryKeys.userSettings.all,
-        (previous: typeof userSettings) =>
-          previous ? { ...previous, aiCoachConsent: true } : previous,
-      );
-    },
-    onError: () =>
-      Alert.alert("Error", "Could not save your choice. Please try again."),
-  });
 
   const acceptProgramMutation = useMutation({
     mutationFn: async (program: Program) => {
@@ -169,28 +136,6 @@ export default function AIScreen() {
   };
 
   const scrollToEnd = () => scrollRef.current?.scrollToEnd({ animated: true });
-
-  // Blank rather than the gate while this loads, so a granted user never
-  // sees a flash of "turn on the AI coach" before their settings arrive.
-  if (isLoadingSettings) {
-    return (
-      <View
-        className="flex-1 items-center justify-center"
-        style={{ backgroundColor: Colors[theme].background }}
-      >
-        <ActivityIndicator color={Colors[theme].highlight} />
-      </View>
-    );
-  }
-
-  if (!hasAiCoachConsent) {
-    return (
-      <AiConsentGate
-        onEnable={() => enableAiCoachMutation.mutate()}
-        isEnabling={enableAiCoachMutation.isPending}
-      />
-    );
-  }
 
   return (
     <View

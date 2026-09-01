@@ -49,8 +49,6 @@ export const updateUserSettings = async (
   // consentEvents collection.
   if (updates.analyticsConsent !== undefined)
     sanitized.analyticsConsent = updates.analyticsConsent;
-  if (updates.aiCoachConsent !== undefined)
-    sanitized.aiCoachConsent = updates.aiCoachConsent;
 
   await firestore().collection("users").doc(userId).set(sanitized, { merge: true });
 };
