@@ -10,8 +10,13 @@ const PILL_FILL_ALPHA = "26";
 const PILL_BORDER_ALPHA = "80";
 
 /**
- * Conversation starters for the empty chat — one per pillar the empty state
- * promises: programming, form/pain, nutrition.
+ * Conversation starters for the empty chat.
+ *
+ * Programming only. The form/pain and nutrition starters were removed
+ * deliberately: a suggestion pill is the app inviting a question, which is
+ * evidence of what the app is FOR, and neither of those is something the coach
+ * is meant to answer any more. See the refusal rules in
+ * functions/src/ai/prompt.ts.
  */
 const SUGGESTIONS = ["Build me a 4-day workout program"] as const;
 

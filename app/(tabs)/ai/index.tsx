@@ -1,5 +1,6 @@
 import ChatBubble from "@/components/ai/ChatBubble";
 import ChatComposer from "@/components/ai/ChatComposer";
+import CoachDisclaimer from "@/components/ai/CoachDisclaimer";
 import ProgramProposalCard from "@/components/ai/ProgramProposalCard";
 import SuggestionPills from "@/components/ai/SuggestionPills";
 import TypingIndicator from "@/components/ai/TypingIndicator";
@@ -159,7 +160,7 @@ export default function AIScreen() {
               Ask me anything about training
             </ThemedText>
             <ThemedText className="mt-2 text-center opacity-60">
-              Form, programming, nutrition. Start typing below.
+              Form, programming, and how you train. Start typing below.
             </ThemedText>
             <SuggestionPills
               onSelect={handleSuggestion}
@@ -203,6 +204,8 @@ export default function AIScreen() {
 
         {isSending ? <TypingIndicator /> : null}
       </ScrollView>
+
+      <CoachDisclaimer />
 
       <ChatComposer
         value={draft}
