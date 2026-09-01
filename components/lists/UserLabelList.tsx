@@ -4,6 +4,7 @@ import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { logEvent } from "@/lib/analytics/client";
 import { addLabel, getAllLabels } from "@/lib/firebase/label";
 import { LabelWithIdSchema } from "@/types/types";
+import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import { Platform, ScrollView, Text, useColorScheme, View } from "react-native";
@@ -137,12 +138,20 @@ export default function UserLabelList({
               </View>
             ) : (
               <View className="items-center py-8">
-                <Text className="text-4xl mb-3">😔</Text>
-                <ThemedText className="text-center opacity-70 mb-2">
-                  No labels available
+                <Feather name="tag" size={32} color={Colors[theme].mutedText} />
+                <ThemedText
+                  className="text-center text-base font-semibold mt-4"
+                  lightColor={Colors.light.mutedText}
+                  darkColor={Colors.dark.mutedText}
+                >
+                  No labels yet
                 </ThemedText>
-                <ThemedText className="text-center opacity-50 mb-2">
-                  Please add some labels first
+                <ThemedText
+                  className="text-center mt-1"
+                  lightColor={Colors.light.mutedText}
+                  darkColor={Colors.dark.mutedText}
+                >
+                  Add a label to organize your training days.
                 </ThemedText>
               </View>
             )}
