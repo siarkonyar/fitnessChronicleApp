@@ -13,11 +13,7 @@ const PILL_BORDER_ALPHA = "80";
  * Conversation starters for the empty chat — one per pillar the empty state
  * promises: programming, form/pain, nutrition.
  */
-const SUGGESTIONS = [
-  "Build me a 4-day workout program",
-  "My shoulder hurts when I press. What should I do?",
-  "How much protein do I need to build muscle?",
-] as const;
+const SUGGESTIONS = ["Build me a 4-day workout program"] as const;
 
 type SuggestionPillsProps = {
   /**
