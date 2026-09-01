@@ -23,12 +23,19 @@ import { setCollectionEnabled } from "./client";
 /**
  * What a user with nothing stored gets.
  *
- * True, matching Firebase's own default and the opt-out model this app uses.
- * Absent means "never asked", not "said no" — every user who predates this
- * feature has no value stored, and reading them as refusals would silently
- * switch analytics off for the entire existing user base.
+ * False. Absent means "never asked", and under a consent model never-asked is
+ * not permission — it is the absence of it. An earlier version of this file
+ * defaulted to true on the reasoning that reading silence as refusal would
+ * switch analytics off for every existing user. That reasoning had it exactly
+ * backwards: switching them off is the correct outcome, because none of them
+ * were ever asked. The cost is real and is meant to be paid.
+ *
+ * Onboarding now asks outright (lib/analytics/consentPrompt.ts), so new users
+ * reach the app with a stored answer either way and never see this default.
+ * It applies to users who onboarded before the prompt existed, who stay off
+ * until they turn analytics on in Settings.
  */
-const DEFAULT_CONSENT = true;
+const DEFAULT_CONSENT = false;
 
 /**
  * Reads the stored choice and applies it to the SDK.

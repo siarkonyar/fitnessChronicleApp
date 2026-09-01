@@ -4,6 +4,9 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
+import { setCollectionEnabled } from "@/lib/analytics/client";
+import { askForAnalyticsConsent } from "@/lib/analytics/consentPrompt";
+import { flushPendingSignUp } from "@/lib/analytics/pendingSignUp";
 import { updateUserProfile, updateUserSettings } from "@/lib/firebase/user";
 import { saveDefaultMeasurement } from "@/lib/offlineStorage";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,13 +18,15 @@ import {
   Keyboard,
   Pressable,
   TextInput,
-  useColorScheme,
   View,
+  useColorScheme,
 } from "react-native";
 import Animated, { Easing, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   GENDER_OPTIONS,
+  MINIMUM_AGE_YEARS,
+  isUnderMinimumAge,
   toIsoBirthday,
   validateBirthday,
   type GenderValue,
@@ -67,21 +72,20 @@ export default function Onboarding() {
   const goToApp = useCallback(() => router.replace("/(tabs)"), []);
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      const isBirthdayFilled = Boolean(birthDay && birthMonth && birthYear);
-
+    // Takes the consent answer so it lands in the SAME users/{uid} write as the
+    // measurement. A second write would be a second chance to fail, and a
+    // failure between them would leave a saved profile with no recorded answer.
+    mutationFn: async (analyticsConsent: boolean) => {
       // The measurement is deliberately written twice: AsyncStorage is what
       // the exercise logger reads for its default, while the Firestore copy is
       // what the weight modals read. Writing one leaves the other disagreeing.
       await Promise.all([
         updateUserProfile({
           name: name.trim(),
-          birthday: isBirthdayFilled
-            ? toIsoBirthday(birthDay, birthMonth, birthYear)
-            : undefined,
+          birthday: toIsoBirthday(birthDay, birthMonth, birthYear),
           gender: gender ?? undefined,
         }),
-        updateUserSettings({ measure }),
+        updateUserSettings({ measure, analyticsConsent }),
         saveDefaultMeasurement(measure),
       ]);
     },
@@ -89,13 +93,30 @@ export default function Onboarding() {
       await refreshUser();
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.userSettings.all });
+
+      // Here, and not straight after setCollectionEnabled in handleSubmit.
+      // That call is fire-and-forget by design, so the native switch may not
+      // have flipped yet microseconds later and an accepted user's sign_up
+      // would be dropped by the very consent they just gave. By this point a
+      // Firestore write has been and gone, which is ample. It is also the more
+      // honest moment for the event: the sign-up is complete now, not when the
+      // credential was issued.
+      flushPendingSignUp();
+
       goToApp();
     },
     onError: () =>
       Alert.alert("Error", "Could not save your details. Please try again."),
   });
 
-  const handleSubmit = () => {
+  // Guards the gap between the tap and the alert appearing. saveMutation is not
+  // pending yet during that window, so the disabled prop cannot cover it and a
+  // fast double tap would stack two alerts — and answer only one of them.
+  const isAskingRef = useRef(false);
+
+  const handleSubmit = async () => {
+    if (isAskingRef.current) return;
+
     if (!name.trim()) {
       setError("Please enter your name.");
       return;
@@ -105,19 +126,48 @@ export default function Onboarding() {
       return;
     }
 
-    // Birthday is optional, so it is only checked once the user has started
-    // filling it in — a half-typed date is a mistake, an empty one is a choice.
-    const isBirthdayTouched = Boolean(birthDay || birthMonth || birthYear);
-    if (isBirthdayTouched) {
-      const birthdayError = validateBirthday(birthDay, birthMonth, birthYear);
-      if (birthdayError) {
-        setError(birthdayError);
-        return;
-      }
+    // Required rather than optional because the account cannot be opened
+    // without it: analytics and the AI coach both run on consent, and consent
+    // from someone under MINIMUM_AGE_YEARS is not valid consent. A date is also
+    // a better gate than a tick-box — it asks for a fact, not an assertion.
+    const birthdayError = validateBirthday(birthDay, birthMonth, birthYear);
+    if (birthdayError) {
+      setError(birthdayError);
+      return;
+    }
+
+    // An Alert rather than the inline error the fields above use. This is not
+    // a typo to correct — there is no edit that makes the account allowed, so
+    // it gets a stop that has to be dismissed rather than a hint under a field.
+    if (isUnderMinimumAge(birthDay, birthMonth, birthYear)) {
+      setError(null);
+      Alert.alert(
+        "You need to be older to use Hercule",
+        `You have to be at least ${MINIMUM_AGE_YEARS} to have an account. If you entered your birthday incorrectly, correct it and try again.`,
+      );
+      return;
     }
 
     setError(null);
-    saveMutation.mutate();
+
+    // Asked before anything is written, so a saved profile always carries an
+    // answer. Declining is a real choice: it costs the user nothing and they
+    // continue into the app exactly as an accepting user does.
+    isAskingRef.current = true;
+    let analyticsConsent = false;
+    try {
+      analyticsConsent = await askForAnalyticsConsent();
+    } finally {
+      isAskingRef.current = false;
+    }
+
+    // The SDK is flipped before the write is confirmed, matching
+    // setAnalyticsConsent in lib/analytics/consent.ts: someone who declined
+    // wants collection off now, not once the network agrees. The write below
+    // carries the same value and is what fires the server-side audit record.
+    setCollectionEnabled(analyticsConsent);
+
+    saveMutation.mutate(analyticsConsent);
   };
 
   // The header and swipe-back are already off in _layout, but Android's
@@ -197,7 +247,7 @@ export default function Onboarding() {
           </Reveal>
 
           <Reveal step={3}>
-            <FieldLabel>birthday · optional</FieldLabel>
+            <FieldLabel>birthday</FieldLabel>
             <View
               className="flex-row items-center pb-2"
               style={{

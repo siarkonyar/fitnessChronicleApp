@@ -5,6 +5,7 @@ import { CallableRequest, HttpsError, onCall } from "firebase-functions/https";
 import { defineSecret } from "firebase-functions/params";
 import { coachFlow } from "./ai/flows/coach.js";
 import { COACH_MODEL, COACH_THINKING_LEVEL } from "./ai/genkit.js";
+import { onUserDeleted } from "./account/deleteAiUsage.js";
 import { onConsentChanged } from "./consent/recordConsentChange.js";
 import { recordTurn } from "./telemetry/aiTurn.js";
 import { checkQuota, toPercentUsed } from "./quota/check.js";
@@ -34,6 +35,14 @@ export const REGION = "europe-west2";
  * directly and it would silently never run if this line were missing.
  */
 export { onConsentChanged };
+
+/**
+ * Re-exported so it deploys. Defined in ./account/deleteAiUsage.ts — an auth
+ * onDelete trigger, fired by the deleteUser call at the end of the app's
+ * deleteAccount flow. Nothing calls it directly, so a missing line here would
+ * leave every deleted account's usage counter behind with no error anywhere.
+ */
+export { onUserDeleted };
 
 interface PingResponse {
   uid: string;

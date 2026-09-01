@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { logEvent } from "@/lib/analytics/client";
+import { rememberSignUp } from "@/lib/analytics/pendingSignUp";
 import {
   getAppleCredential,
   getGoogleCredential,
@@ -59,7 +60,11 @@ export default function AuthButtons() {
     method: "google" | "apple",
   ) {
     if (credential.additionalUserInfo?.isNewUser) {
-      logEvent("sign_up", { method });
+      // Held rather than sent. Analytics are off until onboarding asks for
+      // consent, which happens after this — sending it here would mean the SDK
+      // dropped every sign_up the app ever produced. Onboarding spends it once
+      // the answer is recorded. See lib/analytics/pendingSignUp.ts.
+      rememberSignUp(method);
       return;
     }
 

@@ -4,23 +4,28 @@ import { onDocumentWritten } from "firebase-functions/firestore";
 import { consentEventsCollection } from "../data/firestore.js";
 
 /**
- * Which consent this log entry is about.
+ * Every consent this trigger watches on users/{uid}.
  *
- * A constant rather than an inline string because analytics will not be the
- * only consent forever — marketing mail and crash reporting are the obvious
- * next ones — and the log needs to say which one changed from its very first
- * row. Backfilling a discriminator onto an append-only collection is not
- * possible: by definition, nothing in it can be rewritten.
+ * A list rather than one hardcoded field, because analytics is unlikely to
+ * stay the only consent — marketing mail or crash reporting could be a second.
+ * `setting` is the discriminator written into each log row; it has to be
+ * assigned here, once, because the log is append-only and a discriminator
+ * cannot be backfilled onto rows that already exist.
+ *
+ * Rows with setting "ai_coach" exist in the log from the period when the AI
+ * coach had its own opt-in. They are deliberately left in place: the log is
+ * append-only, and deleting the evidence of a consent that was genuinely given
+ * would defeat the only purpose it has.
  */
-const ANALYTICS_SETTING = "analytics";
-
-/** The field on users/{uid} that this trigger watches. */
-const CONSENT_FIELD = "analyticsConsent";
+const WATCHED_CONSENT_FIELDS: readonly { field: string; setting: string }[] = [
+  { field: "analyticsConsent", setting: "analytics" },
+];
 
 const readConsent = (
   data: FirebaseFirestore.DocumentData | undefined,
+  field: string,
 ): boolean | null => {
-  const value = data?.[CONSENT_FIELD];
+  const value = data?.[field];
   return typeof value === "boolean" ? value : null;
 };
 
@@ -39,42 +44,52 @@ const readConsent = (
  *
  * This fires on every write to users/{uid}, including the frequent ones that
  * have nothing to do with consent (measure, activeProgramDay). That is why the
- * first thing it does is compare before and after and return: the common case
- * costs one comparison and no write at all.
+ * first thing it does per field is compare before and after and skip: the
+ * common case costs a handful of comparisons and no write at all.
  */
 export const onConsentChanged = onDocumentWritten(
   { document: "users/{uid}", region: "europe-west2" },
   async (event) => {
-    const previous = readConsent(event.data?.before.data());
-    const granted = readConsent(event.data?.after.data());
-
-    // The overwhelmingly common path: some other field changed.
-    if (previous === granted) return;
-
-    // The document was deleted, or the field was cleared. Account deletion
-    // lands here, and it must NOT append a "consent withdrawn" row — the user
-    // withdrew their account, which is not the same statement, and recording it
-    // as one would misrepresent them in the only record that outlives them.
-    if (granted === null) return;
-
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
     const { uid } = event.params;
 
-    try {
-      await consentEventsCollection().add({
-        uid,
-        setting: ANALYTICS_SETTING,
-        granted,
-        // null on the first ever choice, which is worth telling apart from a
-        // deliberate change of mind.
-        previous,
-        at: FieldValue.serverTimestamp(),
-      });
-    } catch (error) {
-      // Logged, never swallowed and never rethrown. Rethrowing would make the
-      // runtime retry the whole trigger, and a retry that succeeds after a
-      // partial failure would append the same consent change twice — a log
-      // that double-counts is worse than one that is short a row and says so.
-      logger.error("Failed to record consent change", { uid, granted, error });
+    for (const { field, setting } of WATCHED_CONSENT_FIELDS) {
+      const previous = readConsent(before, field);
+      const granted = readConsent(after, field);
+
+      // The overwhelmingly common path: this particular field did not change.
+      if (previous === granted) continue;
+
+      // The document was deleted, or the field was cleared. Account deletion
+      // lands here, and it must NOT append a "consent withdrawn" row — the user
+      // withdrew their account, which is not the same statement, and recording
+      // it as one would misrepresent them in the only record that outlives them.
+      if (granted === null) continue;
+
+      try {
+        await consentEventsCollection().add({
+          uid,
+          setting,
+          granted,
+          // null on the first ever choice, which is worth telling apart from a
+          // deliberate change of mind.
+          previous,
+          at: FieldValue.serverTimestamp(),
+        });
+      } catch (error) {
+        // Logged, never swallowed and never rethrown. Rethrowing would make the
+        // runtime retry the whole trigger, and a retry that succeeds after a
+        // partial failure would append the same consent change twice for every
+        // field, not just the one that failed — a log that double-counts is
+        // worse than one that is short a row and says so.
+        logger.error("Failed to record consent change", {
+          uid,
+          setting,
+          granted,
+          error,
+        });
+      }
     }
   },
 );

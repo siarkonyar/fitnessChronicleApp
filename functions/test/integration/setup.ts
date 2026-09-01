@@ -14,6 +14,7 @@ import {
   deleteApp as deleteAdminApp,
   initializeApp as initializeAdminApp,
 } from "firebase-admin/app";
+import { getAuth as getAdminAuth } from "firebase-admin/auth";
 import { Timestamp, getFirestore } from "firebase-admin/firestore";
 import { deleteApp, initializeApp } from "firebase/app";
 import {
@@ -91,6 +92,18 @@ const adminApp = initializeAdminApp(
 export const adminDb = getFirestore(adminApp);
 
 const usageDoc = (uid: string) => adminDb.collection("aiUsage").doc(uid);
+
+/**
+ * Deletes a user from the auth emulator, the way production deletes one.
+ *
+ * Admin-side rather than through the signed-in client because the trigger is
+ * what is under test, not the client SDK: onUserDeleted fires on the auth
+ * deletion event itself, whichever side issues it. Going through admin also
+ * keeps the test honest about the real ordering — the app deletes Firestore
+ * data first and calls this last.
+ */
+export const deleteAuthUser = (uid: string): Promise<void> =>
+  getAdminAuth(adminApp).deleteUser(uid);
 
 export interface TestUser {
   uid: string;
