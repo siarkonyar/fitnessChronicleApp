@@ -8,7 +8,7 @@ if (getApps().length === 0) {
 
 export const db = getFirestore();
 
-const userDoc = (uid: string) => db.collection("users").doc(uid);
+export const userDoc = (uid: string) => db.collection("users").doc(uid);
 
 /**
  * Every collection the coach reads lives under one user's document.

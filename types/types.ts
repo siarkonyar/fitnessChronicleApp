@@ -115,6 +115,14 @@ export const UserSettingsSchema = z.object({
   activeProgramDay: z.number().int().min(0).optional(),
   activeProgramDayDate: z.string().optional(),
   analyticsConsent: z.boolean().optional(),
+  /**
+   * Separate from analyticsConsent and from accepting the Terms of Service.
+   * Sending a message to the AI coach sends it, and any training data the
+   * coach reads on your behalf, to Google's Gemini API — a distinct,
+   * higher-risk processing purpose that needs its own explicit opt-in rather
+   * than riding along on a general "by signing in you agree" acceptance.
+   */
+  aiCoachConsent: z.boolean().optional(),
 });
 
 export const GenderSchema = z.enum([

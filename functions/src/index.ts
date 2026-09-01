@@ -6,6 +6,7 @@ import { defineSecret } from "firebase-functions/params";
 import { coachFlow } from "./ai/flows/coach.js";
 import { COACH_MODEL, COACH_THINKING_LEVEL } from "./ai/genkit.js";
 import { onUserDeleted } from "./account/deleteAiUsage.js";
+import { requireAiCoachConsent } from "./consent/checkAiCoachConsent.js";
 import { onConsentChanged } from "./consent/recordConsentChange.js";
 import { recordTurn } from "./telemetry/aiTurn.js";
 import { checkQuota, toPercentUsed } from "./quota/check.js";
@@ -103,6 +104,10 @@ export const chatWithCoach = onCall(
     if (!uid) {
       throw new HttpsError("unauthenticated", "You must be signed in.");
     }
+
+    // Before anything else — a request with no consent should never reach
+    // validation, quota, or Gemini. See checkAiCoachConsent.ts.
+    await requireAiCoachConsent(uid);
 
     // request.data is untrusted. Parse before anything reads a field off it.
     const parsed = CoachRequestSchema.safeParse(request.data);

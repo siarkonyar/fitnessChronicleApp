@@ -93,6 +93,22 @@ export const adminDb = getFirestore(adminApp);
 
 const usageDoc = (uid: string) => adminDb.collection("aiUsage").doc(uid);
 
+const userDoc = (uid: string) => adminDb.collection("users").doc(uid);
+
+/**
+ * Writes users/{uid}.aiCoachConsent directly into the emulator.
+ *
+ * Kept separate from createTestUser's own write to it below so a test that
+ * cares specifically about the consent gate — see aiCoachConsent.test.ts —
+ * can set it to false or leave it unset without fighting a default.
+ */
+export const setAiCoachConsent = async (
+  uid: string,
+  granted: boolean,
+): Promise<void> => {
+  await userDoc(uid).set({ aiCoachConsent: granted }, { merge: true });
+};
+
 /**
  * Deletes a user from the auth emulator, the way production deletes one.
  *
@@ -115,6 +131,12 @@ export interface TestUser {
  *
  * The returned session gives the client SDK a genuine ID token, so callables
  * are exercised through the same verification path production uses.
+ *
+ * Grants AI coach consent by default. Every suite except
+ * aiCoachConsent.test.ts is testing something further down the pipeline —
+ * quota, rate limiting, request validation — and none of that is reachable
+ * past requireAiCoachConsent otherwise. A test that specifically wants an
+ * unconsented user calls setAiCoachConsent(uid, false) to override this.
  */
 export const createTestUser = async (): Promise<TestUser> => {
   const email = `test-${randomUUID()}@example.com`;
@@ -123,6 +145,8 @@ export const createTestUser = async (): Promise<TestUser> => {
     email,
     TEST_PASSWORD,
   );
+
+  await setAiCoachConsent(credential.user.uid, true);
 
   return { uid: credential.user.uid, email };
 };

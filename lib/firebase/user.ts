@@ -44,10 +44,13 @@ export const updateUserSettings = async (
     sanitized.activeProgramDay = updates.activeProgramDay;
   if (updates.activeProgramDayDate !== undefined)
     sanitized.activeProgramDayDate = updates.activeProgramDayDate;
-  // Writing this field is what fires the server-side consent trigger, which
-  // appends the immutable record to the top-level consentEvents collection.
+  // Writing either of these fields is what fires the server-side consent
+  // trigger, which appends the immutable record to the top-level
+  // consentEvents collection.
   if (updates.analyticsConsent !== undefined)
     sanitized.analyticsConsent = updates.analyticsConsent;
+  if (updates.aiCoachConsent !== undefined)
+    sanitized.aiCoachConsent = updates.aiCoachConsent;
 
   await firestore().collection("users").doc(userId).set(sanitized, { merge: true });
 };
