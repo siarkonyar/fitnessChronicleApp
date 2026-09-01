@@ -65,20 +65,52 @@ const GOOGLE_USER = {
   providerData: [{ providerId: "google.com" }],
 };
 
+/**
+ * One document in every subcollection deleteAccount is responsible for.
+ *
+ * A list rather than a run of seedDoc calls so that seeding, "nothing was
+ * touched", and "everything is gone" all walk the same paths. Written out
+ * separately, the assertions only ever checked the three subcollections
+ * someone had remembered to seed — which is precisely how programs,
+ * weightLogs and dayAssignments survived account deletion while a test named
+ * "every subcollection" passed. Adding a subcollection to SUBCOLLECTIONS in
+ * account.ts means adding a row here.
+ */
+const SUBCOLLECTION_DOCS: readonly {
+  path: string[];
+  data: Record<string, unknown>;
+}[] = [
+  {
+    path: ["users", TEST_UID, "fitnessLogs", "log-1"],
+    data: { activity: "Bench Press" },
+  },
+  {
+    path: ["users", TEST_UID, "exerciseNames", "name-1"],
+    data: { name: "Squat" },
+  },
+  { path: ["users", TEST_UID, "labels", "push"], data: { label: "P" } },
+  {
+    path: ["users", TEST_UID, "dayAssignments", "2026-01-05"],
+    data: { date: "2026-01-05", labelId: "push" },
+  },
+  {
+    path: ["users", TEST_UID, "programs", "ppl"],
+    data: { name: "Push Pull Legs", days: [] },
+  },
+  {
+    path: ["users", TEST_UID, "weightLogs", "2026-01-05"],
+    data: { weight: 82.5, date: "2026-01-05", measure: "kg" },
+  },
+];
+
 const seedUserData = () => {
   seedDoc(["users", TEST_UID], { measure: "kg", name: "Alex" });
-  seedDoc(["users", TEST_UID, "fitnessLogs", "log-1"], {
-    activity: "Bench Press",
-  });
-  seedDoc(["users", TEST_UID, "exerciseNames", "name-1"], { name: "Squat" });
-  seedDoc(["users", TEST_UID, "labels", "push"], { label: "P" });
+  SUBCOLLECTION_DOCS.forEach(({ path, data }) => seedDoc(path, data));
 };
 
 const expectUserDataIntact = () => {
   expect(readDoc(["users", TEST_UID])).toBeDefined();
-  expect(readDoc(["users", TEST_UID, "fitnessLogs", "log-1"])).toBeDefined();
-  expect(readDoc(["users", TEST_UID, "exerciseNames", "name-1"])).toBeDefined();
-  expect(readDoc(["users", TEST_UID, "labels", "push"])).toBeDefined();
+  SUBCOLLECTION_DOCS.forEach(({ path }) => expect(readDoc(path)).toBeDefined());
 };
 
 beforeEach(() => {
@@ -148,13 +180,12 @@ describe("deleteAccount", () => {
     // Act
     await deleteAccount();
 
-    // Assert
+    // Assert — Firestore does not cascade, so each subcollection is checked on
+    // its own. Deleting the parent user document proves nothing about them.
     expect(readDoc(["users", TEST_UID])).toBeUndefined();
-    expect(readDoc(["users", TEST_UID, "fitnessLogs", "log-1"])).toBeUndefined();
-    expect(
-      readDoc(["users", TEST_UID, "exerciseNames", "name-1"]),
-    ).toBeUndefined();
-    expect(readDoc(["users", TEST_UID, "labels", "push"])).toBeUndefined();
+    SUBCOLLECTION_DOCS.forEach(({ path }) =>
+      expect(readDoc(path)).toBeUndefined(),
+    );
     expect(mockDeleteUser).toHaveBeenCalled();
   });
 

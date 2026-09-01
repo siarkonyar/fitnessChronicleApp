@@ -10,7 +10,29 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { logEvent } from "../analytics/client";
 import { GOOGLE_PROVIDER_ID, getCredentialForUser } from "./credentials";
 
-const SUBCOLLECTIONS = ["fitnessLogs", "exerciseNames", "labels"] as const;
+/**
+ * Every subcollection under users/{uid}. All of them have to be deleted by hand.
+ *
+ * Firestore does not cascade. Deleting users/{uid} leaves its subcollections
+ * untouched and merely unreachable — orphaned beneath a document that no longer
+ * exists, still stored, still billed, and still the user's personal data after
+ * they asked us to erase it. That is the entire reason this list exists.
+ *
+ * ADDING A SUBCOLLECTION ANYWHERE UNDER users/{uid} MEANS ADDING IT HERE.
+ * Nothing checks that this list is complete, and nothing can: a missing entry
+ * looks exactly like a successful deletion from inside the app, and surfaces
+ * only as rows sitting in the console long after the account they belonged to
+ * is gone. programs, weightLogs and dayAssignments were each missed for
+ * precisely that reason.
+ */
+const SUBCOLLECTIONS = [
+  "fitnessLogs",
+  "exerciseNames",
+  "labels",
+  "dayAssignments",
+  "programs",
+  "weightLogs",
+] as const;
 
 const deleteSubcollection = async (
   userDocRef: FirebaseFirestoreTypes.DocumentReference,
@@ -52,6 +74,12 @@ export const deleteAccount = async (): Promise<void> => {
   }
   await userDocRef.delete();
 
+  // MUST STAY LAST of the deletion steps. This call fires the onUserDeleted
+  // auth trigger (functions/src/account/deleteAiUsage.ts), which removes the
+  // top-level aiUsage/{uid} counter that no client is allowed to touch. Moving
+  // it above the Firestore deletes would run that cleanup while the account's
+  // data still existed, and a failure here would then leave a live account
+  // whose usage counter had already been wiped.
   await deleteUser(currentUser);
 
   // Strictly after the delete. Revoking earlier tears down the very session
