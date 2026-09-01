@@ -4,6 +4,12 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useAuth } from "@/context/AuthContext";
+import { setCollectionEnabled } from "@/lib/analytics/client";
+import {
+  PRIVACY_POLICY_URL,
+  askForAnalyticsConsent,
+} from "@/lib/analytics/consentPrompt";
+import { flushPendingSignUp } from "@/lib/analytics/pendingSignUp";
 import { updateUserProfile, updateUserSettings } from "@/lib/firebase/user";
 import { saveDefaultMeasurement } from "@/lib/offlineStorage";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +19,7 @@ import {
   Alert,
   BackHandler,
   Keyboard,
+  Linking,
   Pressable,
   TextInput,
   useColorScheme,
@@ -67,7 +74,10 @@ export default function Onboarding() {
   const goToApp = useCallback(() => router.replace("/(tabs)"), []);
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
+    // Takes the consent answer so it lands in the SAME users/{uid} write as the
+    // measurement. A second write would be a second chance to fail, and a
+    // failure between them would leave a saved profile with no recorded answer.
+    mutationFn: async (analyticsConsent: boolean) => {
       const isBirthdayFilled = Boolean(birthDay && birthMonth && birthYear);
 
       // The measurement is deliberately written twice: AsyncStorage is what
@@ -81,7 +91,7 @@ export default function Onboarding() {
             : undefined,
           gender: gender ?? undefined,
         }),
-        updateUserSettings({ measure }),
+        updateUserSettings({ measure, analyticsConsent }),
         saveDefaultMeasurement(measure),
       ]);
     },
@@ -89,13 +99,30 @@ export default function Onboarding() {
       await refreshUser();
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.userSettings.all });
+
+      // Here, and not straight after setCollectionEnabled in handleSubmit.
+      // That call is fire-and-forget by design, so the native switch may not
+      // have flipped yet microseconds later and an accepted user's sign_up
+      // would be dropped by the very consent they just gave. By this point a
+      // Firestore write has been and gone, which is ample. It is also the more
+      // honest moment for the event: the sign-up is complete now, not when the
+      // credential was issued.
+      flushPendingSignUp();
+
       goToApp();
     },
     onError: () =>
       Alert.alert("Error", "Could not save your details. Please try again."),
   });
 
-  const handleSubmit = () => {
+  // Guards the gap between the tap and the alert appearing. saveMutation is not
+  // pending yet during that window, so the disabled prop cannot cover it and a
+  // fast double tap would stack two alerts — and answer only one of them.
+  const isAskingRef = useRef(false);
+
+  const handleSubmit = async () => {
+    if (isAskingRef.current) return;
+
     if (!name.trim()) {
       setError("Please enter your name.");
       return;
@@ -117,7 +144,25 @@ export default function Onboarding() {
     }
 
     setError(null);
-    saveMutation.mutate();
+
+    // Asked before anything is written, so a saved profile always carries an
+    // answer. Declining is a real choice: it costs the user nothing and they
+    // continue into the app exactly as an accepting user does.
+    isAskingRef.current = true;
+    let analyticsConsent = false;
+    try {
+      analyticsConsent = await askForAnalyticsConsent();
+    } finally {
+      isAskingRef.current = false;
+    }
+
+    // The SDK is flipped before the write is confirmed, matching
+    // setAnalyticsConsent in lib/analytics/consent.ts: someone who declined
+    // wants collection off now, not once the network agrees. The write below
+    // carries the same value and is what fires the server-side audit record.
+    setCollectionEnabled(analyticsConsent);
+
+    saveMutation.mutate(analyticsConsent);
   };
 
   // The header and swipe-back are already off in _layout, but Android's
@@ -340,6 +385,24 @@ export default function Onboarding() {
               {error}
             </ThemedText>
           )}
+
+          {/* Here rather than inside the consent alert: a native Alert cannot
+              hold a tappable link, and "informed" consent needs the policy to
+              be reachable at the moment the question is asked. */}
+          <Reveal step={6}>
+            <Pressable
+              onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+              className="mb-4 self-center py-1 active:opacity-60"
+              hitSlop={8}
+            >
+              <ThemedText
+                className="text-xs underline"
+                style={{ color: palette.mutedText }}
+              >
+                Privacy Policy
+              </ThemedText>
+            </Pressable>
+          </Reveal>
 
           <Reveal step={6}>
             <Pressable

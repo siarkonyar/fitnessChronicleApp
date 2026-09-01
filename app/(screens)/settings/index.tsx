@@ -130,8 +130,10 @@ export default function Settings() {
     queryFn: getUserSettings,
   });
 
-  // Nothing stored means never asked, which is not the same as refused.
-  const analyticsEnabled = userSettings?.analyticsConsent ?? true;
+  // Nothing stored means never asked, and never asked is not permission. Must
+  // match DEFAULT_CONSENT in lib/analytics/consent.ts — if the two disagree,
+  // this row shows a switch that contradicts what the SDK is actually doing.
+  const analyticsEnabled = userSettings?.analyticsConsent ?? false;
 
   const handleAnalyticsToggle = (value: boolean) => {
     // Sent before collection is switched off, so an opt-out is the last thing
