@@ -174,7 +174,14 @@ export default function AIScreen() {
 
             return (
               <React.Fragment key={index}>
-                <ChatBubble message={message} />
+                <ChatBubble
+                  message={message}
+                  precedingUserText={
+                    message.role === "model"
+                      ? messages[index - 1]?.text
+                      : undefined
+                  }
+                />
                 {program ? (
                   <ProgramProposalCard
                     program={program}
