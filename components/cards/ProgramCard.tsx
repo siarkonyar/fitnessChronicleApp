@@ -10,6 +10,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ProgramWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
+import { useBottomSheetModal } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import React, { useRef } from "react";
 import { TouchableOpacity } from "react-native";
@@ -31,6 +32,7 @@ export default function ProgramCard({
   className,
 }: ProgramCardProps) {
   const theme = useColorScheme() ?? "light";
+  const { dismissAll } = useBottomSheetModal();
 
   const totalDays = program.days.length;
   const restDayCount = program.days.filter((day) => day.isRestDay).length;
@@ -80,12 +82,13 @@ export default function ProgramCard({
           <RoundedButton
             type="blue"
             icon="edit"
-            onPress={() =>
+            onPress={() => {
+              dismissAll();
               router.push({
                 pathname: "/(screens)/editProgram",
                 params: { program: JSON.stringify(program) },
-              })
-            }
+              });
+            }}
           />
           {onDelete && (
             <RoundedButton
