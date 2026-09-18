@@ -1,5 +1,7 @@
 import Card from "@/components/Card";
-import ProgramDetailsModal from "@/components/modals/ProgramDetailsModal";
+import ProgramDetailsModal, {
+  ProgramDetailsModalRef,
+} from "@/components/modals/ProgramDetailsModal";
 import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -9,7 +11,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { ProgramWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import { TouchableOpacity } from "react-native";
 import { z } from "zod";
 
@@ -29,7 +31,6 @@ export default function ProgramCard({
   className,
 }: ProgramCardProps) {
   const theme = useColorScheme() ?? "light";
-  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
 
   const totalDays = program.days.length;
   const restDayCount = program.days.filter((day) => day.isRestDay).length;
@@ -44,6 +45,8 @@ export default function ProgramCard({
       : `${totalDays} day${totalDays !== 1 ? "s" : ""}${
           restDayCount > 0 ? ` · ${restDayCount} rest` : ""
         } · ${exerciseCount} exercise${exerciseCount !== 1 ? "s" : ""}`;
+
+  const programDetailRef = useRef<ProgramDetailsModalRef>(null);
 
   return (
     <Card className={className}>
@@ -96,7 +99,7 @@ export default function ProgramCard({
         {totalDays > 0 && (
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => setIsDetailsModalVisible(true)}
+            onPress={() => programDetailRef.current?.present()}
             className="flex-row items-center mt-3 pt-3 border-t"
             style={{ borderTopColor: Colors[theme].separator }}
           >
@@ -144,16 +147,12 @@ export default function ProgramCard({
               size={18}
               color={Colors[theme].mutedText}
               style={{ marginLeft: 8 }}
-            /> 
+            />
           </TouchableOpacity>
         )}
       </TouchableOpacity>
 
-      <ProgramDetailsModal
-        program={program}
-        visible={isDetailsModalVisible}
-        onClose={() => setIsDetailsModalVisible(false)}
-      />
+      <ProgramDetailsModal program={program} ref={programDetailRef} />
     </Card>
   );
 }

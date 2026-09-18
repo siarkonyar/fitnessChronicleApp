@@ -10,7 +10,13 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from "react";
 import { useWindowDimensions, View } from "react-native";
 import { z } from "zod";
 import { RoundedButton } from "../RoundButton";
@@ -20,16 +26,18 @@ type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
 
 interface ProgramDetailsModalProps {
   program: ProgramWithId;
-  visible: boolean;
-  onClose: () => void;
 }
 
-export default function ProgramDetailsModal({
-  program,
-  visible,
-  onClose,
-}: ProgramDetailsModalProps) {
+export interface ProgramDetailsModalRef {
+  present: () => void;
+}
+
+const ProgramDetailsModal = forwardRef<
+  ProgramDetailsModalRef,
+  ProgramDetailsModalProps
+>(function ProgramDetailsModal(props, ref) {
   const theme = useColorScheme() ?? "light";
+  const { program } = props;
   const palette = Colors[theme];
   const totalDays = program.days.length;
   const restDayCount = program.days.filter((day) => day.isRestDay).length;
@@ -49,22 +57,6 @@ export default function ProgramDetailsModal({
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => [], []);
-  const hasPresentedRef = useRef(false);
-
-  // Bridge the controlled `visible` prop to the imperative sheet API.
-  // Dismissing a sheet that was never presented strands it in a "dismissing"
-  // state it can never leave, which silently swallows every later present().
-  useEffect(() => {
-    if (visible) {
-      hasPresentedRef.current = true;
-      bottomSheetModalRef.current?.present();
-      return;
-    }
-
-    if (hasPresentedRef.current) {
-      bottomSheetModalRef.current?.dismiss();
-    }
-  }, [visible]);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -78,6 +70,14 @@ export default function ProgramDetailsModal({
     [],
   );
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      present: () => bottomSheetModalRef.current?.present(),
+    }),
+    [],
+  );
+
   return (
     <BottomSheetModal
       ref={bottomSheetModalRef}
@@ -88,7 +88,6 @@ export default function ProgramDetailsModal({
       // default "switch" behaviour minimizes that parent, which can unmount it
       // and take this sheet's portal down with it. "push" leaves it untouched.
       stackBehavior="push"
-      onDismiss={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: palette.background }}
       handleIndicatorStyle={{ backgroundColor: palette.separator }}
@@ -149,4 +148,6 @@ export default function ProgramDetailsModal({
       </BottomSheetScrollView>
     </BottomSheetModal>
   );
-}
+});
+
+export default ProgramDetailsModal;
