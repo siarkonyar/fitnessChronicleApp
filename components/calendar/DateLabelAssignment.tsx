@@ -29,7 +29,7 @@ import {
 } from "react-native";
 import { Button } from "../Button";
 import LabelCard from "../cards/LabelCard";
-import UserLabelList from "../lists/UserLabelList";
+import LabelList from "../lists/LabelList";
 import { RoundedButton } from "../RoundButton";
 import { ThemedView } from "../ThemedView";
 
@@ -243,7 +243,7 @@ export default function DateLabelAssignment({
               />
             ) : (
               <ThemedView className="p-4">
-                <UserLabelList labelOnPress={handleAsignLabelToDay} />
+                <LabelList labelOnPress={handleAsignLabelToDay} />
               </ThemedView>
             )}
           </KeyboardAvoidingView>
