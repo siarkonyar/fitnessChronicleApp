@@ -21,12 +21,12 @@ jobs:
       profile: production
 
   # 3. Auto-Submit Android (Runs only after build_android succeeds)
-  submit_android:
-    name: Submit Android
-    needs: [build_android]
-    type: submit
-    params:
-      build_id: ${{ needs.build_android.outputs.build_id }}
+  #submit_android:
+  #  name: Submit Android
+  #  needs: [build_android]
+  #  type: submit
+  #  params:
+  #    build_id: ${{ needs.build_android.outputs.build_id }}
 
   # 4. Auto-Submit iOS (Runs only after build_ios succeeds)
   submit_ios:

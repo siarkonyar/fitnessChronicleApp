@@ -4,32 +4,30 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ProgramWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { useWindowDimensions, View } from "react-native";
+import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
+import { useWindowDimensions } from "react-native";
 import { z } from "zod";
-import { RoundedButton } from "../RoundButton";
 import ProgramDayCard from "../cards/ProgramDayCard";
+import SheetHeader from "../ui/SheetHeader";
 
 type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
 
 interface ProgramDetailsModalProps {
   program: ProgramWithId;
-  visible: boolean;
-  onClose: () => void;
 }
 
-export default function ProgramDetailsModal({
-  program,
-  visible,
-  onClose,
-}: ProgramDetailsModalProps) {
+export interface ProgramDetailsModalRef {
+  present: () => void;
+}
+
+const ProgramDetailsModal = forwardRef<
+  ProgramDetailsModalRef,
+  ProgramDetailsModalProps
+>(function ProgramDetailsModal(props, ref) {
   const theme = useColorScheme() ?? "light";
+  const { program } = props;
   const palette = Colors[theme];
   const totalDays = program.days.length;
   const restDayCount = program.days.filter((day) => day.isRestDay).length;
@@ -48,71 +46,30 @@ export default function ProgramDetailsModal({
   const maxDynamicContentSize = height * 0.875;
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => [], []);
-  const hasPresentedRef = useRef(false);
 
-  // Bridge the controlled `visible` prop to the imperative sheet API.
-  // Dismissing a sheet that was never presented strands it in a "dismissing"
-  // state it can never leave, which silently swallows every later present().
-  useEffect(() => {
-    if (visible) {
-      hasPresentedRef.current = true;
-      bottomSheetModalRef.current?.present();
-      return;
-    }
-
-    if (hasPresentedRef.current) {
-      bottomSheetModalRef.current?.dismiss();
-    }
-  }, [visible]);
-
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-        pressBehavior="close"
-      />
-    ),
+  useImperativeHandle(
+    ref,
+    () => ({
+      present: () => bottomSheetModalRef.current?.present(),
+    }),
     [],
   );
 
   return (
-    <BottomSheetModal
+    <ThemedBottomSheetModal
       ref={bottomSheetModalRef}
-      index={0}
-      snapPoints={snapPoints}
       maxDynamicContentSize={maxDynamicContentSize}
       // This sheet is opened from inside another sheet (ChooseProgram). The
       // default "switch" behaviour minimizes that parent, which can unmount it
       // and take this sheet's portal down with it. "push" leaves it untouched.
       stackBehavior="push"
-      onDismiss={onClose}
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: palette.background }}
-      handleIndicatorStyle={{ backgroundColor: palette.separator }}
     >
-      <View className="flex-row items-start justify-between px-5 pb-4">
-        <View className="flex-1 mr-3">
-          <ThemedText className="text-xl font-bold" numberOfLines={1}>
-            {program.name.toUpperCase()}
-          </ThemedText>
-          <ThemedText
-            className="text-sm"
-            lightColor={Colors.light.mutedText}
-            darkColor={Colors.dark.mutedText}
-            numberOfLines={1}
-          >
-            {subtitle}
-          </ThemedText>
-        </View>
-        <RoundedButton
-          type="danger"
-          icon="x"
-          onPress={() => bottomSheetModalRef.current?.dismiss()}
-        />
-      </View>
+      <SheetHeader
+        icon="clipboard"
+        title={program.name.toUpperCase()}
+        subtitle={subtitle}
+        onClose={() => bottomSheetModalRef.current?.dismiss()}
+      />
 
       <BottomSheetScrollView
         showsVerticalScrollIndicator={false}
@@ -147,6 +104,8 @@ export default function ProgramDetailsModal({
           ))
         )}
       </BottomSheetScrollView>
-    </BottomSheetModal>
+    </ThemedBottomSheetModal>
   );
-}
+});
+
+export default ProgramDetailsModal;

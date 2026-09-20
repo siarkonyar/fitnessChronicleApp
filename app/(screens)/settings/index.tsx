@@ -1,4 +1,5 @@
 import { RoundedButton } from "@/components/RoundButton";
+import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
@@ -32,22 +33,12 @@ import {
   type GenderValue,
 } from "@/lib/profile";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -84,7 +75,6 @@ export default function Settings() {
   const yearRef = useRef<TextInput>(null);
 
   const genderSheetRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => [], []);
 
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [defaultFixedReps, setDefaultFixedReps] = useState(false);
@@ -244,18 +234,6 @@ export default function Settings() {
       Alert.alert("Error", "Failed to sign out. Please try again.");
     }
   };
-
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-        pressBehavior="close"
-      />
-    ),
-    [],
-  );
 
   if (isLoading) {
     return (
@@ -619,7 +597,6 @@ export default function Settings() {
                 />
               </View>
             </View>
-
           </SectionCard>
 
           {/* ── Account ── */}
@@ -668,14 +645,7 @@ export default function Settings() {
         </ScrollView>
       </ThemedView>
 
-      <BottomSheetModal
-        ref={genderSheetRef}
-        index={0}
-        snapPoints={snapPoints}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: Colors[theme].cardBackground }}
-        handleIndicatorStyle={{ backgroundColor: Colors[theme].separator }}
-      >
+      <ThemedBottomSheetModal ref={genderSheetRef}>
         <BottomSheetView>
           <ThemedText type="defaultSemiBold" className="text-center mb-4 mt-2">
             Select Gender
@@ -696,7 +666,7 @@ export default function Settings() {
           ))}
           <ThemedView style={{ height: insets.bottom + 16 }} />
         </BottomSheetView>
-      </BottomSheetModal>
+      </ThemedBottomSheetModal>
     </>
   );
 }

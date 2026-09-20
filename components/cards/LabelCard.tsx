@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
+import { useInsideBottomSheet } from "@/context/InsideBottomSheetContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { deleteLabel, editLabel } from "@/lib/firebase/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,6 +9,7 @@ import { Alert, useColorScheme } from "react-native";
 import { z } from "zod";
 import { LabelWithIdSchema } from "../../types/types";
 import { RoundedButton } from "../RoundButton";
+import { ThemedBottomSheetTextInput } from "../ThemedBottomSheetTextInput";
 import { ThemedText } from "../ThemedText";
 import { ThemedTextInput } from "../ThemedTextInput";
 import { ThemedView } from "../ThemedView";
@@ -30,6 +32,10 @@ export default function LabelCard({
   className,
 }: LabelCardProps) {
   const theme = useColorScheme() ?? "light";
+  const insideBottomSheet = useInsideBottomSheet();
+  const TextInput = insideBottomSheet
+    ? ThemedBottomSheetTextInput
+    : ThemedTextInput;
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editedLabel, setEditedLabel] = useState(label.label);
@@ -144,7 +150,7 @@ export default function LabelCard({
       >
         <IconBadge className="mr-4">
           {isEditing ? (
-            <ThemedTextInput
+            <TextInput
               value={editedLabel}
               onChangeText={(t) => {
                 const chars = Array.from(t);
@@ -186,7 +192,7 @@ export default function LabelCard({
           )}
         </IconBadge>
         {isEditing ? (
-          <ThemedTextInput
+          <TextInput
             value={editedDescription}
             onChangeText={setEditedDescription}
             className="text-base font-medium flex-1 border-b border-gray-400"

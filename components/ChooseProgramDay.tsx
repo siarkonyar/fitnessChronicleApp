@@ -2,24 +2,15 @@ import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useActiveProgramContext } from "@/context/ActiveProgramContext";
 import { Feather } from "@expo/vector-icons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
-import React, { useCallback, useMemo, useRef } from "react";
-import {
-  TouchableOpacity,
-  View,
-  useColorScheme,
-  useWindowDimensions,
-} from "react-native";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import React, { useRef } from "react";
+import { TouchableOpacity, View, useColorScheme } from "react-native";
 import Card from "./Card";
 import ProgramDayCard from "./cards/ProgramDayCard";
 import GetExerciseCard from "./exercise/GetExerciseCard";
-import { RoundedButton } from "./RoundButton";
+import ThemedBottomSheetModal from "./ThemedBottomSheetModal";
 import IconBadge from "./ui/IconBadge";
+import SheetHeader from "./ui/SheetHeader";
 
 export default function ChooseProgramDay() {
   const theme = useColorScheme() ?? "light";
@@ -27,23 +18,7 @@ export default function ChooseProgramDay() {
   const { activeProgram, programDay, selectProgramDay } =
     useActiveProgramContext();
 
-  const { height } = useWindowDimensions();
-  const maxDynamicContentSize = height * 0.85;
-
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => [], []);
-
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-        pressBehavior="close"
-      />
-    ),
-    [],
-  );
 
   function handleSelectDay(dayIndex: number) {
     selectProgramDay(dayIndex, {
@@ -156,38 +131,13 @@ export default function ChooseProgramDay() {
         )}
       </Card>
 
-      <BottomSheetModal
-        ref={bottomSheetModalRef}
-        index={0}
-        snapPoints={snapPoints}
-        maxDynamicContentSize={maxDynamicContentSize}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: palette.background }}
-        handleIndicatorStyle={{ backgroundColor: palette.separator }}
-      >
-        <View className="flex-row items-center px-5 pb-4">
-          <IconBadge className="mr-3">
-            <Feather name="calendar" size={24} color={palette.highlight} />
-          </IconBadge>
-          <View className="flex-1 mr-3">
-            <ThemedText className="text-xl font-bold" numberOfLines={1}>
-              Pick a Day to Follow
-            </ThemedText>
-            <ThemedText
-              className="text-sm uppercase"
-              lightColor={Colors.light.mutedText}
-              darkColor={Colors.dark.mutedText}
-              numberOfLines={1}
-            >
-              {activeProgram?.name}
-            </ThemedText>
-          </View>
-          <RoundedButton
-            type="danger"
-            icon="x"
-            onPress={() => bottomSheetModalRef.current?.dismiss()}
-          />
-        </View>
+      <ThemedBottomSheetModal ref={bottomSheetModalRef}>
+        <SheetHeader
+          icon="calendar"
+          title="Pick a Day to Follow"
+          subtitle={activeProgram?.name ?? ""}
+          onClose={() => bottomSheetModalRef.current?.dismiss()}
+        />
 
         <BottomSheetScrollView
           showsVerticalScrollIndicator={false}
@@ -203,7 +153,7 @@ export default function ChooseProgramDay() {
             />
           ))}
         </BottomSheetScrollView>
-      </BottomSheetModal>
+      </ThemedBottomSheetModal>
     </>
   );
 }
