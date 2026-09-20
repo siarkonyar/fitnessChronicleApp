@@ -1,0 +1,120 @@
+# Cuts a GitHub Release whenever the app's version number changes.
+#
+# app.config.js is the single source of truth for the version — it is what
+# ships to the stores, so anything that disagrees with it is wrong by
+# definition. This workflow reads it rather than asking you to type the
+# version a second time into a tag.
+#
+# The release is created as a DRAFT on purpose. Raw commit subjects make poor
+# public release notes; the draft arrives pre-filled with the generated list so
+# you can rewrite it into something a user would want to read, then publish.
+# Nothing is public until you press the button.
+#
+# The README's version badge reads the latest PUBLISHED release, so it stays
+# stale until you publish that draft. That is deliberate: the badge should
+# claim what is actually released, not what is sitting half-written.
+name: release
+
+on:
+  push:
+    branches: [main]
+    # Only app.config.js can change the version, so nothing else needs to wake
+    # this up. Every other push to main is irrelevant here.
+    paths:
+      - "app.config.js"
+      - ".github/workflows/release.yml"
+  # Lets you run this by hand from the Actions tab — useful for backfilling a
+  # release for a version that shipped before this workflow existed.
+  workflow_dispatch:
+
+# Two quick pushes to app.config.js must not race to create the same release.
+# cancel-in-progress is off: a cancelled run here could leave a tag created and
+# no release attached to it.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: draft release
+    runs-on: ubuntu-latest
+    permissions:
+      # Required to create the tag and the release. Nothing else is needed —
+      # this workflow never touches code, packages, or deployments.
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # --generate-notes diffs against the previous release, and the
+          # existing-tag check below needs the full tag list. A shallow clone
+          # has neither.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # app.config.js is an ES module in a CommonJS package, so plain `node
+      # import` on it is a syntax error, and `expo config` would mean a full
+      # npm install for one string. Reading the literal is the cheap, honest
+      # option — and it exits non-zero rather than guessing if the shape of the
+      # file ever changes.
+      - name: Read version from app.config.js
+        id: version
+        run: |
+          VERSION=$(node -e '
+            const src = require("fs").readFileSync("app.config.js", "utf8");
+            const match = src.match(/^\s*version:\s*"([^"]+)"/m);
+            if (!match) {
+              console.error("Could not find expo.version in app.config.js");
+              process.exit(1);
+            }
+            console.log(match[1]);
+          ')
+          echo "Detected version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # This workflow also fires on edits to app.config.js that leave the
+      # version alone (a new plugin, a bundle id change). `gh release view`
+      # finds drafts as well as published releases, so a re-run is a no-op
+      # instead of a pile of duplicate drafts.
+      - name: Skip if this release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — nothing to do."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # --draft means GitHub records the target commit but does not create the
+      # git tag until you publish. So an abandoned draft leaves no tag behind
+      # to clean up.
+      - name: Create draft release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          gh release create "$TAG" \
+            --draft \
+            --generate-notes \
+            --title "$TAG" \
+            --target "${{ github.sha }}"
+          echo "Draft release $TAG created. Edit and publish it at:"
+          echo "  ${{ github.server_url }}/${{ github.repository }}/releases"
+
+      - name: Summary
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
+            echo "### Release $TAG already exists — skipped" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Draft release $TAG created :memo:" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Edit the notes and publish: [Releases](${{ github.server_url }}/${{ github.repository }}/releases)" >> "$GITHUB_STEP_SUMMARY"
+          fi

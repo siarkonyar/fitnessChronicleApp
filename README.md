@@ -9,7 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
 ![Firebase](https://img.shields.io/badge/Firebase-Auth%20·%20Firestore%20·%20Functions-FFCA28?logo=firebase)
 ![Genkit](https://img.shields.io/badge/AI-Genkit%20%2B%20Gemini-4285F4?logo=googlegemini)
-![Version](https://img.shields.io/badge/Version-1.1.1-success)
+[![Version](https://img.shields.io/github/v/release/siarkonyar/fitnessChronicleApp?label=Version&color=success)](https://github.com/siarkonyar/fitnessChronicleApp/releases)
 ![License](https://img.shields.io/badge/License-Source--available-lightgrey)
 
 [![Download on the App Store](https://img.shields.io/badge/Download-App%20Store-0D96F6?logo=appstore&logoColor=white)](https://apps.apple.com/app/id6755726344)
@@ -59,21 +59,14 @@ Analytics ships **off** and is only switched on after the app has read your stor
 
 ---
 
-## Current version — v1.1.1
+## Releases
 
-Hercule is on **v1.1.1** (`app.config.js` → `expo.version`), live on both the App Store and Google Play.
+[![Latest release](https://img.shields.io/github/v/release/siarkonyar/fitnessChronicleApp?label=latest&color=success)](https://github.com/siarkonyar/fitnessChronicleApp/releases/latest)
+![Release date](https://img.shields.io/github/release-date/siarkonyar/fitnessChronicleApp?label=released)
 
-**What's new in 1.1.1 — the bottom sheet pass.** Every modal in the app moved to a single shared sheet system:
+Every version and its notes live on the **[Releases page](https://github.com/siarkonyar/fitnessChronicleApp/releases)** — that is the changelog, and the badges above track it on their own.
 
-- **`ThemedBottomSheetModal`** replaces the app's assorted modals, with a blurred backdrop instead of a flat dim layer.
-- **`SheetHeader`** gives every sheet the same header design, so sheets stop drifting apart visually.
-- **Label selection** — on both the calendar and programs — is now a bottom sheet rather than a popup.
-- **`InsideBottomSheetContext`** lets shared form primitives detect they're inside a sheet and swap in `BottomSheetTextInput` internally. This fixes the keyboard covering the entire sheet when naming a label.
-- **Program selection sheet** UI refresh, plus `dismissAll` on the edit action so the sheet closes cleanly on navigation.
-- Share-day and program-details modals were wrapped in `forwardRef`, dropping the `useState` open/close plumbing.
-- Fixed: the label list placeholder no longer disappears while a label is being added.
-
-**Previously, in 1.1.0:** consent gating for the AI coach before it reaches Gemini, a report action on coach replies, the coach disclaimer, and AI usage cleanup on account deletion.
+The version that ships to the stores is `expo.version` in [`app.config.js`](app.config.js), and it is the single source of truth. Bumping it on `main` fires [`.github/workflows/release.yml`](.github/workflows/release.yml), which opens a **draft** release at `v<version>` pre-filled with generated notes. Editing and publishing that draft creates the tag and updates the badges here — so the README never needs a manual version edit.
 
 ---
 
