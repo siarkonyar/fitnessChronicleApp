@@ -7,10 +7,10 @@ import { Feather } from "@expo/vector-icons";
 import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
 import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
-import { useWindowDimensions, View } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { z } from "zod";
-import { RoundedButton } from "../RoundButton";
 import ProgramDayCard from "../cards/ProgramDayCard";
+import SheetHeader from "../ui/SheetHeader";
 
 type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
 
@@ -64,26 +64,12 @@ const ProgramDetailsModal = forwardRef<
       // and take this sheet's portal down with it. "push" leaves it untouched.
       stackBehavior="push"
     >
-      <View className="flex-row items-start justify-between px-5 pb-4">
-        <View className="flex-1 mr-3">
-          <ThemedText className="text-xl font-bold" numberOfLines={1}>
-            {program.name.toUpperCase()}
-          </ThemedText>
-          <ThemedText
-            className="text-sm"
-            lightColor={Colors.light.mutedText}
-            darkColor={Colors.dark.mutedText}
-            numberOfLines={1}
-          >
-            {subtitle}
-          </ThemedText>
-        </View>
-        <RoundedButton
-          type="danger"
-          icon="x"
-          onPress={() => bottomSheetModalRef.current?.dismiss()}
-        />
-      </View>
+      <SheetHeader
+        icon="clipboard"
+        title={program.name.toUpperCase()}
+        subtitle={subtitle}
+        onClose={() => bottomSheetModalRef.current?.dismiss()}
+      />
 
       <BottomSheetScrollView
         showsVerticalScrollIndicator={false}

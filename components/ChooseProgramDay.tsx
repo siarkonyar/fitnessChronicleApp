@@ -8,9 +8,9 @@ import { TouchableOpacity, View, useColorScheme } from "react-native";
 import Card from "./Card";
 import ProgramDayCard from "./cards/ProgramDayCard";
 import GetExerciseCard from "./exercise/GetExerciseCard";
-import { RoundedButton } from "./RoundButton";
 import ThemedBottomSheetModal from "./ThemedBottomSheetModal";
 import IconBadge from "./ui/IconBadge";
+import SheetHeader from "./ui/SheetHeader";
 
 export default function ChooseProgramDay() {
   const theme = useColorScheme() ?? "light";
@@ -132,29 +132,12 @@ export default function ChooseProgramDay() {
       </Card>
 
       <ThemedBottomSheetModal ref={bottomSheetModalRef}>
-        <View className="flex-row items-center px-5 pb-4">
-          <IconBadge className="mr-3">
-            <Feather name="calendar" size={24} color={palette.highlight} />
-          </IconBadge>
-          <View className="flex-1 mr-3">
-            <ThemedText className="text-xl font-bold" numberOfLines={1}>
-              Pick a Day to Follow
-            </ThemedText>
-            <ThemedText
-              className="text-sm uppercase"
-              lightColor={Colors.light.mutedText}
-              darkColor={Colors.dark.mutedText}
-              numberOfLines={1}
-            >
-              {activeProgram?.name}
-            </ThemedText>
-          </View>
-          <RoundedButton
-            type="danger"
-            icon="x"
-            onPress={() => bottomSheetModalRef.current?.dismiss()}
-          />
-        </View>
+        <SheetHeader
+          icon="calendar"
+          title="Pick a Day to Follow"
+          subtitle={activeProgram?.name ?? ""}
+          onClose={() => bottomSheetModalRef.current?.dismiss()}
+        />
 
         <BottomSheetScrollView
           showsVerticalScrollIndicator={false}

@@ -13,7 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQuery } from "@tanstack/react-query";
 import React, { useRef, useState } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { z } from "zod";
 import Card from "../Card";
 import MiniExerciseCard from "../exercise/MiniExerciseCard";
@@ -22,6 +22,7 @@ import AddProgramExerciseModal from "../modals/AddProgramExerciseModal";
 import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
+import SheetHeader from "../ui/SheetHeader";
 import IconBadge from "../ui/IconBadge";
 
 type ProgramDay = z.infer<typeof ProgramDaySchema>;
@@ -219,26 +220,12 @@ export default function AddProgramDayCard({
         android_keyboardInputMode="adjustResize"
       >
         <BottomSheetScrollView keyboardShouldPersistTaps="handled">
-          <View className="flex-row items-center px-5 pb-4">
-            <View className="flex-1 mr-3">
-              <ThemedText className="text-xl font-bold" numberOfLines={1}>
-                Choose Label
-              </ThemedText>
-              <ThemedText
-                className="text-sm"
-                lightColor={Colors.light.mutedText}
-                darkColor={Colors.dark.mutedText}
-                numberOfLines={1}
-              >
-                Day {index + 1}
-              </ThemedText>
-            </View>
-            <RoundedButton
-              type="danger"
-              icon="x"
-              onPress={() => bottomSheetModalRef.current?.dismiss()}
-            />
-          </View>
+          <SheetHeader
+            icon="tag"
+            title="Choose Label"
+            subtitle={`Day ${index + 1}`}
+            onClose={() => bottomSheetModalRef.current?.dismiss()}
+          />
 
           <ThemedView className="p-4 mb-12">
             <LabelList labelOnPress={handleSelectLabel} />

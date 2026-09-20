@@ -24,9 +24,8 @@ import {
 import { Button } from "../Button";
 import LabelCard from "../cards/LabelCard";
 import LabelList from "../lists/LabelList";
-import { RoundedButton } from "../RoundButton";
 import { ThemedView } from "../ThemedView";
-import IconBadge from "../ui/IconBadge";
+import SheetHeader from "../ui/SheetHeader";
 
 // Represents an label assignment joined with its label data
 export type DateLabelAssignmentWithLabel = {
@@ -146,29 +145,12 @@ export default function DateLabelAssignment({
         android_keyboardInputMode="adjustResize"
       >
         <BottomSheetScrollView keyboardShouldPersistTaps="handled">
-          <View className="flex-row items-center px-5 pb-4">
-            <IconBadge className="mr-3">
-              <Feather name="tag" size={24} color={Colors[theme].highlight} />
-            </IconBadge>
-            <View className="flex-1 mr-3">
-              <ThemedText className="text-xl font-bold" numberOfLines={1}>
-                Choose Label
-              </ThemedText>
-              <ThemedText
-                className="text-sm"
-                lightColor={Colors.light.mutedText}
-                darkColor={Colors.dark.mutedText}
-                numberOfLines={1}
-              >
-                {formatDateAsString(selectedDate)}
-              </ThemedText>
-            </View>
-            <RoundedButton
-              type="danger"
-              icon="x"
-              onPress={() => bottomSheetModalRef.current?.dismiss()}
-            />
-          </View>
+          <SheetHeader
+            icon="tag"
+            title="Choose Label"
+            subtitle={formatDateAsString(selectedDate)}
+            onClose={() => bottomSheetModalRef.current?.dismiss()}
+          />
 
           {data ? (
             <View

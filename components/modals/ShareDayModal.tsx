@@ -26,8 +26,7 @@ import {
 import { captureRef } from "react-native-view-shot";
 import { z } from "zod";
 import LogoIcon from "../LogoIcon";
-import { RoundedButton } from "../RoundButton";
-import IconBadge from "../ui/IconBadge";
+import SheetHeader from "../ui/SheetHeader";
 
 type ExerciseLog = z.infer<typeof ExerciseLogWithIdSchema>;
 
@@ -100,32 +99,12 @@ const ShareDayModal = forwardRef<ShareDayModalRef, ShareDayModalProps>(
         ref={bottomSheetModalRef}
         maxDynamicContentSize={maxDynamicContentSize}
       >
-        <View className="flex-row items-center px-5 pb-4">
-          <IconBadge className="mr-3">
-            <Feather name="share-2" size={24} color={palette.highlight} />
-          </IconBadge>
-          <View className="flex-1 mr-3">
-            <Text
-              className="text-xl font-bold"
-              style={{ color: palette.text }}
-              numberOfLines={1}
-            >
-              Share your day
-            </Text>
-            <Text
-              className="text-sm uppercase"
-              style={{ color: palette.mutedText }}
-              numberOfLines={1}
-            >
-              {formattedDate}
-            </Text>
-          </View>
-          <RoundedButton
-            type="danger"
-            icon="x"
-            onPress={() => bottomSheetModalRef.current?.dismiss()}
-          />
-        </View>
+        <SheetHeader
+          icon="share-2"
+          title="Share your day"
+          subtitle={formattedDate}
+          onClose={() => bottomSheetModalRef.current?.dismiss()}
+        />
 
         <BottomSheetScrollView
           showsVerticalScrollIndicator={false}

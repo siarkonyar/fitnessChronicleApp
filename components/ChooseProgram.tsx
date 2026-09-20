@@ -7,8 +7,8 @@ import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import React, { useRef } from "react";
 import { Pressable, View, useColorScheme } from "react-native";
 import ProgramList from "./lists/ProgramList";
-import { RoundedButton } from "./RoundButton";
 import ThemedBottomSheetModal from "./ThemedBottomSheetModal";
+import SheetHeader from "./ui/SheetHeader";
 
 export default function ChooseProgram() {
   const theme = useColorScheme() ?? "light";
@@ -41,26 +41,12 @@ export default function ChooseProgram() {
 
       <ThemedBottomSheetModal ref={bottomSheetModalRef}>
         <BottomSheetScrollView showsVerticalScrollIndicator={false}>
-          <View className="flex-row items-center px-5 pb-4">
-            <View className="flex-1 mr-3">
-              <ThemedText className="text-xl font-bold" numberOfLines={1}>
-                Choose Program
-              </ThemedText>
-              <ThemedText
-                className="text-sm"
-                lightColor={Colors.light.mutedText}
-                darkColor={Colors.dark.mutedText}
-                numberOfLines={1}
-              >
-                Pick the plan you want to follow
-              </ThemedText>
-            </View>
-            <RoundedButton
-              type="danger"
-              icon="x"
-              onPress={() => bottomSheetModalRef.current?.dismiss()}
-            />
-          </View>
+          <SheetHeader
+            icon="calendar"
+            title="Choose Program"
+            subtitle="Pick the plan you want to follow"
+            onClose={() => bottomSheetModalRef.current?.dismiss()}
+          />
 
           {activeProgram ? (
             <View
