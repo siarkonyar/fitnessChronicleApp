@@ -3,6 +3,7 @@ import { Colors } from "@/constants/Colors";
 import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
+import { formatDateAsString } from "@/lib/dateUtils";
 import { logEvent } from "@/lib/analytics/client";
 import {
   asignLabelToDay,
@@ -25,6 +26,7 @@ import LabelCard from "../cards/LabelCard";
 import LabelList from "../lists/LabelList";
 import { RoundedButton } from "../RoundButton";
 import { ThemedView } from "../ThemedView";
+import IconBadge from "../ui/IconBadge";
 
 // Represents an label assignment joined with its label data
 export type DateLabelAssignmentWithLabel = {
@@ -145,6 +147,9 @@ export default function DateLabelAssignment({
       >
         <BottomSheetScrollView keyboardShouldPersistTaps="handled">
           <View className="flex-row items-center px-5 pb-4">
+            <IconBadge className="mr-3">
+              <Feather name="tag" size={24} color={Colors[theme].highlight} />
+            </IconBadge>
             <View className="flex-1 mr-3">
               <ThemedText className="text-xl font-bold" numberOfLines={1}>
                 Choose Label
@@ -155,7 +160,7 @@ export default function DateLabelAssignment({
                 darkColor={Colors.dark.mutedText}
                 numberOfLines={1}
               >
-                {selectedDate}
+                {formatDateAsString(selectedDate)}
               </ThemedText>
             </View>
             <RoundedButton
