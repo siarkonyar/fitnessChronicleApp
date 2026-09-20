@@ -124,7 +124,7 @@ export default function LabelList({
             />
           ))}
         </View>
-      ) : (
+      ) : isAddingLabel ? null : (
         <View className="items-center py-8">
           <Feather name="tag" size={32} color={Colors[theme].mutedText} />
           <ThemedText
