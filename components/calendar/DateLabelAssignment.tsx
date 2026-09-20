@@ -1,6 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
+import { InsideBottomSheetProvider } from "@/context/InsideBottomSheetContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { logEvent } from "@/lib/analytics/client";
 import {
@@ -20,8 +21,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   useColorScheme,
   useWindowDimensions,
@@ -168,13 +167,12 @@ export default function DateLabelAssignment({
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: Colors[theme].background }}
         handleIndicatorStyle={{ backgroundColor: Colors[theme].separator }}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
       >
-        <BottomSheetScrollView>
-          <KeyboardAvoidingView
-            keyboardVerticalOffset={-90}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            className="flex-1"
-          >
+        <InsideBottomSheetProvider>
+          <BottomSheetScrollView keyboardShouldPersistTaps="handled">
             <View className="flex-row items-center px-5 pb-4">
               <View className="flex-1 mr-3">
                 <ThemedText className="text-xl font-bold" numberOfLines={1}>
@@ -246,8 +244,8 @@ export default function DateLabelAssignment({
                 <LabelList labelOnPress={handleAsignLabelToDay} />
               </ThemedView>
             )}
-          </KeyboardAvoidingView>
-        </BottomSheetScrollView>
+          </BottomSheetScrollView>
+        </InsideBottomSheetProvider>
       </BottomSheetModal>
     </>
   );

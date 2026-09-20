@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { queryKeys } from "@/constants/QueryKeys";
+import { useInsideBottomSheet } from "@/context/InsideBottomSheetContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { logEvent } from "@/lib/analytics/client";
 import { addLabel, getAllLabels } from "@/lib/firebase/label";
@@ -7,7 +8,7 @@ import { LabelWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { Platform, ScrollView, Text, useColorScheme, View } from "react-native";
+import { ScrollView, Text, useColorScheme, View } from "react-native";
 import { z } from "zod";
 import { Button } from "../Button";
 import AddLabelCard from "../cards/AddLabelCard";
@@ -24,6 +25,7 @@ export default function LabelList({
   labelOnPress: (labelId: string) => void | Promise<void>;
 }) {
   const theme = useColorScheme() ?? "light";
+  const insideBottomSheet = useInsideBottomSheet();
 
   const [isAddingLabel, setIsAddingLabel] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -108,83 +110,87 @@ export default function LabelList({
     );
   }
 
+  const content = (
+    <View className="p-3">
+      {labels.length > 0 ? (
+        <View className="flex-col gap-3 mb-6">
+          {labels.map((item, index) => (
+            <LabelCard
+              label={item}
+              index={index}
+              key={item.id}
+              editable
+              onPress={labelOnPress}
+            />
+          ))}
+        </View>
+      ) : (
+        <View className="items-center py-8">
+          <Feather name="tag" size={32} color={Colors[theme].mutedText} />
+          <ThemedText
+            className="text-center text-base font-semibold mt-4"
+            lightColor={Colors.light.mutedText}
+            darkColor={Colors.dark.mutedText}
+          >
+            No labels yet
+          </ThemedText>
+          <ThemedText
+            className="text-center mt-1"
+            lightColor={Colors.light.mutedText}
+            darkColor={Colors.dark.mutedText}
+          >
+            Add a label to organize your training days.
+          </ThemedText>
+        </View>
+      )}
+
+      {isAddingLabel ? (
+        <ThemedView className="flex-row gap-2 items-center mb-2">
+          <ThemedView className="flex-1">
+            <AddLabelCard
+              label={label}
+              description={description}
+              setLabel={setLabel}
+              setDescription={setDescription}
+            />
+          </ThemedView>
+
+          <RoundedButton
+            icon="plus"
+            type="success"
+            onPress={handleAddLabel}
+            disabled={isAdding}
+          />
+
+          <RoundedButton
+            icon="x-octagon"
+            type="danger"
+            onPress={() => setIsAddingLabel(false)}
+          />
+        </ThemedView>
+      ) : null}
+      {isLabelEmpty ? (
+        <Text
+          className="text-xs"
+          style={{
+            color: Colors[theme].danger,
+          }}
+        >
+          Label or the description is empty!
+        </Text>
+      ) : null}
+    </View>
+  );
+
   return (
     <ThemedView>
-      <ScrollView
-        className="max-h-96"
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
-      >
-        <View className="p-3">
-          {labels.length > 0 ? (
-            <View className="flex-col gap-3 mb-6">
-              {labels.map((item, index) => (
-                <LabelCard
-                  label={item}
-                  index={index}
-                  key={item.id}
-                  editable
-                  onPress={labelOnPress}
-                />
-              ))}
-            </View>
-          ) : (
-            <View className="items-center py-8">
-              <Feather name="tag" size={32} color={Colors[theme].mutedText} />
-              <ThemedText
-                className="text-center text-base font-semibold mt-4"
-                lightColor={Colors.light.mutedText}
-                darkColor={Colors.dark.mutedText}
-              >
-                No labels yet
-              </ThemedText>
-              <ThemedText
-                className="text-center mt-1"
-                lightColor={Colors.light.mutedText}
-                darkColor={Colors.dark.mutedText}
-              >
-                Add a label to organize your training days.
-              </ThemedText>
-            </View>
-          )}
-
-          {isAddingLabel ? (
-            <ThemedView className="flex-row gap-2 items-center mb-2">
-              <ThemedView className="flex-1">
-                <AddLabelCard
-                  label={label}
-                  description={description}
-                  setLabel={setLabel}
-                  setDescription={setDescription}
-                />
-              </ThemedView>
-
-              <RoundedButton
-                icon="plus"
-                type="success"
-                onPress={handleAddLabel}
-                disabled={isAdding}
-              />
-
-              <RoundedButton
-                icon="x-octagon"
-                type="danger"
-                onPress={() => setIsAddingLabel(false)}
-              />
-            </ThemedView>
-          ) : null}
-          {isLabelEmpty ? (
-            <Text
-              className="text-xs"
-              style={{
-                color: Colors[theme].danger,
-              }}
-            >
-              Label or the description is empty!
-            </Text>
-          ) : null}
-        </View>
-      </ScrollView>
+      {insideBottomSheet ? (
+        content
+      ) : (
+        <ScrollView className="max-h-96" keyboardShouldPersistTaps="handled">
+          {content}
+        </ScrollView>
+      )}
       <Button
         className="mt-6"
         disabled={isAddingLabel}
