@@ -1,5 +1,7 @@
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
-import ShareDayModal from "@/components/modals/ShareDayModal";
+import ShareDayModal, {
+  ShareDayModalRef,
+} from "@/components/modals/ShareDayModal";
 import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -14,7 +16,7 @@ import {
 import { getExerciseLogByDate } from "@/lib/firebase/exercise";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { ActivityIndicator, View, useColorScheme } from "react-native";
 import { Button } from "../Button";
 import DateLabelAssignment from "./DateLabelAssignment";
@@ -26,7 +28,7 @@ export default function ExerciseLogByDate({
 }) {
   const theme = useColorScheme() ?? "light";
   const { handleQueryError } = useServerErrorHandler();
-  const [shareDayVisible, setShareDayVisible] = useState(false);
+  const shareDayModalRef = useRef<ShareDayModalRef>(null);
 
   const {
     data: logs,
@@ -133,7 +135,7 @@ export default function ExerciseLogByDate({
             <ThemedText type="subtitle">Exercise Log</ThemedText>
             <RoundedButton
               icon="upload"
-              onPress={() => setShareDayVisible(true)}
+              onPress={() => shareDayModalRef.current?.present()}
             />
           </View>
         ) : (
@@ -166,8 +168,7 @@ export default function ExerciseLogByDate({
 
       {logs && logs.length > 0 && (
         <ShareDayModal
-          visible={shareDayVisible}
-          onClose={() => setShareDayVisible(false)}
+          ref={shareDayModalRef}
           logs={logs}
           date={selectedDate}
         />

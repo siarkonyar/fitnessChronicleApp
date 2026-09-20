@@ -1,6 +1,8 @@
 import { Colors } from "@/constants/Colors";
+import { useInsideBottomSheet } from "@/context/InsideBottomSheetContext";
 import React from "react";
 import { useColorScheme, View } from "react-native";
+import { ThemedBottomSheetTextInput } from "../ThemedBottomSheetTextInput";
 import { ThemedTextInput } from "../ThemedTextInput";
 import { ThemedView } from "../ThemedView";
 import MutedCard from "./MuteCard";
@@ -21,6 +23,10 @@ export default function AddLabelCard({
   className,
 }: AddLabelCardProps) {
   const theme = useColorScheme() ?? "light";
+  const insideBottomSheet = useInsideBottomSheet();
+  const TextInput = insideBottomSheet
+    ? ThemedBottomSheetTextInput
+    : ThemedTextInput;
 
   return (
     <MutedCard
@@ -36,7 +42,7 @@ export default function AddLabelCard({
             borderColor: `${Colors[theme].highlight}30`,
           }}
         >
-          <ThemedTextInput
+          <TextInput
             value={label}
             onChangeText={(t) => {
               const chars = Array.from(t);
@@ -65,7 +71,7 @@ export default function AddLabelCard({
             className="text-center"
           />
         </View>
-        <ThemedTextInput
+        <TextInput
           value={description}
           onChangeText={setDescription}
           className="text-base font-medium flex-1 border-b border-gray-400"

@@ -6,7 +6,9 @@ import ChooseProgramDay from "@/components/ChooseProgramDay";
 import StreakDisplay from "@/components/display/StreakDisplay";
 import GetExerciseCard from "@/components/exercise/GetExerciseCard";
 import MyIcon from "@/components/LogoIcon";
-import ShareDayModal from "@/components/modals/ShareDayModal";
+import ShareDayModal, {
+  ShareDayModalRef,
+} from "@/components/modals/ShareDayModal";
 import { RoundedButton } from "@/components/RoundButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -18,7 +20,7 @@ import { timestampToMillis } from "@/lib/dateUtils";
 import { getExerciseLogByDate } from "@/lib/firebase/exercise";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -42,7 +44,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { handleQueryError } = useServerErrorHandler();
   const [refreshing, setRefreshing] = useState(false);
-  const [shareDayVisible, setShareDayVisible] = useState(false);
+  const shareDayModalRef = useRef<ShareDayModalRef>(null);
   const { activeProgram } = useActiveProgramContext();
 
   const {
@@ -152,7 +154,7 @@ export default function HomeScreen() {
               {logs && logs.length > 0 && (
                 <RoundedButton
                   icon="upload"
-                  onPress={() => setShareDayVisible(true)}
+                  onPress={() => shareDayModalRef.current?.present()}
                 />
               )}
             </View>
@@ -192,12 +194,7 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
       {logs && logs.length > 0 && (
-        <ShareDayModal
-          visible={shareDayVisible}
-          onClose={() => setShareDayVisible(false)}
-          logs={logs}
-          date={today}
-        />
+        <ShareDayModal ref={shareDayModalRef} logs={logs} date={today} />
       )}
     </SafeAreaView>
   );

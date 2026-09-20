@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
 import { queryKeys } from "@/constants/QueryKeys";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { getAllLabels } from "@/lib/firebase/label";
@@ -9,24 +10,19 @@ import {
   ProgramExerciseSchema,
 } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useRef, useState } from "react";
+import { TouchableOpacity } from "react-native";
 import { z } from "zod";
-import { Button } from "../Button";
 import Card from "../Card";
 import MiniExerciseCard from "../exercise/MiniExerciseCard";
-import UserLabelList from "../lists/UserLabelList";
+import LabelList from "../lists/LabelList";
 import AddProgramExerciseModal from "../modals/AddProgramExerciseModal";
 import { RoundedButton } from "../RoundButton";
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
+import SheetHeader from "../ui/SheetHeader";
 import IconBadge from "../ui/IconBadge";
 
 type ProgramDay = z.infer<typeof ProgramDaySchema>;
@@ -56,7 +52,9 @@ export default function AddProgramDayCard({
   className,
 }: AddProgramDayCardProps) {
   const theme = useColorScheme() ?? "light";
-  const [isLabelSelectionOpen, setIsLabelSelectionOpen] = useState(false);
+
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
   const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -84,7 +82,7 @@ export default function AddProgramDayCard({
     if (!found) return;
     const { id, ...label } = found;
     onSelectLabel(label);
-    setIsLabelSelectionOpen(false);
+    bottomSheetModalRef.current?.dismiss();
   }
 
   function handleOpenEdit(exerciseIndex: number) {
@@ -123,7 +121,7 @@ export default function AddProgramDayCard({
             ) : (
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => setIsLabelSelectionOpen(true)}
+                onPress={() => bottomSheetModalRef.current?.present()}
                 className="mr-4"
               >
                 <IconBadge>
@@ -168,7 +166,10 @@ export default function AddProgramDayCard({
             style={{ borderTopColor: Colors[theme].separator }}
           >
             {day.exercises?.map((exercise, exerciseIndex) => (
-              <ThemedView key={exerciseIndex} className="flex-row items-start gap-2">
+              <ThemedView
+                key={exerciseIndex}
+                className="flex-row items-start gap-2"
+              >
                 <MiniExerciseCard
                   exercise={exercise}
                   variant="program"
@@ -212,36 +213,25 @@ export default function AddProgramDayCard({
         )}
       </Card>
 
-      <Modal
-        visible={isLabelSelectionOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsLabelSelectionOpen(false)}
+      <ThemedBottomSheetModal
+        ref={bottomSheetModalRef}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
       >
-        <KeyboardAvoidingView
-          keyboardVerticalOffset={-90}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
-        >
-          <View className="flex-1 items-center justify-center px-4 bg-black backdrop-blur-sm">
-            <ThemedView className="w-11/12 max-w-md mx-4">
-              <ThemedText className="font-bold mb-2 text-center">
-                Choose a Label
-              </ThemedText>
-              <ThemedText className="opacity-70 text-center mb-6">
-                Day {index + 1}
-              </ThemedText>
-              <UserLabelList labelOnPress={handleSelectLabel} />
-              <Button
-                type="danger"
-                onPress={() => setIsLabelSelectionOpen(false)}
-              >
-                Cancel
-              </Button>
-            </ThemedView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        <BottomSheetScrollView keyboardShouldPersistTaps="handled">
+          <SheetHeader
+            icon="tag"
+            title="Choose Label"
+            subtitle={`Day ${index + 1}`}
+            onClose={() => bottomSheetModalRef.current?.dismiss()}
+          />
+
+          <ThemedView className="p-4 mb-12">
+            <LabelList labelOnPress={handleSelectLabel} />
+          </ThemedView>
+        </BottomSheetScrollView>
+      </ThemedBottomSheetModal>
 
       <AddProgramExerciseModal
         visible={isAddExerciseOpen}
