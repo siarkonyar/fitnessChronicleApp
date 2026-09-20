@@ -240,7 +240,7 @@ export default function DateLabelAssignment({
                 className="mb-4"
               />
             ) : (
-              <ThemedView className="p-4">
+              <ThemedView className="p-4 mb-12">
                 <LabelList labelOnPress={handleAsignLabelToDay} />
               </ThemedView>
             )}

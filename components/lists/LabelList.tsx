@@ -111,7 +111,7 @@ export default function LabelList({
   }
 
   const content = (
-    <View className="p-3">
+    <View className="mt-4">
       {labels.length > 0 ? (
         <View className="flex-col gap-3 mb-6">
           {labels.map((item, index) => (
@@ -191,11 +191,7 @@ export default function LabelList({
           {content}
         </ScrollView>
       )}
-      <Button
-        className="mt-6"
-        disabled={isAddingLabel}
-        onPress={handleAddLabelPress}
-      >
+      <Button disabled={isAddingLabel} onPress={handleAddLabelPress}>
         Add Label
       </Button>
     </ThemedView>
