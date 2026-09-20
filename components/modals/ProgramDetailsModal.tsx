@@ -4,19 +4,9 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ProgramWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
-import React, {
-  forwardRef,
-  useCallback,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-} from "react";
+import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { useWindowDimensions, View } from "react-native";
 import { z } from "zod";
 import { RoundedButton } from "../RoundButton";
@@ -56,19 +46,6 @@ const ProgramDetailsModal = forwardRef<
   const maxDynamicContentSize = height * 0.875;
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => [], []);
-
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-        pressBehavior="close"
-      />
-    ),
-    [],
-  );
 
   useImperativeHandle(
     ref,
@@ -79,18 +56,13 @@ const ProgramDetailsModal = forwardRef<
   );
 
   return (
-    <BottomSheetModal
+    <ThemedBottomSheetModal
       ref={bottomSheetModalRef}
-      index={0}
-      snapPoints={snapPoints}
       maxDynamicContentSize={maxDynamicContentSize}
       // This sheet is opened from inside another sheet (ChooseProgram). The
       // default "switch" behaviour minimizes that parent, which can unmount it
       // and take this sheet's portal down with it. "push" leaves it untouched.
       stackBehavior="push"
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: palette.background }}
-      handleIndicatorStyle={{ backgroundColor: palette.separator }}
     >
       <View className="flex-row items-start justify-between px-5 pb-4">
         <View className="flex-1 mr-3">
@@ -146,7 +118,7 @@ const ProgramDetailsModal = forwardRef<
           ))
         )}
       </BottomSheetScrollView>
-    </BottomSheetModal>
+    </ThemedBottomSheetModal>
   );
 });
 

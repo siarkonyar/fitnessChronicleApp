@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/Colors";
+import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
 import { queryKeys } from "@/constants/QueryKeys";
-import { InsideBottomSheetProvider } from "@/context/InsideBottomSheetContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { getAllLabels } from "@/lib/firebase/label";
 import {
@@ -10,15 +10,10 @@ import {
   ProgramExerciseSchema,
 } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQuery } from "@tanstack/react-query";
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { TouchableOpacity, useWindowDimensions, View } from "react-native";
+import React, { useRef, useState } from "react";
+import { TouchableOpacity, View } from "react-native";
 import { z } from "zod";
 import Card from "../Card";
 import MiniExerciseCard from "../exercise/MiniExerciseCard";
@@ -58,22 +53,6 @@ export default function AddProgramDayCard({
   const theme = useColorScheme() ?? "light";
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => [], []);
-
-  const { height } = useWindowDimensions();
-  const maxDynamicContentSize = height * 0.85;
-
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-        pressBehavior="close"
-      />
-    ),
-    [],
-  );
 
   const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -186,7 +165,10 @@ export default function AddProgramDayCard({
             style={{ borderTopColor: Colors[theme].separator }}
           >
             {day.exercises?.map((exercise, exerciseIndex) => (
-              <ThemedView key={exerciseIndex} className="flex-row items-start gap-2">
+              <ThemedView
+                key={exerciseIndex}
+                className="flex-row items-start gap-2"
+              >
                 <MiniExerciseCard
                   exercise={exercise}
                   variant="program"
@@ -230,47 +212,39 @@ export default function AddProgramDayCard({
         )}
       </Card>
 
-      <BottomSheetModal
+      <ThemedBottomSheetModal
         ref={bottomSheetModalRef}
-        index={0}
-        snapPoints={snapPoints}
-        maxDynamicContentSize={maxDynamicContentSize}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: Colors[theme].background }}
-        handleIndicatorStyle={{ backgroundColor: Colors[theme].separator }}
         keyboardBehavior="interactive"
         keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustResize"
       >
-        <InsideBottomSheetProvider>
-          <BottomSheetScrollView keyboardShouldPersistTaps="handled">
-            <View className="flex-row items-center px-5 pb-4">
-              <View className="flex-1 mr-3">
-                <ThemedText className="text-xl font-bold" numberOfLines={1}>
-                  Choose Label
-                </ThemedText>
-                <ThemedText
-                  className="text-sm"
-                  lightColor={Colors.light.mutedText}
-                  darkColor={Colors.dark.mutedText}
-                  numberOfLines={1}
-                >
-                  Day {index + 1}
-                </ThemedText>
-              </View>
-              <RoundedButton
-                type="danger"
-                icon="x"
-                onPress={() => bottomSheetModalRef.current?.dismiss()}
-              />
+        <BottomSheetScrollView keyboardShouldPersistTaps="handled">
+          <View className="flex-row items-center px-5 pb-4">
+            <View className="flex-1 mr-3">
+              <ThemedText className="text-xl font-bold" numberOfLines={1}>
+                Choose Label
+              </ThemedText>
+              <ThemedText
+                className="text-sm"
+                lightColor={Colors.light.mutedText}
+                darkColor={Colors.dark.mutedText}
+                numberOfLines={1}
+              >
+                Day {index + 1}
+              </ThemedText>
             </View>
+            <RoundedButton
+              type="danger"
+              icon="x"
+              onPress={() => bottomSheetModalRef.current?.dismiss()}
+            />
+          </View>
 
-            <ThemedView className="p-4">
-              <LabelList labelOnPress={handleSelectLabel} />
-            </ThemedView>
-          </BottomSheetScrollView>
-        </InsideBottomSheetProvider>
-      </BottomSheetModal>
+          <ThemedView className="p-4 mb-12">
+            <LabelList labelOnPress={handleSelectLabel} />
+          </ThemedView>
+        </BottomSheetScrollView>
+      </ThemedBottomSheetModal>
 
       <AddProgramExerciseModal
         visible={isAddExerciseOpen}

@@ -1,20 +1,12 @@
+import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { REP_RANGE_OPTIONS } from "@/constants/RepRanges";
 import { useColorScheme } from "@/hooks/useColorScheme.web";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
-import React, { useCallback, useMemo, useRef } from "react";
-import {
-  Keyboard,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-} from "react-native";
+import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
+import React, { useCallback, useRef } from "react";
+import { Keyboard, Text, TouchableOpacity } from "react-native";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 import Card from "../Card";
 import HorizontalWheelPicker from "../HorizontalWheelPicker";
@@ -56,13 +48,8 @@ export const AddSetCard: React.FC<Props> = ({
   onCopy,
 }) => {
   const theme = useColorScheme() ?? "light";
-  const { height } = useWindowDimensions();
-  const maxDynamicContentSize = height * 0.85;
   // Bottom sheet ref
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-
-  // Variables
-  const snapPoints = useMemo(() => [], []);
 
   const flatListItemWidth = 80;
 
@@ -153,18 +140,6 @@ export const AddSetCard: React.FC<Props> = ({
   const openDropdown = useCallback(() => {
     bottomSheetModalRef.current?.present();
   }, []);
-
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-        pressBehavior="close"
-      />
-    ),
-    [],
-  );
 
   return (
     <>
@@ -277,19 +252,7 @@ export const AddSetCard: React.FC<Props> = ({
       </Animated.View>
 
       {/* Bottom Sheet Modal */}
-      <BottomSheetModal
-        ref={bottomSheetModalRef}
-        index={0}
-        snapPoints={snapPoints}
-        maxDynamicContentSize={maxDynamicContentSize}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{
-          backgroundColor: Colors[theme].cardBackground,
-        }}
-        handleIndicatorStyle={{
-          backgroundColor: Colors[theme].separator,
-        }}
-      >
+      <ThemedBottomSheetModal ref={bottomSheetModalRef}>
         <ThemedText className="font-semibold text-center mb-6">
           Choose Set Type
         </ThemedText>
@@ -535,7 +498,7 @@ export const AddSetCard: React.FC<Props> = ({
             </TouchableOpacity>
           </ThemedView>
         </BottomSheetView>
-      </BottomSheetModal>
+      </ThemedBottomSheetModal>
     </>
   );
 };

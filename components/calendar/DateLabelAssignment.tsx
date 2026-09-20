@@ -1,7 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
+import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
 import { queryKeys } from "@/constants/QueryKeys";
-import { InsideBottomSheetProvider } from "@/context/InsideBottomSheetContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { logEvent } from "@/lib/analytics/client";
 import {
@@ -11,19 +11,13 @@ import {
 } from "@/lib/firebase/label";
 import { LabelSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   Pressable,
   useColorScheme,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { Button } from "../Button";
@@ -50,22 +44,6 @@ export default function DateLabelAssignment({
   const theme = useColorScheme() ?? "light";
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => [], []);
-
-  const { height } = useWindowDimensions();
-  const maxDynamicContentSize = height * 0.85;
-
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-        pressBehavior="close"
-      />
-    ),
-    [],
-  );
 
   const { handleMutationError, handleQueryError } = useServerErrorHandler();
   const queryClient = useQueryClient();
@@ -159,94 +137,86 @@ export default function DateLabelAssignment({
         )}
       </ThemedView>
 
-      <BottomSheetModal
+      <ThemedBottomSheetModal
         ref={bottomSheetModalRef}
-        index={0}
-        snapPoints={snapPoints}
-        maxDynamicContentSize={maxDynamicContentSize}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: Colors[theme].background }}
-        handleIndicatorStyle={{ backgroundColor: Colors[theme].separator }}
         keyboardBehavior="interactive"
         keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustResize"
       >
-        <InsideBottomSheetProvider>
-          <BottomSheetScrollView keyboardShouldPersistTaps="handled">
-            <View className="flex-row items-center px-5 pb-4">
-              <View className="flex-1 mr-3">
-                <ThemedText className="text-xl font-bold" numberOfLines={1}>
-                  Choose Label
-                </ThemedText>
+        <BottomSheetScrollView keyboardShouldPersistTaps="handled">
+          <View className="flex-row items-center px-5 pb-4">
+            <View className="flex-1 mr-3">
+              <ThemedText className="text-xl font-bold" numberOfLines={1}>
+                Choose Label
+              </ThemedText>
+              <ThemedText
+                className="text-sm"
+                lightColor={Colors.light.mutedText}
+                darkColor={Colors.dark.mutedText}
+                numberOfLines={1}
+              >
+                {selectedDate}
+              </ThemedText>
+            </View>
+            <RoundedButton
+              type="danger"
+              icon="x"
+              onPress={() => bottomSheetModalRef.current?.dismiss()}
+            />
+          </View>
+
+          {data ? (
+            <View
+              className="mx-5 mb-4 flex-row items-center justify-between rounded-2xl border px-4 py-3"
+              style={{
+                backgroundColor: `${Colors[theme].highlight}18`,
+                borderColor: `${Colors[theme].highlight}30`,
+              }}
+            >
+              <View className="mr-3 flex-1">
                 <ThemedText
-                  className="text-sm"
-                  lightColor={Colors.light.mutedText}
-                  darkColor={Colors.dark.mutedText}
+                  className="text-xs font-semibold uppercase"
+                  style={{ color: Colors[theme].highlight }}
                   numberOfLines={1}
                 >
-                  {selectedDate}
+                  Currently assigned
+                </ThemedText>
+                <ThemedText
+                  className="text-base font-bold uppercase"
+                  numberOfLines={1}
+                >
+                  {data.label} {data.description}
                 </ThemedText>
               </View>
-              <RoundedButton
-                type="danger"
-                icon="x"
-                onPress={() => bottomSheetModalRef.current?.dismiss()}
-              />
-            </View>
-
-            {data ? (
-              <View
-                className="mx-5 mb-4 flex-row items-center justify-between rounded-2xl border px-4 py-3"
-                style={{
-                  backgroundColor: `${Colors[theme].highlight}18`,
-                  borderColor: `${Colors[theme].highlight}30`,
-                }}
+              <Pressable
+                onPress={handleDeleteAssignedLabel}
+                className="flex-row items-center rounded-full px-3 py-2 active:opacity-70"
+                style={{ backgroundColor: `${Colors[theme].danger}1A` }}
               >
-                <View className="mr-3 flex-1">
-                  <ThemedText
-                    className="text-xs font-semibold uppercase"
-                    style={{ color: Colors[theme].highlight }}
-                    numberOfLines={1}
-                  >
-                    Currently assigned
-                  </ThemedText>
-                  <ThemedText
-                    className="text-base font-bold uppercase"
-                    numberOfLines={1}
-                  >
-                    {data.label} {data.description}
-                  </ThemedText>
-                </View>
-                <Pressable
-                  onPress={handleDeleteAssignedLabel}
-                  className="flex-row items-center rounded-full px-3 py-2 active:opacity-70"
-                  style={{ backgroundColor: `${Colors[theme].danger}1A` }}
+                <Feather name="x" size={14} color={Colors[theme].danger} />
+                <ThemedText
+                  className="ml-1 text-sm font-semibold"
+                  style={{ color: Colors[theme].danger }}
                 >
-                  <Feather name="x" size={14} color={Colors[theme].danger} />
-                  <ThemedText
-                    className="ml-1 text-sm font-semibold"
-                    style={{ color: Colors[theme].danger }}
-                  >
-                    Unselect
-                  </ThemedText>
-                </Pressable>
-              </View>
-            ) : null}
+                  Unselect
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : null}
 
-            {isAssigningLabel ? (
-              <ActivityIndicator
-                size="large"
-                color={Colors[theme].highlight}
-                className="mb-4"
-              />
-            ) : (
-              <ThemedView className="p-4 mb-12">
-                <LabelList labelOnPress={handleAsignLabelToDay} />
-              </ThemedView>
-            )}
-          </BottomSheetScrollView>
-        </InsideBottomSheetProvider>
-      </BottomSheetModal>
+          {isAssigningLabel ? (
+            <ActivityIndicator
+              size="large"
+              color={Colors[theme].highlight}
+              className="mb-4"
+            />
+          ) : (
+            <ThemedView className="p-4 mb-12">
+              <LabelList labelOnPress={handleAsignLabelToDay} />
+            </ThemedView>
+          )}
+        </BottomSheetScrollView>
+      </ThemedBottomSheetModal>
     </>
   );
 }

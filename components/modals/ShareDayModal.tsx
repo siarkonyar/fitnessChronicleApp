@@ -6,18 +6,12 @@ import { timestampToMillis } from "@/lib/dateUtils";
 import { getLabelAsignmentByDate } from "@/lib/firebase/label";
 import { ExerciseLogWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
-import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
+import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQuery } from "@tanstack/react-query";
 import React, {
   forwardRef,
-  useCallback,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -59,25 +53,12 @@ const ShareDayModal = forwardRef<ShareDayModalRef, ShareDayModalProps>(
     const maxDynamicContentSize = height * 0.92;
 
     const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-    const snapPoints = useMemo(() => [], []);
 
     useImperativeHandle(
       ref,
       () => ({
         present: () => bottomSheetModalRef.current?.present(),
       }),
-      [],
-    );
-
-    const renderBackdrop = useCallback(
-      (props: BottomSheetBackdropProps) => (
-        <BottomSheetBackdrop
-          {...props}
-          appearsOnIndex={0}
-          disappearsOnIndex={-1}
-          pressBehavior="close"
-        />
-      ),
       [],
     );
 
@@ -115,14 +96,9 @@ const ShareDayModal = forwardRef<ShareDayModalRef, ShareDayModalProps>(
     };
 
     return (
-      <BottomSheetModal
+      <ThemedBottomSheetModal
         ref={bottomSheetModalRef}
-        index={0}
-        snapPoints={snapPoints}
         maxDynamicContentSize={maxDynamicContentSize}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: palette.background }}
-        handleIndicatorStyle={{ backgroundColor: palette.separator }}
       >
         <View className="flex-row items-center px-5 pb-4">
           <IconBadge className="mr-3">
@@ -331,7 +307,7 @@ const ShareDayModal = forwardRef<ShareDayModalRef, ShareDayModalProps>(
             </Text>
           </TouchableOpacity>
         </BottomSheetScrollView>
-      </BottomSheetModal>
+      </ThemedBottomSheetModal>
     );
   },
 );
