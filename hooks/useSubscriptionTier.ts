@@ -11,7 +11,7 @@ export type SubscriptionTier = z.infer<typeof SubscriptionTierSchema>;
  * `SubscriptionTierSchema` so an unknown value fails loudly instead of
  * silently unlocking a paid tier.
  */
-const HARDCODED_TIER: SubscriptionTier = "free";
+const HARDCODED_TIER: SubscriptionTier = "max";
 
 export function useSubscriptionTier(): SubscriptionTier {
   return HARDCODED_TIER;

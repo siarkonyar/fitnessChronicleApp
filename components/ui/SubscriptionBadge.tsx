@@ -5,35 +5,22 @@ import {
   useSubscriptionTier,
 } from "@/hooks/useSubscriptionTier";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect } from "react";
+import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withTiming,
-} from "react-native-reanimated";
 
 const BADGE_WIDTH = 54;
-const SHEEN_WIDTH = 14;
-const SHEEN_START_X = -SHEEN_WIDTH * 2;
-const SWEEP_DURATION_MS = 850;
-const SWEEP_DELAY_MS = 2200;
 
 type TierColorToken = "mutedText" | "accentBlue" | "accentPurple";
 
 interface TierConfig {
   label: string;
   token: TierColorToken;
-  hasSheen: boolean;
 }
 
 const TIER_CONFIG: Record<SubscriptionTier, TierConfig> = {
-  free: { label: "FREE", token: "mutedText", hasSheen: false },
-  pro: { label: "PRO", token: "accentBlue", hasSheen: true },
-  max: { label: "MAX", token: "accentPurple", hasSheen: true },
+  free: { label: "FREE", token: "mutedText" },
+  pro: { label: "PRO", token: "accentBlue" },
+  max: { label: "MAX", token: "accentPurple" },
 };
 
 interface SubscriptionBadgeProps {
@@ -43,8 +30,7 @@ interface SubscriptionBadgeProps {
 
 /**
  * Rounded badge showing the user's subscription tier. One layout for all
- * three tiers — only the colour token changes. Paid tiers additionally get a
- * sheen that sweeps across the badge on a loop.
+ * three tiers — only the colour token changes.
  *
  * Reads the tier itself, so call sites just render `<SubscriptionBadge />`.
  */
@@ -54,29 +40,8 @@ export default function SubscriptionBadge({
 }: SubscriptionBadgeProps) {
   const theme = useColorScheme() ?? "light";
   const tier = useSubscriptionTier();
-  const { label, token, hasSheen } = TIER_CONFIG[tier];
+  const { label, token } = TIER_CONFIG[tier];
   const surface = Colors[theme][token];
-  const sheenX = useSharedValue(SHEEN_START_X);
-
-  useEffect(() => {
-    if (!hasSheen) return;
-
-    sheenX.value = withRepeat(
-      withDelay(
-        SWEEP_DELAY_MS,
-        withTiming(BADGE_WIDTH + SHEEN_WIDTH, {
-          duration: SWEEP_DURATION_MS,
-          easing: Easing.inOut(Easing.ease),
-        }),
-      ),
-      -1,
-      false,
-    );
-  }, [hasSheen, sheenX]);
-
-  const sheenStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: sheenX.value }, { rotate: "18deg" }],
-  }));
 
   return (
     <TouchableOpacity
@@ -97,16 +62,6 @@ export default function SubscriptionBadge({
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-
-      {hasSheen && (
-        <Animated.View
-          className="absolute -top-2 -bottom-2"
-          style={[
-            { width: SHEEN_WIDTH, backgroundColor: `${surface}6E` },
-            sheenStyle,
-          ]}
-        />
-      )}
 
       <Text
         className="text-xs font-['Inter-Bold'] tracking-[1px] py-[3px]"
