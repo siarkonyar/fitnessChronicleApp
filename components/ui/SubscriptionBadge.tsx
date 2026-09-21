@@ -1,6 +1,9 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { SubscriptionTier } from "@/hooks/useSubscriptionTier";
+import {
+  SubscriptionTier,
+  useSubscriptionTier,
+} from "@/hooks/useSubscriptionTier";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
@@ -34,7 +37,6 @@ const TIER_CONFIG: Record<SubscriptionTier, TierConfig> = {
 };
 
 interface SubscriptionBadgeProps {
-  tier: SubscriptionTier;
   onPress?: () => void;
   className?: string;
 }
@@ -43,13 +45,15 @@ interface SubscriptionBadgeProps {
  * Rounded badge showing the user's subscription tier. One layout for all
  * three tiers — only the colour token changes. Paid tiers additionally get a
  * sheen that sweeps across the badge on a loop.
+ *
+ * Reads the tier itself, so call sites just render `<SubscriptionBadge />`.
  */
 export default function SubscriptionBadge({
-  tier,
   onPress,
   className,
 }: SubscriptionBadgeProps) {
   const theme = useColorScheme() ?? "light";
+  const tier = useSubscriptionTier();
   const { label, token, hasSheen } = TIER_CONFIG[tier];
   const surface = Colors[theme][token];
   const sheenX = useSharedValue(SHEEN_START_X);

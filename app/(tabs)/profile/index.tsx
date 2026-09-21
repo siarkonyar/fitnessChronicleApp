@@ -4,6 +4,7 @@ import ProgramList from "@/components/lists/ProgramList";
 import UserLabelList from "@/components/lists/UserLabelList";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import SubscriptionBadge from "@/components/ui/SubscriptionBadge";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
 import { getUserProfile } from "@/lib/firebase/user";
@@ -104,6 +105,7 @@ export default function Profile() {
       </View>
 
       <Card className="mb-4">
+        <SubscriptionBadge className="absolute top-3 left-3 z-20" />
         <TouchableOpacity
           onPress={() => router.push("/settings")}
           style={{ position: "absolute", top: 12, right: 12, zIndex: 20 }}
