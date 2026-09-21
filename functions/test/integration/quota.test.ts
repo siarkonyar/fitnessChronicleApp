@@ -3,8 +3,9 @@ import {
   BUCKET_CAPACITY,
   FREE_TOKEN_CAP,
   MIN_HEADROOM_TOKENS,
-  PREMIUM_TOKEN_CAP,
+  PRO_TOKEN_CAP,
 } from "../../src/quota/caps.js";
+import { FREE_PERIOD_DAYS } from "../../src/quota/period.js";
 import {
   callCoach,
   callUsagePercentage,
@@ -13,6 +14,7 @@ import {
   createTestUser,
   readUsage,
   seedUsage,
+  waitForUsageToExist,
   validCoachRequest,
 } from "./setup.js";
 
@@ -47,13 +49,13 @@ describe("token quota", () => {
     expect(failure.details).toEqual({ reason: "quota" });
   });
 
-  it("refuses a premium user with less than the headroom left", async () => {
+  it("refuses a pro user with less than the headroom left", async () => {
     const { uid } = await createTestUser();
     // Inside MIN_HEADROOM_TOKENS of the cap, so still refused even though the
     // raw balance is positive — a turn's cost is unknown until it has run.
     await seedUsage(uid, {
-      tier: "premium",
-      tokensUsed: PREMIUM_TOKEN_CAP - (MIN_HEADROOM_TOKENS - 100),
+      tier: "pro",
+      tokensUsed: PRO_TOKEN_CAP - (MIN_HEADROOM_TOKENS - 100),
     });
 
     const failure = await catchCallableError(() =>
@@ -64,8 +66,17 @@ describe("token quota", () => {
     expect(failure.details).toEqual({ reason: "quota" });
   });
 
-  it("creates the usage document on a brand-new user's first contact", async () => {
+  it("creates the usage document for a user who has none", async () => {
     const { uid } = await createTestUser();
+
+    // onUserCreated now writes this document at signup, so the empty state has
+    // to be constructed rather than assumed. The lazy path being tested here
+    // is still the real guarantee, and still load-bearing twice over: every
+    // user who predates that trigger has no document, which is what lets this
+    // change ship without a migration, and onUserCreated deliberately swallows
+    // its own failures because this path will catch them.
+    expect(await waitForUsageToExist(uid)).toBe(true);
+    await clearUsage();
     expect(await readUsage(uid)).toBeUndefined();
 
     // Deliberately the usage endpoint rather than the coach. The document is
@@ -83,7 +94,7 @@ describe("token quota", () => {
     // Never inferred from the request. A client that could set this would have
     // no quota at all.
     expect(usage?.tier).toBe("free");
-    expect(usage?.periodStart).toBeDefined();
+    expect(usage?.periodEnd).toBeDefined();
   });
 
   it("spends one bucket token on a turn, even one it goes on to refuse", async () => {
@@ -112,9 +123,25 @@ describe("token quota", () => {
     // asserted 100, which was the 0/0 guard inside toPercentUsed showing
     // through — that guard is covered directly in test/unit/percent.test.ts
     // now, so it no longer rides on the free cap happening to be zero.
-    const result = (await callUsagePercentage()) as { data: unknown };
+    const result = (await callUsagePercentage()) as {
+      data: { percentUsed: number; resetsAt: string; tier: string };
+    };
 
-    expect(result.data).toBe(0);
+    expect(result.data.percentUsed).toBe(0);
+
+    // The other two fields of the contract, asserted here because this is the
+    // only test that sees the wire payload rather than the Firestore document.
+    // tier ships today always saying "free"; it exists so that adding paid
+    // tiers later does not change the response shape under installed apps.
+    expect(result.data.tier).toBe("free");
+
+    // A free user's first period opens on this very call, so the reset date is
+    // roughly FREE_PERIOD_DAYS out. Asserted as a range, not an instant: the
+    // emulator's clock and ours are not the same millisecond.
+    const daysAway =
+      (Date.parse(result.data.resetsAt) - Date.now()) / (24 * 60 * 60 * 1000);
+    expect(daysAway).toBeGreaterThan(FREE_PERIOD_DAYS - 1);
+    expect(daysAway).toBeLessThanOrEqual(FREE_PERIOD_DAYS);
   });
 
   it("does not spend a bucket token when only reading the percentage", async () => {

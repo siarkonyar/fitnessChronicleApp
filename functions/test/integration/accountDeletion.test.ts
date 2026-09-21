@@ -5,6 +5,7 @@ import {
   deleteAuthUser,
   readUsage,
   seedUsage,
+  waitForUsageToExist,
 } from "./setup.js";
 
 /**
@@ -30,6 +31,7 @@ const waitForUsageToBeDeleted = async (uid: string): Promise<boolean> => {
   return false;
 };
 
+
 /**
  * The last step of account deletion.
  *
@@ -44,6 +46,12 @@ describe("aiUsage cleanup on account deletion", () => {
     // Arrange — a user who has actually spent tokens, so the document exists
     await clearUsage();
     const { uid } = await createTestUser();
+    // Wait for onUserCreated before touching anything. Both triggers are
+    // background functions with no ordering between them, so deleting while
+    // the signup write is still in flight lets it land afterwards and
+    // resurrect the document — a race the test would create, not one a real
+    // user reaches by signing up and deleting seconds later.
+    expect(await waitForUsageToExist(uid)).toBe(true);
     await seedUsage(uid, { tier: "free", tokensUsed: 5_000 });
     expect(await readUsage(uid)).toBeDefined();
 
@@ -61,6 +69,9 @@ describe("aiUsage cleanup on account deletion", () => {
     await clearUsage();
     const { uid: deletedUid } = await createTestUser();
     const { uid: survivingUid } = await createTestUser();
+    // Same reason as above: let both signup triggers land before deleting.
+    expect(await waitForUsageToExist(deletedUid)).toBe(true);
+    expect(await waitForUsageToExist(survivingUid)).toBe(true);
     await seedUsage(deletedUid, { tier: "free", tokensUsed: 5_000 });
     await seedUsage(survivingUid, { tier: "free", tokensUsed: 1_234 });
 
@@ -72,12 +83,20 @@ describe("aiUsage cleanup on account deletion", () => {
     expect(await readUsage(survivingUid)).toMatchObject({ tokensUsed: 1_234 });
   });
 
-  it("succeeds for a user who never used the coach", async () => {
-    // Arrange — no seedUsage: checkQuota never ran, so there is no document.
-    // Firestore deletes silently in that case, and the trigger must not treat
-    // it as an error and retry for seven days.
+  it("succeeds for a user with no usage document", async () => {
+    // Arrange — every account now gets a document from onUserCreated, so the
+    // no-document case has to be constructed rather than assumed. It is still
+    // reachable in production: onUserCreated swallows its failures precisely
+    // because the lazy path in checkQuota is the real guarantee, so a user
+    // whose signup write failed and who never opened the coach has none.
+    //
+    // Waiting for the trigger first, THEN clearing, is what makes this
+    // deterministic — clearing straight after createTestUser would race a
+    // cold-starting trigger that recreates the document a second later.
     await clearUsage();
     const { uid } = await createTestUser();
+    expect(await waitForUsageToExist(uid)).toBe(true);
+    await clearUsage();
     expect(await readUsage(uid)).toBeUndefined();
 
     // Act + Assert — the delete resolving is the whole assertion

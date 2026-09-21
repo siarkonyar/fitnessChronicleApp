@@ -4,12 +4,11 @@ import { trySpend, type BucketState } from "./bucket.js";
 import {
   BUCKET_CAPACITY,
   MIN_HEADROOM_TOKENS,
-  PERIOD_DAYS,
   capForTier,
+  parseTier,
   type Tier,
 } from "./caps.js";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+import { decidePeriod } from "./period.js";
 
 /**
  * Why a turn was refused.
@@ -26,6 +25,15 @@ export interface QuotaState {
   tier: Tier;
   /** 0-100, rounded. The only usage figure the app is ever told. */
   percentUsed: number;
+  /**
+   * When this allowance next resets, or null when nothing has set a period.
+   *
+   * Null is reachable only for a paid document whose webhook has not arrived
+   * yet — a free period is always opened on read, so free users always have a
+   * date. The app must render the absence rather than substitute a guess: a
+   * made-up date is a promise we have not been told we can keep.
+   */
+  resetsAt: Date | null;
 }
 
 export interface QuotaDecision extends QuotaState {
@@ -73,9 +81,6 @@ export const toPercentUsed = (tokensUsed: number, cap: number): number => {
 
   return Math.min(100, Math.round((tokensUsed / spendable) * 100));
 };
-
-const isExpired = (periodStart: Timestamp, now: Date): boolean =>
-  now.getTime() - periodStart.toMillis() >= PERIOD_DAYS * MS_PER_DAY;
 
 /**
  * Reads the bucket out of a stored doc, defaulting a missing one to FULL.
@@ -141,31 +146,40 @@ export const checkQuota = async (
     const snapshot = await tx.get(ref);
     const data = snapshot.data();
 
-    // Anything other than exactly "premium" falls to "free". A corrupted or
+    // Anything unrecognised falls to "free" — see parseTier. A corrupted or
     // missing tier field can only ever cost a user allowance, never grant one.
-    const tier: Tier = data?.tier === "premium" ? "premium" : "free";
-    const periodStart = data?.periodStart as Timestamp | undefined;
+    const tier: Tier = parseTier(data?.tier);
+    const storedPeriodEnd = data?.periodEnd as Timestamp | undefined;
 
-    // No document yet, or the period has rolled over.
-    const isNewPeriod =
-      !snapshot.exists || !periodStart || isExpired(periodStart, now);
+    // Free periods renew themselves; paid ones wait for RevenueCat. The whole
+    // rule lives in period.ts, where it is unit-testable without an emulator.
+    const period = decidePeriod(tier, storedPeriodEnd?.toMillis(), nowMs);
 
-    const tokensUsed = isNewPeriod
+    const tokensUsed = period.shouldReset
       ? 0
       : typeof data?.tokensUsed === "number"
         ? data.tokensUsed
         : 0;
 
-    const periodFields = isNewPeriod
-      ? { tokensUsed: 0, periodStart: Timestamp.fromDate(now), tier }
+    // Writing `tier` back on a free rollover is how a brand-new document gets
+    // one, and it quietly repairs a value parseTier had to fall back on. It
+    // can never clobber a paid tier, because a paid tier never rolls here.
+    const periodFields = period.shouldReset
+      ? {
+          tokensUsed: 0,
+          periodEnd: Timestamp.fromMillis(period.nextPeriodEnd),
+          tier,
+        }
       : {};
+
+    const periodEndMs = period.nextPeriodEnd ?? storedPeriodEnd?.toMillis();
 
     // Read-only callers stop here. They still create the document on first
     // contact, so the usage bar has something to read, but they never touch
     // the bucket.
     if (!spendRateToken) {
-      if (isNewPeriod) tx.set(ref, periodFields, { merge: true });
-      return { tokensUsed, tier, rateLimited: false };
+      if (period.shouldReset) tx.set(ref, periodFields, { merge: true });
+      return { tokensUsed, tier, periodEndMs, rateLimited: false };
     }
 
     const spend = trySpend(readBucket(data, nowMs), nowMs);
@@ -176,7 +190,7 @@ export const checkQuota = async (
       // the spammer control of our Firestore bill. Nothing is lost by skipping
       // it: refill() is a pure function of the stored state and the clock, so
       // the next call recomputes the identical answer.
-      return { tokensUsed, tier, rateLimited: true };
+      return { tokensUsed, tier, periodEndMs, rateLimited: true };
     }
 
     tx.set(
@@ -189,7 +203,7 @@ export const checkQuota = async (
       { merge: true },
     );
 
-    return { tokensUsed, tier, rateLimited: false };
+    return { tokensUsed, tier, periodEndMs, rateLimited: false };
   });
 
   const cap = capForTier(state.tier);
@@ -213,5 +227,7 @@ export const checkQuota = async (
     cap,
     tier: state.tier,
     percentUsed: toPercentUsed(state.tokensUsed, cap),
+    resetsAt:
+      state.periodEndMs === undefined ? null : new Date(state.periodEndMs),
   };
 };

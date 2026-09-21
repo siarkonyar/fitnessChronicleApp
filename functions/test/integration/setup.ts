@@ -142,26 +142,31 @@ export const callUsagePercentage = (): Promise<unknown> =>
 export interface UsageSeed {
   tokensUsed?: number;
   tier?: Tier;
-  periodStart?: Date;
+  periodEnd?: Date;
   rateTokens?: number;
   rateLastRefill?: number;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 /**
  * Writes an aiUsage document straight into the emulator.
  *
- * periodStart defaults to now for a reason: a seed without it looks to
- * checkQuota like a brand-new period, which resets tokensUsed to 0 and
- * silently undoes whatever the test was setting up.
+ * periodEnd defaults to the FUTURE for a reason: a seed whose period has
+ * already ended looks to checkQuota like a rollover, which resets tokensUsed
+ * to 0 and silently undoes whatever the test was setting up. Pass an explicit
+ * past date to exercise the rollover on purpose.
  */
 export const seedUsage = async (
   uid: string,
-  { periodStart, ...fields }: UsageSeed,
+  { periodEnd, ...fields }: UsageSeed,
 ): Promise<void> => {
   await usageDoc(uid).set(
     {
       ...fields,
-      periodStart: Timestamp.fromDate(periodStart ?? new Date()),
+      periodEnd: Timestamp.fromDate(
+        periodEnd ?? new Date(Date.now() + 30 * MS_PER_DAY),
+      ),
     },
     { merge: true },
   );
@@ -198,6 +203,27 @@ const assertSafeToDelete = (): void => {
 };
 
 /** Wipes aiUsage between suites so one test's seed cannot leak into another. */
+/**
+ * Waits for onUserCreated to write a new account's usage document.
+ *
+ * Needed by any test that cares about the document's state right after
+ * signup: the trigger is a background function that can cold-start seconds
+ * later, so acting immediately races it.
+ */
+export const waitForUsageToExist = async (
+  uid: string,
+  timeoutMs = 15_000,
+): Promise<boolean> => {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if ((await readUsage(uid)) !== undefined) return true;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  return false;
+};
+
 export const clearUsage = async (): Promise<void> => {
   assertSafeToDelete();
 
