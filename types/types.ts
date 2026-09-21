@@ -137,6 +137,8 @@ export const UserProfileSchema = z.object({
   gender: GenderSchema.optional(),
 });
 
+export const SubscriptionTierSchema = z.enum(["free", "pro", "max"]);
+
 export const ChatRoleSchema = z.enum(["user", "model"]);
 
 export const ChatMessageSchema = z.object({
