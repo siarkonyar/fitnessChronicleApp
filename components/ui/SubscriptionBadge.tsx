@@ -9,18 +9,19 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
 const BADGE_WIDTH = 54;
+const BORDER_ALPHA = "80";
 
-type TierColorToken = "mutedText" | "accentBlue" | "accentPurple";
+type ColorToken = "mutedText" | "highlight" | "secondary";
 
 interface TierConfig {
   label: string;
-  token: TierColorToken;
+  accentToken: ColorToken;
 }
 
 const TIER_CONFIG: Record<SubscriptionTier, TierConfig> = {
-  free: { label: "FREE", token: "mutedText" },
-  pro: { label: "PRO", token: "accentBlue" },
-  max: { label: "MAX", token: "accentPurple" },
+  free: { label: "FREE", accentToken: "mutedText" },
+  pro: { label: "PRO", accentToken: "secondary" },
+  max: { label: "MAX", accentToken: "highlight" },
 };
 
 interface SubscriptionBadgeProps {
@@ -30,7 +31,7 @@ interface SubscriptionBadgeProps {
 
 /**
  * Rounded badge showing the user's subscription tier. One layout for all
- * three tiers — only the colour token changes.
+ * three tiers — only the colour changes.
  *
  * Reads the tier itself, so call sites just render `<SubscriptionBadge />`.
  */
@@ -40,8 +41,8 @@ export default function SubscriptionBadge({
 }: SubscriptionBadgeProps) {
   const theme = useColorScheme() ?? "light";
   const tier = useSubscriptionTier();
-  const { label, token } = TIER_CONFIG[tier];
-  const surface = Colors[theme][token];
+  const { label, accentToken } = TIER_CONFIG[tier];
+  const accent = Colors[theme][accentToken];
 
   return (
     <TouchableOpacity
@@ -53,11 +54,11 @@ export default function SubscriptionBadge({
       style={{
         width: BADGE_WIDTH,
         borderWidth: 1,
-        borderColor: `${surface}80`,
+        borderColor: `${accent}${BORDER_ALPHA}`,
       }}
     >
       <LinearGradient
-        colors={[`${surface}59`, `${surface}1F`]}
+        colors={[`${accent}59`, `${accent}1F`]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -65,7 +66,7 @@ export default function SubscriptionBadge({
 
       <Text
         className="text-xs font-['Inter-Bold'] tracking-[1px] py-[3px]"
-        style={{ color: surface }}
+        style={{ color: accent }}
       >
         {label}
       </Text>
