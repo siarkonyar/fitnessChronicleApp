@@ -143,6 +143,11 @@ export interface UsageSeed {
   tokensUsed?: number;
   tier?: Tier;
   periodEnd?: Date;
+  /**
+   * Paid only. Omitted means "no entitlement", which is what free users have.
+   * Its day-of-month is also the day a paid allowance refills on.
+   */
+  entitlementExpiresAt?: Date;
   rateTokens?: number;
   rateLastRefill?: number;
 }
@@ -156,10 +161,15 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
  * already ended looks to checkQuota like a rollover, which resets tokensUsed
  * to 0 and silently undoes whatever the test was setting up. Pass an explicit
  * past date to exercise the rollover on purpose.
+ *
+ * entitlementExpiresAt has NO default, deliberately. Defaulting it would give
+ * every seeded `tier: "pro"` document a working entitlement, and a test that
+ * means to check the corrupt no-entitlement case would silently stop checking
+ * it. A paid seed that wants to roll has to say so.
  */
 export const seedUsage = async (
   uid: string,
-  { periodEnd, ...fields }: UsageSeed,
+  { periodEnd, entitlementExpiresAt, ...fields }: UsageSeed,
 ): Promise<void> => {
   await usageDoc(uid).set(
     {
@@ -167,6 +177,9 @@ export const seedUsage = async (
       periodEnd: Timestamp.fromDate(
         periodEnd ?? new Date(Date.now() + 30 * MS_PER_DAY),
       ),
+      ...(entitlementExpiresAt && {
+        entitlementExpiresAt: Timestamp.fromDate(entitlementExpiresAt),
+      }),
     },
     { merge: true },
   );

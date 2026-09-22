@@ -157,3 +157,130 @@ describe("token quota", () => {
     expect((await readUsage(uid))?.rateTokens).toBeUndefined();
   });
 });
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * The allowance clock and the access clock, through the real callable.
+ *
+ * The rules themselves are proved in test/unit/period.test.ts, which runs in
+ * milliseconds and covers far more cases than is sensible here. What these two
+ * cannot prove, and this suite can, is that checkQuota actually READS
+ * entitlementExpiresAt off the document. A decidePeriod that is perfect and
+ * never handed the field would pass every unit test and still refill nobody.
+ *
+ * Nothing writes these fields in production yet — RevenueCat does, once the
+ * webhook exists — so both are seeded by hand.
+ */
+describe("paid allowance periods", () => {
+  beforeEach(async () => {
+    await clearUsage();
+  });
+
+  it("refills a paid allowance inside a still-valid entitlement", async () => {
+    // The annual-subscriber case: one long entitlement, sliced into months.
+    const { uid } = await createTestUser();
+    expect(await waitForUsageToExist(uid)).toBe(true);
+
+    await seedUsage(uid, {
+      tier: "pro",
+      tokensUsed: 1_000_000,
+      // This month's slice ended yesterday...
+      periodEnd: new Date(Date.now() - MS_PER_DAY),
+      // ...but the subscription itself runs for most of another year.
+      entitlementExpiresAt: new Date(Date.now() + 300 * MS_PER_DAY),
+    });
+
+    await callUsagePercentage();
+
+    const usage = await readUsage(uid);
+    expect(usage?.tokensUsed).toBe(0);
+    // Still pro. A refill is not a downgrade.
+    expect(usage?.tier).toBe("pro");
+    expect(usage?.periodEnd.toMillis()).toBeGreaterThan(Date.now());
+  });
+
+  it("does not refill a paid allowance once the entitlement has expired", async () => {
+    // A churned subscriber, or one whose RENEWAL webhook has not landed. Only
+    // RevenueCat knows which, so the allowance simply stops.
+    const { uid } = await createTestUser();
+    expect(await waitForUsageToExist(uid)).toBe(true);
+
+    await seedUsage(uid, {
+      tier: "pro",
+      tokensUsed: 1_000_000,
+      periodEnd: new Date(Date.now() - 2 * MS_PER_DAY),
+      entitlementExpiresAt: new Date(Date.now() - MS_PER_DAY),
+    });
+
+    await callUsagePercentage();
+
+    expect((await readUsage(uid))?.tokensUsed).toBe(1_000_000);
+  });
+
+  it("does not refill a paid document that has no entitlement at all", async () => {
+    // Corrupt state — the webhook writes tier and entitlement together. The
+    // seed helper deliberately has no default for entitlementExpiresAt, so
+    // this is what every other `tier: "pro"` seed in the suite looks like.
+    const { uid } = await createTestUser();
+    expect(await waitForUsageToExist(uid)).toBe(true);
+
+    await seedUsage(uid, {
+      tier: "pro",
+      tokensUsed: 1_000_000,
+      periodEnd: new Date(Date.now() - MS_PER_DAY),
+    });
+
+    await callUsagePercentage();
+
+    expect((await readUsage(uid))?.tokensUsed).toBe(1_000_000);
+  });
+
+  it("never pushes a refilled period past the entitlement", async () => {
+    // The tail of a subscription: a 30-day slice would overshoot the three
+    // days of access that remain. The allowance clock must not outlive the
+    // access clock — that conflation is the whole reason these are two fields.
+    const { uid } = await createTestUser();
+    expect(await waitForUsageToExist(uid)).toBe(true);
+
+    const entitlementExpiresAt = new Date(Date.now() + 3 * MS_PER_DAY);
+
+    await seedUsage(uid, {
+      tier: "pro",
+      tokensUsed: 1_000_000,
+      periodEnd: new Date(Date.now() - MS_PER_DAY),
+      entitlementExpiresAt,
+    });
+
+    await callUsagePercentage();
+
+    const usage = await readUsage(uid);
+    expect(usage?.tokensUsed).toBe(0);
+    expect(usage?.periodEnd.toMillis()).toBe(entitlementExpiresAt.getTime());
+  });
+
+  it("leaves a healthy monthly subscriber's allowance alone", async () => {
+    // The regression. A monthly plan's allowance window IS its billing window,
+    // so periodEnd and entitlementExpiresAt are the same instant and the timer
+    // can never fire while the entitlement is valid. A flat 30-day paid period
+    // would have ended a day early, refilled here, and let the RENEWAL webhook
+    // refill again the next day — two full allowances every month.
+    const { uid } = await createTestUser();
+    expect(await waitForUsageToExist(uid)).toBe(true);
+
+    const renewsAt = new Date(Date.now() + MS_PER_DAY);
+
+    await seedUsage(uid, {
+      tier: "pro",
+      tokensUsed: 1_000_000,
+      periodEnd: renewsAt,
+      entitlementExpiresAt: renewsAt,
+    });
+
+    await callUsagePercentage();
+
+    const usage = await readUsage(uid);
+    expect(usage?.tokensUsed).toBe(1_000_000);
+    expect(usage?.periodEnd.toMillis()).toBe(renewsAt.getTime());
+  });
+});

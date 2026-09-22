@@ -151,9 +151,26 @@ export const checkQuota = async (
     const tier: Tier = parseTier(data?.tier);
     const storedPeriodEnd = data?.periodEnd as Timestamp | undefined;
 
-    // Free periods renew themselves; paid ones wait for RevenueCat. The whole
-    // rule lives in period.ts, where it is unit-testable without an emulator.
-    const period = decidePeriod(tier, storedPeriodEnd?.toMillis(), nowMs);
+    // The paid half of the document. Both are written only by RevenueCat, so
+    // both are absent for every user today and for every free user forever.
+    //
+    // entitlementExpiresAt is the ACCESS clock, deliberately separate from the
+    // periodEnd allowance clock above — see the header of period.ts for why
+    // one field could not safely be both. Its day-of-month also anchors a paid
+    // user's monthly refill, which is why no separate anchor field is read.
+    const storedEntitlementExpiresAt = data?.entitlementExpiresAt as
+      | Timestamp
+      | undefined;
+
+    // Free periods renew themselves; paid ones refill only inside a window
+    // RevenueCat has vouched for, and never outlive it. The whole rule lives
+    // in period.ts, where it is unit-testable without an emulator.
+    const period = decidePeriod({
+      tier,
+      periodEndMs: storedPeriodEnd?.toMillis(),
+      entitlementExpiresAtMs: storedEntitlementExpiresAt?.toMillis(),
+      nowMs,
+    });
 
     const tokensUsed = period.shouldReset
       ? 0
@@ -161,9 +178,13 @@ export const checkQuota = async (
         ? data.tokensUsed
         : 0;
 
-    // Writing `tier` back on a free rollover is how a brand-new document gets
-    // one, and it quietly repairs a value parseTier had to fall back on. It
-    // can never clobber a paid tier, because a paid tier never rolls here.
+    // Writing `tier` back on a rollover is how a brand-new document gets one,
+    // and it quietly repairs a value parseTier had to fall back on. It cannot
+    // clobber a paid tier: `tier` here IS the stored tier as parseTier read
+    // it, so a rolling pro user is written back as pro.
+    //
+    // Note what is NOT written. entitlementExpiresAt does not appear here and
+    // never should — it is RevenueCat's to set, and this is a timer.
     const periodFields = period.shouldReset
       ? {
           tokensUsed: 0,
