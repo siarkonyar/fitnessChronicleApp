@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
+import { logger } from "firebase-functions";
 import { aiUsageDoc, db } from "../data/firestore.js";
 import { trySpend, type BucketState } from "./bucket.js";
 import {
@@ -151,6 +152,23 @@ export const checkQuota = async (
     // missing tier field can only ever cost a user allowance, never grant one.
     const storedTier: Tier = parseTier(data?.tier);
     const storedPeriodEnd = data?.periodEnd as Timestamp | undefined;
+
+    // parseTier falling back is the right DIRECTION — a bad value can only
+    // cost allowance, never grant it — but doing so in silence is the wrong
+    // VOLUME. The realistic cause is a new product mapped to an entitlement in
+    // the RevenueCat dashboard before the server that knows the word is
+    // deployed, which silently downgrades a paying customer with no trace
+    // anywhere. This line is the only signal that would tell you.
+    //
+    // A mismatch means parseTier changed the value, i.e. did not recognise it.
+    // May log more than once for one call, since a contended transaction
+    // re-runs this callback; a rare duplicate warning is worth the simplicity.
+    if (data?.tier !== undefined && data.tier !== storedTier) {
+      logger.warn("Unrecognised tier on aiUsage document, treating as free", {
+        uid,
+        storedValue: data.tier,
+      });
+    }
 
     // The paid half of the document. Both are written only by RevenueCat, so
     // both are absent for every user today and for every free user forever.
