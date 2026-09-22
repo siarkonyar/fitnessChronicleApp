@@ -258,7 +258,11 @@ export const chatWithCoach = onCall(
  * alone until the RevenueCat deploy makes that cleanup worth doing anyway.
  */
 export const getUsagePercentage = onCall(
-  { region: REGION, secrets: [geminiApiKey], maxInstances: 10 },
+  // No `secrets` binding, unlike chatWithCoach above, and the asymmetry is
+  // deliberate rather than an oversight: this callable only reads Firestore and
+  // never reaches Gemini, so mounting the key here would hand it to a function
+  // with no use for it.
+  { region: REGION, maxInstances: 10 },
   async (request: CallableRequest): Promise<AiUsageResponse> => {
     const uid = request.auth?.uid;
     if (!uid) {
