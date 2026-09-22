@@ -25,8 +25,8 @@ import { initializeApp } from "firebase-admin/app";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import {
   MIN_HEADROOM_TOKENS,
-  PERIOD_DAYS,
   capForTier,
+  parseTier,
   type Tier,
 } from "../src/quota/caps.js";
 
@@ -44,24 +44,24 @@ import {
  */
 const BLENDED_USD_PER_MILLION_TOKENS = 0.4;
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 const TOP_USER_COUNT = 10;
 
 interface UsageRow {
   readonly uid: string;
   readonly tokensUsed: number;
   readonly tier: Tier;
-  readonly periodStart: Date | null;
+  readonly periodEnd: Date | null;
 }
 
 /**
  * Narrows one raw document, or returns null.
  *
- * Mirrors how checkQuota reads the same fields: anything that is not exactly
- * "premium" is free, and a missing or non-numeric tokensUsed is zero. A doc is
- * rejected only when it has no usable shape at all, and rejections are counted
- * and reported rather than silently dropped.
+ * Mirrors how checkQuota reads the same fields — literally, in the case of the
+ * tier, which goes through the same parseTier so an unrecognised value is
+ * counted as free here exactly as it is enforced as free there. A missing or
+ * non-numeric tokensUsed is zero. A doc is rejected only when it has no usable
+ * shape at all, and rejections are counted and reported rather than silently
+ * dropped.
  */
 const toUsageRow = (
   uid: string,
@@ -69,14 +69,13 @@ const toUsageRow = (
 ): UsageRow | null => {
   if (!data) return null;
 
-  const rawPeriodStart: unknown = data.periodStart;
+  const rawPeriodEnd: unknown = data.periodEnd;
 
   return {
     uid,
     tokensUsed: typeof data.tokensUsed === "number" ? data.tokensUsed : 0,
-    tier: data.tier === "premium" ? "premium" : "free",
-    periodStart:
-      rawPeriodStart instanceof Timestamp ? rawPeriodStart.toDate() : null,
+    tier: parseTier(data.tier),
+    periodEnd: rawPeriodEnd instanceof Timestamp ? rawPeriodEnd.toDate() : null,
   };
 };
 
@@ -95,10 +94,17 @@ const percentile = (sorted: readonly number[], fraction: number): number => {
 const isExhausted = (row: UsageRow): boolean =>
   row.tokensUsed >= capForTier(row.tier) - MIN_HEADROOM_TOKENS;
 
-/** Active means the period has not yet rolled, i.e. they used the coach recently. */
+/**
+ * Active means the user is inside an open period — their allowance has not run
+ * out of clock yet.
+ *
+ * Reads periodEnd directly rather than deriving it from a start plus a fixed
+ * length, which is what this used to do. It cannot assume a length any more:
+ * free periods are 30 days, and a paid period is whatever slice of the
+ * subscription RevenueCat's window was cut into.
+ */
 const isActive = (row: UsageRow, now: Date): boolean =>
-  row.periodStart !== null &&
-  now.getTime() - row.periodStart.getTime() < PERIOD_DAYS * MS_PER_DAY;
+  row.periodEnd !== null && row.periodEnd.getTime() > now.getTime();
 
 const usd = (tokens: number): string =>
   `$${((tokens / 1_000_000) * BLENDED_USD_PER_MILLION_TOKENS).toFixed(2)}`;
@@ -128,7 +134,9 @@ const buildReport = (rows: readonly UsageRow[], now: Date): string => {
   const spenders = rows.filter((row) => row.tokensUsed > 0);
   const sorted = [...spenders].map((row) => row.tokensUsed).sort((a, b) => a - b);
 
-  const premiumCount = rows.filter((row) => row.tier === "premium").length;
+  const proCount = rows.filter((row) => row.tier === "pro").length;
+  const maxCount = rows.filter((row) => row.tier === "max").length;
+  const freeCount = rows.length - proCount - maxCount;
   const activeCount = rows.filter((row) => isActive(row, now)).length;
   const exhaustedCount = rows.filter(isExhausted).length;
 
@@ -149,11 +157,12 @@ const buildReport = (rows: readonly UsageRow[], now: Date): string => {
       `${int(spenders.length)} (${pct(spenders.length, rows.length)})`,
     ),
     line(
-      `Active this period (${PERIOD_DAYS}d)`,
+      "Inside an open period",
       `${int(activeCount)} (${pct(activeCount, rows.length)})`,
     ),
-    line("Premium tier", int(premiumCount)),
-    line("Free tier", int(rows.length - premiumCount)),
+    line("Free tier", int(freeCount)),
+    line("Pro tier", int(proCount)),
+    line("Max tier", int(maxCount)),
     line(
       "Quota-exhausted right now",
       `${int(exhaustedCount)} (${pct(exhaustedCount, rows.length)})`,
