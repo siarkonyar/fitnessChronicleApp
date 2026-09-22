@@ -181,8 +181,15 @@ const decideFreePeriod = (
  * NOTE THIS DOES NOT DOWNGRADE AN EXPIRED PAID USER EITHER. RevenueCat retries
  * webhooks, and demoting someone mid-retry would punish a paying customer for
  * our delivery problem. Their allowance simply stops refilling until a webhook
- * settles the question. (That wait is currently unbounded, which is a known
- * gap — a lost EXPIRATION leaves the user here forever.)
+ * settles the question.
+ *
+ * THAT WAIT IS BOUNDED, BUT NOT HERE. effectiveTier in entitlement.ts resolves
+ * a paid tier whose entitlement lapsed more than ENTITLEMENT_GRACE_HOURS ago
+ * down to "free" BEFORE decidePeriod is ever called — quota/check.ts runs the
+ * two in that order. So a lost EXPIRATION cannot strand anyone in this branch
+ * forever: they arrive as the free user they now are, and decideFreePeriod
+ * opens them a fresh period. This module deliberately knows nothing about
+ * that, and should stay that way.
  */
 const decidePaidPeriod = (
   periodEndMs: number | undefined,
