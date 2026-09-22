@@ -185,6 +185,17 @@ export const seedUsage = async (
   );
 };
 
+/**
+ * A far-future entitlement, for seeding a genuinely paid user.
+ *
+ * Needed on every paid seed now that checkQuota resolves the stored tier
+ * against the clock: a `tier: "pro"` document with no entitlement is corrupt
+ * state and is deliberately treated as free, so a test that forgets this is
+ * not testing the paid path at all.
+ */
+export const activeEntitlement = (): Date =>
+  new Date(Date.now() + 300 * MS_PER_DAY);
+
 export const readUsage = async (
   uid: string,
 ): Promise<FirebaseFirestore.DocumentData | undefined> =>

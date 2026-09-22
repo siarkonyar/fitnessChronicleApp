@@ -5,8 +5,10 @@ import {
   MIN_HEADROOM_TOKENS,
   PRO_TOKEN_CAP,
 } from "../../src/quota/caps.js";
+import { ENTITLEMENT_GRACE_HOURS } from "../../src/quota/entitlement.js";
 import { FREE_PERIOD_DAYS } from "../../src/quota/period.js";
 import {
+  activeEntitlement,
   callCoach,
   callUsagePercentage,
   catchCallableError,
@@ -55,6 +57,7 @@ describe("token quota", () => {
     // raw balance is positive — a turn's cost is unknown until it has run.
     await seedUsage(uid, {
       tier: "pro",
+      entitlementExpiresAt: activeEntitlement(),
       tokensUsed: PRO_TOKEN_CAP - (MIN_HEADROOM_TOKENS - 100),
     });
 
@@ -159,6 +162,7 @@ describe("token quota", () => {
 });
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MS_PER_HOUR = 60 * 60 * 1000;
 
 /**
  * The allowance clock and the access clock, through the real callable.
@@ -200,28 +204,58 @@ describe("paid allowance periods", () => {
     expect(usage?.periodEnd.toMillis()).toBeGreaterThan(Date.now());
   });
 
-  it("does not refill a paid allowance once the entitlement has expired", async () => {
-    // A churned subscriber, or one whose RENEWAL webhook has not landed. Only
-    // RevenueCat knows which, so the allowance simply stops.
+  it("freezes, but does not downgrade, a lapsed subscriber inside the grace", async () => {
+    // A RENEWAL webhook that is merely LATE. RevenueCat retries for about
+    // 2h35m, and the renewal may well have been charged already, so the user
+    // keeps their tier and their remaining tokens — they just stop growing.
     const { uid } = await createTestUser();
     expect(await waitForUsageToExist(uid)).toBe(true);
 
     await seedUsage(uid, {
       tier: "pro",
       tokensUsed: 1_000_000,
-      periodEnd: new Date(Date.now() - 2 * MS_PER_DAY),
-      entitlementExpiresAt: new Date(Date.now() - MS_PER_DAY),
+      periodEnd: new Date(Date.now() - 2 * MS_PER_HOUR),
+      entitlementExpiresAt: new Date(Date.now() - MS_PER_HOUR),
     });
 
     await callUsagePercentage();
 
-    expect((await readUsage(uid))?.tokensUsed).toBe(1_000_000);
+    const usage = await readUsage(uid);
+    expect(usage?.tokensUsed).toBe(1_000_000);
+    expect(usage?.tier).toBe("pro");
   });
 
-  it("does not refill a paid document that has no entitlement at all", async () => {
-    // Corrupt state — the webhook writes tier and entitlement together. The
-    // seed helper deliberately has no default for entitlementExpiresAt, so
-    // this is what every other `tier: "pro"` seed in the suite looks like.
+  it("drops a lapsed subscriber to free once the grace has run out", async () => {
+    // A LOST expiry webhook, not a late one. Without this bound the user
+    // would keep a 3,000,000 token cap forever, with a counter that never
+    // resets and a reset date permanently in the past.
+    const { uid } = await createTestUser();
+    expect(await waitForUsageToExist(uid)).toBe(true);
+
+    await seedUsage(uid, {
+      tier: "pro",
+      tokensUsed: 1_000_000,
+      periodEnd: new Date(Date.now() - 3 * MS_PER_DAY),
+      entitlementExpiresAt: new Date(
+        Date.now() - (ENTITLEMENT_GRACE_HOURS + 1) * MS_PER_HOUR,
+      ),
+    });
+
+    await callUsagePercentage();
+
+    const usage = await readUsage(uid);
+    // Persisted as free, not merely recomputed as free on every read.
+    expect(usage?.tier).toBe("free");
+    // And the ordinary free path took over with no separate downgrade branch:
+    // fresh period, counter zeroed, reset date back in the future.
+    expect(usage?.tokensUsed).toBe(0);
+    expect(usage?.periodEnd.toMillis()).toBeGreaterThan(Date.now());
+  });
+
+  it("treats a paid document with no entitlement at all as free", async () => {
+    // Corrupt state — applyEvent writes tier and entitlement in one set, so
+    // one without the other should not exist. Failing closed hands the user
+    // the FREE allowance rather than freezing them on a paid cap forever.
     const { uid } = await createTestUser();
     expect(await waitForUsageToExist(uid)).toBe(true);
 
@@ -233,7 +267,9 @@ describe("paid allowance periods", () => {
 
     await callUsagePercentage();
 
-    expect((await readUsage(uid))?.tokensUsed).toBe(1_000_000);
+    const usage = await readUsage(uid);
+    expect(usage?.tier).toBe("free");
+    expect(usage?.tokensUsed).toBe(0);
   });
 
   it("never pushes a refilled period past the entitlement", async () => {

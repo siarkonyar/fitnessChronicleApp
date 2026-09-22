@@ -8,6 +8,7 @@ import {
   parseTier,
   type Tier,
 } from "./caps.js";
+import { effectiveTier } from "./entitlement.js";
 import { decidePeriod } from "./period.js";
 
 /**
@@ -148,7 +149,7 @@ export const checkQuota = async (
 
     // Anything unrecognised falls to "free" — see parseTier. A corrupted or
     // missing tier field can only ever cost a user allowance, never grant one.
-    const tier: Tier = parseTier(data?.tier);
+    const storedTier: Tier = parseTier(data?.tier);
     const storedPeriodEnd = data?.periodEnd as Timestamp | undefined;
 
     // The paid half of the document. Both are written only by RevenueCat, so
@@ -162,13 +163,21 @@ export const checkQuota = async (
       | Timestamp
       | undefined;
 
+    const entitlementExpiresAtMs = storedEntitlementExpiresAt?.toMillis();
+
+    // What the document CLAIMS, resolved against the clock. A paid tier whose
+    // entitlement lapsed longer than the grace ago stops being honoured here —
+    // see entitlement.ts. Everything below then treats the caller as the free
+    // user they now are, with no separate downgrade path anywhere.
+    const tier: Tier = effectiveTier(storedTier, entitlementExpiresAtMs, nowMs);
+
     // Free periods renew themselves; paid ones refill only inside a window
     // RevenueCat has vouched for, and never outlive it. The whole rule lives
     // in period.ts, where it is unit-testable without an emulator.
     const period = decidePeriod({
       tier,
       periodEndMs: storedPeriodEnd?.toMillis(),
-      entitlementExpiresAtMs: storedEntitlementExpiresAt?.toMillis(),
+      entitlementExpiresAtMs,
       nowMs,
     });
 
@@ -179,9 +188,13 @@ export const checkQuota = async (
         : 0;
 
     // Writing `tier` back on a rollover is how a brand-new document gets one,
-    // and it quietly repairs a value parseTier had to fall back on. It cannot
-    // clobber a paid tier: `tier` here IS the stored tier as parseTier read
-    // it, so a rolling pro user is written back as pro.
+    // and it quietly repairs a value parseTier had to fall back on.
+    //
+    // It is the EFFECTIVE tier, so this is also where a lapsed subscriber is
+    // persisted as free instead of being recomputed as free on every read.
+    // Safe to write: it records that we stopped HONOURING an entitlement, not
+    // that the subscription changed, and any later webhook writes the paid
+    // tier straight back. What actually happened stays in rcEvents.
     //
     // Note what is NOT written. entitlementExpiresAt does not appear here and
     // never should — it is RevenueCat's to set, and this is a timer.
