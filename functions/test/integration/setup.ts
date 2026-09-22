@@ -204,12 +204,12 @@ export const readUsage = async (
  * at the real project it would delete every user's quota document, and no
  * amount of randomness in the test data would prevent that.
  */
-const assertSafeToDelete = (): void => {
+const assertSafeToDelete = (collection: string): void => {
   const projectId = adminApp.options.projectId;
 
   if (!projectId?.startsWith("demo-")) {
     throw new Error(
-      `Refusing to wipe aiUsage: connected project "${projectId}" is not a demo project. ` +
+      `Refusing to wipe ${collection}: connected project "${projectId}" is not a demo project. ` +
         "Only project ids starting with `demo-` are fake; anything else is real data.",
     );
   }
@@ -238,9 +238,23 @@ export const waitForUsageToExist = async (
 };
 
 export const clearUsage = async (): Promise<void> => {
-  assertSafeToDelete();
+  assertSafeToDelete("aiUsage");
 
   const snapshot = await adminDb.collection("aiUsage").get();
+  await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
+};
+
+/** Reads one processed-event record written by applyRevenueCatEvent. */
+export const readRcEvent = async (
+  eventId: string,
+): Promise<FirebaseFirestore.DocumentData | undefined> =>
+  (await adminDb.collection("rcEvents").doc(eventId).get()).data();
+
+/** Wipes rcEvents between suites, under the same demo-project lock as above. */
+export const clearRcEvents = async (): Promise<void> => {
+  assertSafeToDelete("rcEvents");
+
+  const snapshot = await adminDb.collection("rcEvents").get();
   await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
 };
 
