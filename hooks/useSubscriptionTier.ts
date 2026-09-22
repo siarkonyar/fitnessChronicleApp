@@ -1,5 +1,4 @@
-import { queryKeys } from "@/constants/QueryKeys";
-import { callAiUsage } from "@/lib/ai/coachServer";
+import { aiUsageQueryOptions } from "@/lib/ai/aiUsageQuery";
 import { SubscriptionTierSchema } from "@/types/types";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
@@ -35,11 +34,7 @@ const FALLBACK_TIER: SubscriptionTier = "free";
  * hardcoding it is that the webhook then needs no change here at all.
  */
 export function useSubscriptionTier(): SubscriptionTier {
-  const { data } = useQuery({
-    queryKey: queryKeys.aiUsage.all,
-    queryFn: callAiUsage,
-    staleTime: 0,
-  });
+  const { data } = useQuery(aiUsageQueryOptions());
 
   // Optional-chained rather than destructured, because the persisted cache can
   // rehydrate a bare number written by a build from before this endpoint
