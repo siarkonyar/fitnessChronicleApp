@@ -24,6 +24,10 @@ import {
   signOut,
 } from "firebase/auth";
 import {
+  connectFirestoreEmulator,
+  getFirestore as getClientFirestore,
+} from "firebase/firestore";
+import {
   connectFunctionsEmulator,
   getFunctions,
   httpsCallable,
@@ -45,6 +49,7 @@ export const REGION = "europe-west2";
 const EMULATOR_HOST = "127.0.0.1";
 const AUTH_PORT = 9099;
 const FUNCTIONS_PORT = 5001;
+const FIRESTORE_PORT = 8080;
 
 /** Emulator-only. The auth emulator does not check password strength. */
 const TEST_PASSWORD = "emulator-only-password";
@@ -82,6 +87,14 @@ connectAuthEmulator(auth, `http://${EMULATOR_HOST}:${AUTH_PORT}`, {
 
 const functions = getFunctions(clientApp, REGION);
 connectFunctionsEmulator(functions, EMULATOR_HOST, FUNCTIONS_PORT);
+
+/**
+ * Firestore as the APP sees it: signed in as whichever test user is current,
+ * and subject to firestore.rules. The emulator enforces the rules file named
+ * in firebase.json for client SDK traffic; adminDb below bypasses them.
+ */
+export const clientDb = getClientFirestore(clientApp);
+connectFirestoreEmulator(clientDb, EMULATOR_HOST, FIRESTORE_PORT);
 
 const adminApp = initializeAdminApp(
   { projectId: PROJECT_ID },
