@@ -100,7 +100,7 @@ The version that ships to the stores is `expo.version` in [`app.config.js`](app.
 | `components/` | Organized by domain — `exercise/`, `calendar/`, `ai/`, `modals/`, `cards/`, `ui/` |
 | `context/` | Auth, connectivity, chat, and active-program providers |
 
-Deeper guidance on conventions lives in [CLAUDE.md](CLAUDE.md).
+Deeper guidance on conventions lives in [AGENTS.md](AGENTS.md).
 
 ---
 
@@ -141,7 +141,7 @@ The source is public so you can read it, learn from it, and report what's broken
 
 If you do send code:
 
-- Match the existing conventions in [CLAUDE.md](CLAUDE.md) — in particular, NativeWind `className` over the `style` prop, and colors from `constants/Colors.ts` rather than hardcoded values.
+- Match the existing conventions in [AGENTS.md](AGENTS.md) — in particular, NativeWind `className` over the `style` prop, and colors from `constants/Colors.ts` rather than hardcoded values.
 - Conventional commit messages (`feat:`, `fix:`, `refactor:`, `chore:`).
 - Add tests for behavior you change.
 
