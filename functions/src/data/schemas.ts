@@ -79,7 +79,52 @@ export const ProgramSchema = z.object({
   days: z.array(ProgramDaySchema),
 });
 
+/**
+ * An ISO-8601 date string that Date.parse can actually read.
+ *
+ * A refine rather than z.string().datetime(): RevenueCat writes "…Z" while
+ * other tools write "…+00:00", and datetime() rejects the second by default.
+ * What matters downstream is only that it parses — a NaN reaching
+ * Timestamp.fromMillis throws in the middle of the trigger's transaction.
+ */
+const DateString = z
+  .string()
+  .refine((value) => !Number.isNaN(Date.parse(value)), "not a date");
+
+/**
+ * One entry of a RevenueCat customer's `entitlements`, keyed by entitlement
+ * name. Dates are ISO-8601 strings, exactly as the extension stores them.
+ */
+const RevenueCatEntitlementSchema = z.object({
+  product_identifier: z.string(),
+  /** The latest purchase OR renewal. Moves only when a payment happens. */
+  purchase_date: DateString,
+  /** null means it never expires. */
+  expires_date: DateString.nullable(),
+  /** Set while the store is still retrying a failed charge. */
+  grace_period_expires_date: DateString.nullable().optional(),
+});
+
+/**
+ * The customer document the RevenueCat Firebase extension writes to
+ * revenuecatCustomers/{app_user_id}.
+ *
+ * NOT a mirror of anything in types/types.ts — the app never reads this. It is
+ * here because it is a Firestore document shape written by code we do not
+ * control, and the trigger must check it before trusting it.
+ *
+ * Only the fields the trigger reads are declared. The real document carries
+ * much more (aliases, first_seen, the extension's own event watermark, every
+ * subscription field); zod strips it.
+ */
+export const RevenueCatCustomerSchema = z.object({
+  entitlements: z.record(z.string(), RevenueCatEntitlementSchema),
+  /** Keyed by product id. */
+  subscriptions: z.record(z.string(), z.object({ is_sandbox: z.boolean() })),
+});
+
 export type ExerciseSet = z.infer<typeof SetSchema>;
 export type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
 export type Label = z.infer<typeof LabelSchema>;
 export type Program = z.infer<typeof ProgramSchema>;
+export type RevenueCatCustomer = z.infer<typeof RevenueCatCustomerSchema>;

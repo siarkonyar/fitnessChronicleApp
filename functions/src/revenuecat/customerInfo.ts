@@ -9,30 +9,10 @@
  * Pure, with an injected clock, for the same reason entitlement.ts is: it
  * decides how much money a user is allowed to cost us.
  */
+import type { RevenueCatCustomer } from "../data/schemas.js";
 import type { Tier } from "../quota/caps.js";
 
-/** One entry of customer_info.entitlements, keyed by entitlement name. */
-interface Entitlement {
-  product_identifier: string;
-  /** ISO-8601. null means it never expires. */
-  expires_date: string | null;
-  /** ISO-8601. Set while the store is still retrying a failed charge. */
-  grace_period_expires_date?: string | null;
-}
-
-/** One entry of customer_info.subscriptions, keyed by product id. */
-interface Subscription {
-  is_sandbox: boolean;
-}
-
-/**
- * The part of the extension's customer document this file reads. The real
- * document carries more; everything else is ignored.
- */
-export interface CustomerInfo {
-  entitlements: Record<string, Entitlement>;
-  subscriptions: Record<string, Subscription>;
-}
+type Entitlement = RevenueCatCustomer["entitlements"][string];
 
 /** What aiUsage needs to know about a customer's plan. */
 export type PlanState =
@@ -40,6 +20,12 @@ export type PlanState =
   | {
       tier: Exclude<Tier, "free">;
       entitlementExpiresAtMs: number;
+      /**
+       * When the current billing period was paid for. Moves only when money
+       * actually changes hands — unlike the expiry, which a store's billing
+       * grace period also pushes out — so it is what decides a token reset.
+       */
+      purchasedAtMs: number;
       isSandbox: boolean;
     };
 
@@ -72,7 +58,7 @@ const activeUntilMs = (
 const PAID_TIERS_BEST_FIRST = ["max", "pro"] as const satisfies readonly Tier[];
 
 export const readSubscription = (
-  customerInfo: CustomerInfo,
+  customerInfo: RevenueCatCustomer,
   nowMs: number,
 ): PlanState => {
   for (const tier of PAID_TIERS_BEST_FIRST) {
@@ -89,7 +75,12 @@ export const readSubscription = (
       customerInfo.subscriptions[entitlement.product_identifier]?.is_sandbox ??
       true;
 
-    return { tier, entitlementExpiresAtMs, isSandbox };
+    return {
+      tier,
+      entitlementExpiresAtMs,
+      purchasedAtMs: Date.parse(entitlement.purchase_date),
+      isSandbox,
+    };
   }
 
   return { tier: "free" };

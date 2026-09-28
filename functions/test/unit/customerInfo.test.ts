@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
-  type CustomerInfo,
-  readSubscription,
-} from "../../src/revenuecat/customerInfo.js";
+  type RevenueCatCustomer,
+  RevenueCatCustomerSchema,
+} from "../../src/data/schemas.js";
+import { readSubscription } from "../../src/revenuecat/customerInfo.js";
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 9, 14, 12, 0, 0);
+
+/** When the fixtures' current billing period was paid for. */
+const PAID_AT = NOW - 10 * DAY;
 
 const iso = (ms: number): string => new Date(ms).toISOString();
 
@@ -13,14 +17,14 @@ const MONTHLY_PRO = "hercule_pro_monthly";
 const MONTHLY_MAX = "hercule_max_monthly";
 
 /**
- * A customer_info the way the RevenueCat Firebase extension writes it, cut
- * down to the fields readSubscription reads. Each entitlement points at the
- * product that grants it, and every product has a subscriptions entry.
+ * A customer the way the RevenueCat Firebase extension writes it, cut down to
+ * the fields readSubscription reads. Each entitlement points at the product
+ * that grants it, and every product has a subscriptions entry.
  */
 const customerWith = (
-  entitlements: CustomerInfo["entitlements"],
+  entitlements: RevenueCatCustomer["entitlements"],
   sandboxProducts: readonly string[] = [],
-): CustomerInfo => ({
+): RevenueCatCustomer => ({
   entitlements,
   subscriptions: Object.fromEntries(
     Object.values(entitlements).map(({ product_identifier }) => [
@@ -36,13 +40,15 @@ const entitlement = (
   graceEndsAtMs: number | null = null,
 ) => ({
   product_identifier: productId,
+  purchase_date: iso(PAID_AT),
   expires_date: expiresAtMs === null ? null : iso(expiresAtMs),
   grace_period_expires_date: graceEndsAtMs === null ? null : iso(graceEndsAtMs),
 });
 
 /**
- * Turns the extension's snapshot of a customer into the three facts aiUsage
- * needs: which tier, until when, and whether it was a test purchase.
+ * Turns the extension's snapshot of a customer into what aiUsage needs: which
+ * tier, until when, when it was last paid for, and whether it was a test
+ * purchase.
  *
  * Pure, with an injected clock, for the same reason entitlement.ts is: it
  * decides how much money a user may cost us.
@@ -52,12 +58,13 @@ describe("readSubscription", () => {
     expect(readSubscription(customerWith({}), NOW)).toEqual({ tier: "free" });
   });
 
-  it("returns pro with its expiry for an active pro entitlement", () => {
+  it("returns pro with its dates for an active pro entitlement", () => {
     const customer = customerWith({ pro: entitlement(MONTHLY_PRO, NOW + 20 * DAY) });
 
     expect(readSubscription(customer, NOW)).toEqual({
       tier: "pro",
       entitlementExpiresAtMs: NOW + 20 * DAY,
+      purchasedAtMs: PAID_AT,
       isSandbox: false,
     });
   });
@@ -79,6 +86,7 @@ describe("readSubscription", () => {
     expect(readSubscription(customer, NOW)).toEqual({
       tier: "max",
       entitlementExpiresAtMs: NOW + 5 * DAY,
+      purchasedAtMs: PAID_AT,
       isSandbox: false,
     });
   });
@@ -116,6 +124,7 @@ describe("readSubscription", () => {
     expect(readSubscription(customer, NOW)).toEqual({
       tier: "pro",
       entitlementExpiresAtMs: NOW + 5 * DAY,
+      purchasedAtMs: PAID_AT,
       isSandbox: false,
     });
   });
@@ -151,11 +160,62 @@ describe("readSubscription", () => {
   it("treats a product missing from subscriptions as sandbox", () => {
     // Should never happen. If it does we cannot prove the money was real, so
     // fail closed, like every other unknown in the quota code.
-    const customer: CustomerInfo = {
+    const customer: RevenueCatCustomer = {
       entitlements: { pro: entitlement(MONTHLY_PRO, NOW + 20 * DAY) },
       subscriptions: {},
     };
 
     expect(readSubscription(customer, NOW)).toMatchObject({ isSandbox: true });
+  });
+});
+
+/**
+ * The extension's document is written by someone else's code, so the trigger
+ * checks it before trusting it.
+ */
+describe("RevenueCatCustomerSchema", () => {
+  it("keeps only the fields readSubscription reads", () => {
+    // The real document carries much more: aliases, the extension's own
+    // watermark, first_seen, every subscription field.
+    const stored = {
+      ...customerWith({ pro: entitlement(MONTHLY_PRO, NOW + 20 * DAY) }),
+      aliases: ["abc"],
+      rc_last_event_timestamp_ms: NOW,
+      first_seen: iso(PAID_AT),
+    };
+
+    const parsed = RevenueCatCustomerSchema.parse(stored);
+
+    expect(Object.keys(parsed).sort()).toEqual(["entitlements", "subscriptions"]);
+  });
+
+  it("rejects a document with no entitlements", () => {
+    const result = RevenueCatCustomerSchema.safeParse({ subscriptions: {} });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a date that is not a date", () => {
+    const result = RevenueCatCustomerSchema.safeParse(
+      customerWith({
+        pro: { ...entitlement(MONTHLY_PRO, NOW + 20 * DAY), expires_date: "soon" },
+      }),
+    );
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an entitlement with no purchase date", () => {
+    const { purchase_date: _, ...withoutPurchaseDate } = entitlement(
+      MONTHLY_PRO,
+      NOW + 20 * DAY,
+    );
+
+    const result = RevenueCatCustomerSchema.safeParse({
+      entitlements: { pro: withoutPurchaseDate },
+      subscriptions: { [MONTHLY_PRO]: { is_sandbox: false } },
+    });
+
+    expect(result.success).toBe(false);
   });
 });
