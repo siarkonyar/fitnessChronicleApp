@@ -4,6 +4,7 @@ import {
   FREE_PERIOD_DAYS,
   decidePeriod,
   freePeriodEnd,
+  nextPaidPeriodEnd,
 } from "../../src/quota/period.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -58,6 +59,44 @@ describe("freePeriodEnd", () => {
     // A PAID user does have one, which is why the paid branch below does the
     // calendar arithmetic properly rather than reusing this.
     expect(FREE_PERIOD_DAYS).toBe(30);
+  });
+});
+
+/**
+ * Where a paid allowance's next reset lands. The RevenueCat trigger calls this
+ * to open a subscriber's FIRST period; decidePeriod calls it to roll an annual
+ * one on. One rule, so the two can never disagree.
+ */
+describe("nextPaidPeriodEnd", () => {
+  it("ends a monthly subscriber's period at their expiry", () => {
+    // Bought Oct 14, renews Nov 14. The RENEWAL resets them, not a timer.
+    const bought = Date.UTC(2026, 9, 14, 12, 0, 0);
+    const expires = Date.UTC(2026, 10, 14, 12, 0, 0);
+
+    expect(day(nextPaidPeriodEnd(expires, bought))).toBe("2026-11-14");
+  });
+
+  it("ends an annual subscriber's first period one month in", () => {
+    const bought = Date.UTC(2026, 9, 14, 12, 0, 0);
+    const expires = Date.UTC(2027, 9, 14, 12, 0, 0);
+
+    expect(day(nextPaidPeriodEnd(expires, bought))).toBe("2026-11-14");
+  });
+
+  it("lands an annual plan bought on the 31st on a short month's last day", () => {
+    const bought = Date.UTC(2026, 0, 31, 10, 0, 0);
+    const expires = Date.UTC(2027, 0, 31, 10, 0, 0);
+
+    expect(day(nextPaidPeriodEnd(expires, bought))).toBe("2026-02-28");
+  });
+
+  it("never outlives the expiry", () => {
+    // Access that ends in six days (a billing grace window, say) cannot carry
+    // an allowance period that runs for a month.
+    const now = Date.UTC(2026, 9, 14, 12, 0, 0);
+    const expires = Date.UTC(2026, 9, 20, 12, 0, 0);
+
+    expect(nextPaidPeriodEnd(expires, now)).toBe(expires);
   });
 });
 

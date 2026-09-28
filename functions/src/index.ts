@@ -8,6 +8,7 @@ import { COACH_MODEL, COACH_THINKING_LEVEL } from "./ai/genkit.js";
 import { onUserCreated } from "./account/createAiUsage.js";
 import { onUserDeleted } from "./account/deleteAiUsage.js";
 import { onConsentChanged } from "./consent/recordConsentChange.js";
+import { onRevenueCatCustomerWritten } from "./revenuecat/syncCustomer.js";
 import { recordTurn } from "./telemetry/aiTurn.js";
 import { checkQuota, toPercentUsed } from "./quota/check.js";
 import type { Tier } from "./quota/caps.js";
@@ -82,6 +83,14 @@ export { onUserCreated };
  * leave every deleted account's usage counter behind with no error anywhere.
  */
 export { onUserDeleted };
+
+/**
+ * Re-exported so it deploys. Defined in ./revenuecat/syncCustomer.ts — a
+ * Firestore trigger on the documents the RevenueCat extension writes. Nothing
+ * calls it directly, so a missing line here would take people's money and
+ * never give them the plan they paid for, with no error anywhere.
+ */
+export { onRevenueCatCustomerWritten };
 
 interface PingResponse {
   uid: string;

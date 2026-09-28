@@ -142,6 +142,32 @@ const nextMonthlyAnniversary = (anchorMs: number, afterMs: number): number => {
 };
 
 /**
+ * Where a paid allowance period that starts at `nowMs` ends.
+ *
+ * The next monthly anniversary of the expiry, clamped to the expiry itself.
+ * For a monthly plan those are the same instant, so the period simply ends
+ * when access does and the next payment resets it. For an annual plan it is
+ * one month in, on the expiry's day of the month.
+ *
+ * The clamp is what keeps the allowance clock from ever outliving the access
+ * clock — the exact confusion that splitting these two fields exists to
+ * remove. It also covers the short last month of a subscription, and access
+ * that only runs for days (a store's billing grace window).
+ *
+ * Shared by the RevenueCat trigger, which opens a subscriber's FIRST period,
+ * and by decidePaidPeriod below, which rolls an annual one on. One rule, so
+ * the two can never disagree about where a paid month ends.
+ */
+export const nextPaidPeriodEnd = (
+  entitlementExpiresAtMs: number,
+  nowMs: number,
+): number =>
+  Math.min(
+    nextMonthlyAnniversary(entitlementExpiresAtMs, nowMs),
+    entitlementExpiresAtMs,
+  );
+
+/**
  * A free period renews itself, from NOW.
  *
  * Counted from now, NOT chained from the end that was missed. A user who
@@ -214,16 +240,11 @@ const decidePaidPeriod = (
   // Measured from NOW, not from the period end that was missed, so an annual
   // subscriber returning after three quiet months lands on the next real
   // anniversary rather than one still in the past — which would roll again on
-  // their very next request, zeroing the counter over and over.
-  const nextAnniversary = nextMonthlyAnniversary(entitlementExpiresAtMs, nowMs);
-
-  // The last month of a subscription is short. Clamping is what keeps the
-  // allowance clock from ever outliving the access clock — the exact
-  // confusion that splitting these two fields exists to remove. Safe to
+  // their very next request, zeroing the counter over and over. Safe to
   // return: the expiry is known to be in the future by the guard above.
   return {
     shouldReset: true,
-    nextPeriodEnd: Math.min(nextAnniversary, entitlementExpiresAtMs),
+    nextPeriodEnd: nextPaidPeriodEnd(entitlementExpiresAtMs, nowMs),
   };
 };
 

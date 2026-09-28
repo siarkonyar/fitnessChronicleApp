@@ -269,6 +269,45 @@ export const clearRcEvents = async (): Promise<void> => {
   await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
 };
 
+/**
+ * Writes a customer document the way the RevenueCat extension would.
+ *
+ * Going through the Admin SDK fires onRevenueCatCustomerWritten in the
+ * functions emulator exactly as the extension's own write would in production.
+ */
+export const seedCustomer = async (
+  appUserId: string,
+  customer: Record<string, unknown>,
+): Promise<void> => {
+  await adminDb.collection("revenuecatCustomers").doc(appUserId).set(customer);
+};
+
+/** Wipes revenuecatCustomers between suites, under the same demo-project lock. */
+export const clearCustomers = async (): Promise<void> => {
+  assertSafeToDelete("revenuecatCustomers");
+
+  const snapshot = await adminDb.collection("revenuecatCustomers").get();
+  await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
+};
+
+/**
+ * Polls until `check` returns true, for work done by a background trigger
+ * that can cold-start seconds after the write that fired it.
+ */
+export const waitFor = async (
+  check: () => Promise<boolean>,
+  timeoutMs = 15_000,
+): Promise<boolean> => {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (await check()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  return false;
+};
+
 export interface CallableFailure {
   /** e.g. "functions/unauthenticated". */
   code: string;
