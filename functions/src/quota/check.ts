@@ -36,6 +36,14 @@ export interface QuotaState {
    * made-up date is a promise we have not been told we can keep.
    */
   resetsAt: Date | null;
+  /**
+   * When paid access runs out, for the plan card. Null for free users AND for
+   * a paid entitlement already past its expiry but still inside the grace in
+   * entitlement.ts — a date in the past is not one worth showing.
+   */
+  activeUntil: Date | null;
+  /** The store product behind a paid tier, for the plan card. Null for free. */
+  productId: string | null;
 }
 
 export interface QuotaDecision extends QuotaState {
@@ -227,12 +235,27 @@ export const checkQuota = async (
 
     const periodEndMs = period.nextPeriodEnd ?? storedPeriodEnd?.toMillis();
 
+    // For the plan card only; nothing below decides anything from these. Sent
+    // only while the caller is paid RIGHT NOW, so a lapsed subscriber is never
+    // shown a plan the server has stopped honouring.
+    const isPaid = tier !== "free";
+    const planFields = {
+      activeUntilMs:
+        isPaid &&
+        entitlementExpiresAtMs !== undefined &&
+        entitlementExpiresAtMs > nowMs
+          ? entitlementExpiresAtMs
+          : undefined,
+      productId:
+        isPaid && typeof data?.productId === "string" ? data.productId : null,
+    };
+
     // Read-only callers stop here. They still create the document on first
     // contact, so the usage bar has something to read, but they never touch
     // the bucket.
     if (!spendRateToken) {
       if (period.shouldReset) tx.set(ref, periodFields, { merge: true });
-      return { tokensUsed, tier, periodEndMs, rateLimited: false };
+      return { tokensUsed, tier, periodEndMs, rateLimited: false, ...planFields };
     }
 
     const spend = trySpend(readBucket(data, nowMs), nowMs);
@@ -243,7 +266,7 @@ export const checkQuota = async (
       // the spammer control of our Firestore bill. Nothing is lost by skipping
       // it: refill() is a pure function of the stored state and the clock, so
       // the next call recomputes the identical answer.
-      return { tokensUsed, tier, periodEndMs, rateLimited: true };
+      return { tokensUsed, tier, periodEndMs, rateLimited: true, ...planFields };
     }
 
     tx.set(
@@ -256,7 +279,7 @@ export const checkQuota = async (
       { merge: true },
     );
 
-    return { tokensUsed, tier, periodEndMs, rateLimited: false };
+    return { tokensUsed, tier, periodEndMs, rateLimited: false, ...planFields };
   });
 
   const cap = capForTier(state.tier);
@@ -282,5 +305,8 @@ export const checkQuota = async (
     percentUsed: toPercentUsed(state.tokensUsed, cap),
     resetsAt:
       state.periodEndMs === undefined ? null : new Date(state.periodEndMs),
+    activeUntil:
+      state.activeUntilMs === undefined ? null : new Date(state.activeUntilMs),
+    productId: state.productId,
   };
 };

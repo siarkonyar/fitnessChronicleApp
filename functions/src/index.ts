@@ -10,7 +10,8 @@ import { onUserDeleted } from "./account/deleteAiUsage.js";
 import { onConsentChanged } from "./consent/recordConsentChange.js";
 import { onRevenueCatCustomerWritten } from "./revenuecat/syncCustomer.js";
 import { recordTurn } from "./telemetry/aiTurn.js";
-import { checkQuota, toPercentUsed } from "./quota/check.js";
+import { checkQuota, toPercentUsed, type QuotaDecision } from "./quota/check.js";
+import { billingPeriodOf, type BillingPeriod } from "./revenuecat/billingPeriod.js";
 import type { Tier } from "./quota/caps.js";
 import { recordUsage } from "./quota/record.js";
 import { CoachRequestSchema, isPlausibleToday } from "./types.js";
@@ -57,11 +58,31 @@ export interface AiUsageResponse {
   /** ISO 8601, or null when no period has been set. */
   resetsAt: string | null;
   tier: Tier;
+  /** ISO 8601. When paid access runs out; null for free users. */
+  activeUntil: string | null;
+  /** From the product id — see billingPeriod.ts. Null when unknown or free. */
+  billingPeriod: BillingPeriod | null;
 }
 
 /** Dates do not survive a callable's JSON boundary as Dates. */
 const toIso = (date: Date | null): string | null =>
   date === null ? null : date.toISOString();
+
+/**
+ * The one place both callables build the usage half of their response, so a
+ * field added for one can never be forgotten on the other. Only percentUsed
+ * differs between them: the coach reply counts the turn it just spent.
+ */
+const toAiUsageResponse = (
+  quota: QuotaDecision,
+  percentUsed: number,
+): AiUsageResponse => ({
+  percentUsed,
+  resetsAt: toIso(quota.resetsAt),
+  tier: quota.tier,
+  activeUntil: toIso(quota.activeUntil),
+  billingPeriod: billingPeriodOf(quota.productId),
+});
 
 /**
  * Re-exported so it deploys. Defined in ./consent/recordConsentChange.ts —
@@ -251,12 +272,10 @@ export const chatWithCoach = onCall(
     return {
       reply: result.reply,
       ...(result.program && { program: result.program }),
-      percentUsed: toPercentUsed(
-        quota.tokensUsed + result.totalTokens,
-        quota.cap,
+      ...toAiUsageResponse(
+        quota,
+        toPercentUsed(quota.tokensUsed + result.totalTokens, quota.cap),
       ),
-      resetsAt: toIso(quota.resetsAt),
-      tier: quota.tier,
     };
   },
 );
@@ -288,10 +307,6 @@ export const getUsagePercentage = onCall(
     // a user who has never messaged the coach still gets a real reset date.
     const quota = await checkQuota(uid, new Date(), { spendRateToken: false });
 
-    return {
-      percentUsed: toPercentUsed(quota.tokensUsed, quota.cap),
-      resetsAt: toIso(quota.resetsAt),
-      tier: quota.tier,
-    };
+    return toAiUsageResponse(quota, toPercentUsed(quota.tokensUsed, quota.cap));
   },
 );

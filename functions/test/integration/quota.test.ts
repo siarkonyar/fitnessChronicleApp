@@ -320,3 +320,90 @@ describe("paid allowance periods", () => {
     expect(usage?.periodEnd.toMillis()).toBe(renewsAt.getTime());
   });
 });
+
+/**
+ * What the Settings plan card is told. Paid details are sent only while the
+ * caller is paid RIGHT NOW, so the card can never advertise a plan the server
+ * has stopped honouring, or an "active until" date already in the past.
+ */
+describe("plan details in the usage response", () => {
+  const HOUR = 60 * 60 * 1000;
+
+  interface PlanResponse {
+    data: {
+      tier: string;
+      activeUntil: string | null;
+      billingPeriod: string | null;
+    };
+  }
+
+  beforeEach(async () => {
+    await clearUsage();
+  });
+
+  it("sends the expiry and period for an active paid user", async () => {
+    const { uid } = await createTestUser();
+    const expiresAt = activeEntitlement();
+    await seedUsage(uid, {
+      tier: "pro",
+      entitlementExpiresAt: expiresAt,
+      productId: "hercule_pro_yearly",
+    });
+
+    const result = (await callUsagePercentage()) as PlanResponse;
+
+    expect(result.data).toMatchObject({
+      tier: "pro",
+      activeUntil: expiresAt.toISOString(),
+      billingPeriod: "yearly",
+    });
+  });
+
+  it("sends nulls for a free user", async () => {
+    await createTestUser();
+
+    const result = (await callUsagePercentage()) as PlanResponse;
+
+    expect(result.data).toMatchObject({
+      tier: "free",
+      activeUntil: null,
+      billingPeriod: null,
+    });
+  });
+
+  it("keeps the plan but drops a past expiry inside the grace", async () => {
+    const { uid } = await createTestUser();
+    await seedUsage(uid, {
+      tier: "pro",
+      entitlementExpiresAt: new Date(Date.now() - HOUR),
+      productId: "hercule_pro_yearly",
+    });
+
+    const result = (await callUsagePercentage()) as PlanResponse;
+
+    expect(result.data).toMatchObject({
+      tier: "pro",
+      activeUntil: null,
+      billingPeriod: "yearly",
+    });
+  });
+
+  it("sends nulls for a subscriber lapsed past the grace", async () => {
+    const { uid } = await createTestUser();
+    await seedUsage(uid, {
+      tier: "pro",
+      entitlementExpiresAt: new Date(
+        Date.now() - (ENTITLEMENT_GRACE_HOURS + 1) * HOUR,
+      ),
+      productId: "hercule_pro_yearly",
+    });
+
+    const result = (await callUsagePercentage()) as PlanResponse;
+
+    expect(result.data).toMatchObject({
+      tier: "free",
+      activeUntil: null,
+      billingPeriod: null,
+    });
+  });
+});

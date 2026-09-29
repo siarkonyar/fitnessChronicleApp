@@ -161,6 +161,8 @@ export interface UsageSeed {
    * Its day-of-month is also the day a paid allowance refills on.
    */
   entitlementExpiresAt?: Date;
+  /** Paid only. What syncCustomer writes for support and the plan card. */
+  productId?: string;
   rateTokens?: number;
   rateLastRefill?: number;
 }
