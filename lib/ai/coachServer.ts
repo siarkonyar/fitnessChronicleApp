@@ -9,20 +9,23 @@ const REGION = "europe-west2";
 /**
  * Everything the server tells us about our own allowance.
  *
- * `tier` is parsed through the app's own SubscriptionTierSchema rather than a
- * loose string, so a tier the app does not understand fails loudly here
- * instead of quietly reaching the UI. The server and this schema have to agree
- * word for word — that is the whole reason the server's vocabulary was changed
- * from "premium" to match this one.
- *
  * `resetsAt` is nullable because a paid document whose RevenueCat webhook has
  * not landed yet genuinely has no known reset date. Rendering nothing is the
  * honest answer; inventing a date would promise something nobody told us.
+ *
+ * LENIENT WHERE BEING WRONG IS CHEAP. An installed build lives for months, and
+ * the server will learn words this build never will. A tier it does not know
+ * reads as "free" — the same direction as the server's parseTier — rather than
+ * throwing, because a throw here fails a coach reply that was already billed.
+ * The plan-card fields read as null when missing or unknown, so this build
+ * also works against a server that has not been deployed yet.
  */
 export const AiUsageSchema = z.object({
   percentUsed: z.number(),
   resetsAt: z.iso.datetime().nullable(),
-  tier: SubscriptionTierSchema,
+  tier: SubscriptionTierSchema.catch("free"),
+  activeUntil: z.iso.datetime().nullable().catch(null),
+  billingPeriod: z.enum(["monthly", "yearly"]).nullable().catch(null),
 });
 
 export type AiUsage = z.infer<typeof AiUsageSchema>;
