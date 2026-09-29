@@ -63,3 +63,25 @@ export const aiUsageDoc = (uid: string) => db.collection("aiUsage").doc(uid);
  * Nothing here is ever updated or deleted. One document per change, forever.
  */
 export const consentEventsCollection = () => db.collection("consentEvents");
+
+/**
+ * Where the RevenueCat Firebase extension writes one document per customer.
+ *
+ * MUST match the extension's "customers collection" setting exactly. The
+ * trigger that watches it is built from this constant, so a mismatch means
+ * purchases are silently never applied.
+ *
+ * TOP-LEVEL, NEVER users/{uid}/…, even though the extension's install screen
+ * suggests that path. firestore.rules:18-20 lets every user write anything
+ * under their own users/{uid}, so a customer document there could be edited
+ * by its owner to read "max until 2099". Out here the catch-all deny at
+ * firestore.rules:26-28 applies, exactly as it does for aiUsage.
+ *
+ * The document id is RevenueCat's app_user_id — the Firebase uid only if the
+ * app called Purchases.logIn(uid) before the purchase. Anything else (an
+ * "$RCAnonymousID:…", a deleted account) is refused by syncCustomer.
+ */
+export const REVENUECAT_CUSTOMERS_COLLECTION = "revenuecatCustomers";
+
+export const revenueCatCustomerDoc = (appUserId: string) =>
+  db.collection(REVENUECAT_CUSTOMERS_COLLECTION).doc(appUserId);

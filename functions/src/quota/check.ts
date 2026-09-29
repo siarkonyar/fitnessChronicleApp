@@ -1,15 +1,16 @@
 import { Timestamp } from "firebase-admin/firestore";
+import { logger } from "firebase-functions";
 import { aiUsageDoc, db } from "../data/firestore.js";
 import { trySpend, type BucketState } from "./bucket.js";
 import {
   BUCKET_CAPACITY,
   MIN_HEADROOM_TOKENS,
-  PERIOD_DAYS,
   capForTier,
+  parseTier,
   type Tier,
 } from "./caps.js";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+import { effectiveTier } from "./entitlement.js";
+import { decidePeriod } from "./period.js";
 
 /**
  * Why a turn was refused.
@@ -26,6 +27,23 @@ export interface QuotaState {
   tier: Tier;
   /** 0-100, rounded. The only usage figure the app is ever told. */
   percentUsed: number;
+  /**
+   * When this allowance next resets, or null when nothing has set a period.
+   *
+   * Null is reachable only for a paid document whose webhook has not arrived
+   * yet — a free period is always opened on read, so free users always have a
+   * date. The app must render the absence rather than substitute a guess: a
+   * made-up date is a promise we have not been told we can keep.
+   */
+  resetsAt: Date | null;
+  /**
+   * When paid access runs out, for the plan card. Null for free users AND for
+   * a paid entitlement already past its expiry but still inside the grace in
+   * entitlement.ts — a date in the past is not one worth showing.
+   */
+  activeUntil: Date | null;
+  /** The store product behind a paid tier, for the plan card. Null for free. */
+  productId: string | null;
 }
 
 export interface QuotaDecision extends QuotaState {
@@ -73,9 +91,6 @@ export const toPercentUsed = (tokensUsed: number, cap: number): number => {
 
   return Math.min(100, Math.round((tokensUsed / spendable) * 100));
 };
-
-const isExpired = (periodStart: Timestamp, now: Date): boolean =>
-  now.getTime() - periodStart.toMillis() >= PERIOD_DAYS * MS_PER_DAY;
 
 /**
  * Reads the bucket out of a stored doc, defaulting a missing one to FULL.
@@ -141,31 +156,106 @@ export const checkQuota = async (
     const snapshot = await tx.get(ref);
     const data = snapshot.data();
 
-    // Anything other than exactly "premium" falls to "free". A corrupted or
+    // Anything unrecognised falls to "free" — see parseTier. A corrupted or
     // missing tier field can only ever cost a user allowance, never grant one.
-    const tier: Tier = data?.tier === "premium" ? "premium" : "free";
-    const periodStart = data?.periodStart as Timestamp | undefined;
+    const storedTier: Tier = parseTier(data?.tier);
+    const storedPeriodEnd = data?.periodEnd as Timestamp | undefined;
 
-    // No document yet, or the period has rolled over.
-    const isNewPeriod =
-      !snapshot.exists || !periodStart || isExpired(periodStart, now);
+    // parseTier falling back is the right DIRECTION — a bad value can only
+    // cost allowance, never grant it — but doing so in silence is the wrong
+    // VOLUME. The realistic cause is a new product mapped to an entitlement in
+    // the RevenueCat dashboard before the server that knows the word is
+    // deployed, which silently downgrades a paying customer with no trace
+    // anywhere. This line is the only signal that would tell you.
+    //
+    // A mismatch means parseTier changed the value, i.e. did not recognise it.
+    // May log more than once for one call, since a contended transaction
+    // re-runs this callback; a rare duplicate warning is worth the simplicity.
+    if (data?.tier !== undefined && data.tier !== storedTier) {
+      logger.warn("Unrecognised tier on aiUsage document, treating as free", {
+        uid,
+        storedValue: data.tier,
+      });
+    }
 
-    const tokensUsed = isNewPeriod
+    // The paid half of the document. Both are written only by RevenueCat, so
+    // both are absent for every user today and for every free user forever.
+    //
+    // entitlementExpiresAt is the ACCESS clock, deliberately separate from the
+    // periodEnd allowance clock above — see the header of period.ts for why
+    // one field could not safely be both. Its day-of-month also anchors a paid
+    // user's monthly refill, which is why no separate anchor field is read.
+    const storedEntitlementExpiresAt = data?.entitlementExpiresAt as
+      | Timestamp
+      | undefined;
+
+    const entitlementExpiresAtMs = storedEntitlementExpiresAt?.toMillis();
+
+    // What the document CLAIMS, resolved against the clock. A paid tier whose
+    // entitlement lapsed longer than the grace ago stops being honoured here —
+    // see entitlement.ts. Everything below then treats the caller as the free
+    // user they now are, with no separate downgrade path anywhere.
+    const tier: Tier = effectiveTier(storedTier, entitlementExpiresAtMs, nowMs);
+
+    // Free periods renew themselves; paid ones refill only inside a window
+    // RevenueCat has vouched for, and never outlive it. The whole rule lives
+    // in period.ts, where it is unit-testable without an emulator.
+    const period = decidePeriod({
+      tier,
+      periodEndMs: storedPeriodEnd?.toMillis(),
+      entitlementExpiresAtMs,
+      nowMs,
+    });
+
+    const tokensUsed = period.shouldReset
       ? 0
       : typeof data?.tokensUsed === "number"
         ? data.tokensUsed
         : 0;
 
-    const periodFields = isNewPeriod
-      ? { tokensUsed: 0, periodStart: Timestamp.fromDate(now), tier }
+    // Writing `tier` back on a rollover is how a brand-new document gets one,
+    // and it quietly repairs a value parseTier had to fall back on.
+    //
+    // It is the EFFECTIVE tier, so this is also where a lapsed subscriber is
+    // persisted as free instead of being recomputed as free on every read.
+    // Safe to write: it records that we stopped HONOURING an entitlement, not
+    // that the subscription changed, and the next write to the customer's
+    // RevenueCat document puts the paid tier straight back (syncCustomer).
+    // What actually happened stays in that document.
+    //
+    // Note what is NOT written. entitlementExpiresAt does not appear here and
+    // never should — it is RevenueCat's to set, and this is a timer.
+    const periodFields = period.shouldReset
+      ? {
+          tokensUsed: 0,
+          periodEnd: Timestamp.fromMillis(period.nextPeriodEnd),
+          tier,
+        }
       : {};
+
+    const periodEndMs = period.nextPeriodEnd ?? storedPeriodEnd?.toMillis();
+
+    // For the plan card only; nothing below decides anything from these. Sent
+    // only while the caller is paid RIGHT NOW, so a lapsed subscriber is never
+    // shown a plan the server has stopped honouring.
+    const isPaid = tier !== "free";
+    const planFields = {
+      activeUntilMs:
+        isPaid &&
+        entitlementExpiresAtMs !== undefined &&
+        entitlementExpiresAtMs > nowMs
+          ? entitlementExpiresAtMs
+          : undefined,
+      productId:
+        isPaid && typeof data?.productId === "string" ? data.productId : null,
+    };
 
     // Read-only callers stop here. They still create the document on first
     // contact, so the usage bar has something to read, but they never touch
     // the bucket.
     if (!spendRateToken) {
-      if (isNewPeriod) tx.set(ref, periodFields, { merge: true });
-      return { tokensUsed, tier, rateLimited: false };
+      if (period.shouldReset) tx.set(ref, periodFields, { merge: true });
+      return { tokensUsed, tier, periodEndMs, rateLimited: false, ...planFields };
     }
 
     const spend = trySpend(readBucket(data, nowMs), nowMs);
@@ -176,7 +266,7 @@ export const checkQuota = async (
       // the spammer control of our Firestore bill. Nothing is lost by skipping
       // it: refill() is a pure function of the stored state and the clock, so
       // the next call recomputes the identical answer.
-      return { tokensUsed, tier, rateLimited: true };
+      return { tokensUsed, tier, periodEndMs, rateLimited: true, ...planFields };
     }
 
     tx.set(
@@ -189,7 +279,7 @@ export const checkQuota = async (
       { merge: true },
     );
 
-    return { tokensUsed, tier, rateLimited: false };
+    return { tokensUsed, tier, periodEndMs, rateLimited: false, ...planFields };
   });
 
   const cap = capForTier(state.tier);
@@ -213,5 +303,10 @@ export const checkQuota = async (
     cap,
     tier: state.tier,
     percentUsed: toPercentUsed(state.tokensUsed, cap),
+    resetsAt:
+      state.periodEndMs === undefined ? null : new Date(state.periodEndMs),
+    activeUntil:
+      state.activeUntilMs === undefined ? null : new Date(state.activeUntilMs),
+    productId: state.productId,
   };
 };

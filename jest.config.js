@@ -10,4 +10,9 @@ module.exports = {
   // Ignore the git worktrees under .claude/ — each has its own package.json
   // named "fitnesschronicle", which otherwise collides in Jest's haste map.
   modulePathIgnorePatterns: ["<rootDir>/.claude/"],
+  // The Cloud Functions codebase is a separate project with its own runner.
+  // Its suites import from "vitest", so Jest collecting them here fails every
+  // one of them on the import alone, burying the app's real results. Run them
+  // with `npm test` inside functions/ instead.
+  testPathIgnorePatterns: ["/node_modules/", "<rootDir>/functions/"],
 };
