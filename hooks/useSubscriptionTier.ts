@@ -1,9 +1,10 @@
+import type { SubscriptionTier } from "@/constants/subscriptionTiers";
 import { aiUsageQueryOptions } from "@/lib/ai/aiUsageQuery";
-import { SubscriptionTierSchema } from "@/types/types";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
 
-export type SubscriptionTier = z.infer<typeof SubscriptionTierSchema>;
+// Re-exported so existing `import { SubscriptionTier } from this hook` keeps
+// working now the type lives with the rest of the tier definitions.
+export type { SubscriptionTier };
 
 /**
  * Anything other than a tier the server actually told us.

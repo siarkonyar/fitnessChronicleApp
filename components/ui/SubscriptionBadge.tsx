@@ -1,28 +1,16 @@
 import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
 import {
-  SubscriptionTier,
-  useSubscriptionTier,
-} from "@/hooks/useSubscriptionTier";
+  TIER_BORDER_ALPHA,
+  TIER_CONFIG,
+  TIER_GRADIENT_ALPHA,
+} from "@/constants/subscriptionTiers";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useSubscriptionTier } from "@/hooks/useSubscriptionTier";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
 const BADGE_WIDTH = 54;
-const BORDER_ALPHA = "80";
-
-type ColorToken = "mutedText" | "highlight" | "secondary";
-
-interface TierConfig {
-  label: string;
-  accentToken: ColorToken;
-}
-
-const TIER_CONFIG: Record<SubscriptionTier, TierConfig> = {
-  free: { label: "FREE", accentToken: "mutedText" },
-  pro: { label: "PRO", accentToken: "secondary" },
-  max: { label: "MAX", accentToken: "highlight" },
-};
 
 interface SubscriptionBadgeProps {
   onPress?: () => void;
@@ -54,11 +42,14 @@ export default function SubscriptionBadge({
       style={{
         width: BADGE_WIDTH,
         borderWidth: 1,
-        borderColor: `${accent}${BORDER_ALPHA}`,
+        borderColor: `${accent}${TIER_BORDER_ALPHA}`,
       }}
     >
       <LinearGradient
-        colors={[`${accent}59`, `${accent}1F`]}
+        colors={[
+          `${accent}${TIER_GRADIENT_ALPHA.start}`,
+          `${accent}${TIER_GRADIENT_ALPHA.end}`,
+        ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
