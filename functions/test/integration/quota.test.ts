@@ -173,8 +173,8 @@ const MS_PER_HOUR = 60 * 60 * 1000;
  * entitlementExpiresAt off the document. A decidePeriod that is perfect and
  * never handed the field would pass every unit test and still refill nobody.
  *
- * Nothing writes these fields in production yet — RevenueCat does, once the
- * webhook exists — so both are seeded by hand.
+ * Seeded by hand here. In production syncCustomer writes them from the
+ * RevenueCat extension's customer document — see syncCustomer.test.ts.
  */
 describe("paid allowance periods", () => {
   beforeEach(async () => {
@@ -253,7 +253,7 @@ describe("paid allowance periods", () => {
   });
 
   it("treats a paid document with no entitlement at all as free", async () => {
-    // Corrupt state — applyEvent writes tier and entitlement in one set, so
+    // Corrupt state — syncCustomer writes tier and entitlement in one set, so
     // one without the other should not exist. Failing closed hands the user
     // the FREE allowance rather than freezing them on a paid cap forever.
     const { uid } = await createTestUser();

@@ -211,8 +211,9 @@ export const checkQuota = async (
     // It is the EFFECTIVE tier, so this is also where a lapsed subscriber is
     // persisted as free instead of being recomputed as free on every read.
     // Safe to write: it records that we stopped HONOURING an entitlement, not
-    // that the subscription changed, and any later webhook writes the paid
-    // tier straight back. What actually happened stays in rcEvents.
+    // that the subscription changed, and the next write to the customer's
+    // RevenueCat document puts the paid tier straight back (syncCustomer).
+    // What actually happened stays in that document.
     //
     // Note what is NOT written. entitlementExpiresAt does not appear here and
     // never should — it is RevenueCat's to set, and this is a timer.

@@ -40,8 +40,9 @@ export const REGION = "europe-west2";
  * getUsagePercentage would return, which is what lets the app keep one cached
  * answer instead of reconciling two.
  *
- * `tier` is always "free" today, because nothing can write a paid tier until
- * the RevenueCat webhook exists. It is sent anyway, and that is the entire
+ * `tier` is always "free" today: syncCustomer can write a paid tier, but only
+ * from documents the RevenueCat extension writes, and the extension is not
+ * installed yet. It is sent anyway, and that is the entire
  * point: a callable's response shape is a contract with every already-
  * installed app, so adding a field later would break every build in the wild.
  * Sending it now, while the only possible value is the one the app already

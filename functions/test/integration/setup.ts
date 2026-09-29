@@ -268,20 +268,6 @@ export const clearUsage = async (): Promise<void> => {
   await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
 };
 
-/** Reads one processed-event record written by applyRevenueCatEvent. */
-export const readRcEvent = async (
-  eventId: string,
-): Promise<FirebaseFirestore.DocumentData | undefined> =>
-  (await adminDb.collection("rcEvents").doc(eventId).get()).data();
-
-/** Wipes rcEvents between suites, under the same demo-project lock as above. */
-export const clearRcEvents = async (): Promise<void> => {
-  assertSafeToDelete("rcEvents");
-
-  const snapshot = await adminDb.collection("rcEvents").get();
-  await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
-};
-
 /**
  * Writes a customer document the way the RevenueCat extension would.
  *

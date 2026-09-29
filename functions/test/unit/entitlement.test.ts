@@ -65,7 +65,7 @@ describe("effectiveTier", () => {
   it.each(PAID_TIERS)(
     "refuses a %s document that has no entitlement date at all",
     (tier) => {
-      // Corrupt state — applyEvent writes the tier and the entitlement in one
+      // Corrupt state — syncCustomer writes the tier and the entitlement in one
       // set, so one without the other should not exist. Failing closed means
       // a bad write can only ever cost allowance, never grant it.
       expect(effectiveTier(tier, undefined, NOW)).toBe("free");

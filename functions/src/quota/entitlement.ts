@@ -56,7 +56,8 @@ const GRACE_MS = ENTITLEMENT_GRACE_HOURS * MS_PER_HOUR;
  * A LATE WEBHOOK STILL RECOVERS THE USER. Downgrading here changes no
  * subscription state — it only stops honouring one — so an event arriving
  * afterwards writes the tier and the entitlement back and the user is paid
- * again immediately. The record of what happened lives in rcEvents.
+ * again immediately. The record of what happened lives in the customer's
+ * revenuecatCustomers document.
  */
 export const effectiveTier = (
   storedTier: Tier,
@@ -65,7 +66,7 @@ export const effectiveTier = (
 ): Tier => {
   if (storedTier === "free") return "free";
 
-  // A paid tier with no entitlement date is corrupt: applyEvent writes the
+  // A paid tier with no entitlement date is corrupt: syncCustomer writes the
   // two together in a single set, so one cannot exist without the other.
   // Failing closed means a bad write can only cost allowance, never grant it.
   if (entitlementExpiresAtMs === undefined) return "free";

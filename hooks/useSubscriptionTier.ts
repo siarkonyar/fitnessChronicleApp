@@ -29,9 +29,10 @@ const FALLBACK_TIER: SubscriptionTier = "free";
  * badge can render; sharing its key subscribes to that cache entry rather than
  * fetching again.
  *
- * Returns "free" for every user today, because nothing can write a paid tier
- * until the RevenueCat webhook exists. The value of reading it now rather than
- * hardcoding it is that the webhook then needs no change here at all.
+ * Returns "free" for every user today, because nothing writes a paid tier
+ * until the RevenueCat extension is installed. The value of reading it now
+ * rather than hardcoding it is that turning subscriptions on then needs no
+ * change here at all.
  */
 export function useSubscriptionTier(): SubscriptionTier {
   const { data } = useQuery(aiUsageQueryOptions());

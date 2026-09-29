@@ -85,27 +85,3 @@ export const REVENUECAT_CUSTOMERS_COLLECTION = "revenuecatCustomers";
 
 export const revenueCatCustomerDoc = (appUserId: string) =>
   db.collection(REVENUECAT_CUSTOMERS_COLLECTION).doc(appUserId);
-
-/**
- * One document per RevenueCat webhook event we have processed.
- *
- * TOP-LEVEL for the same reason as aiUsage: the catch-all deny at
- * firestore.rules:26-28 covers every path outside /users/{userId}, so no
- * client can read or write these, while the Admin SDK writes them freely.
- *
- * THE DOCUMENT ID IS RevenueCat's `event.id`, and that is the entire
- * mechanism. RevenueCat retries a failed delivery five times and warns that
- * the same event may arrive more than once; creating a document whose id is
- * the event id makes a second attempt fail rather than reprocess. It only
- * works because the create happens INSIDE the same transaction as the change
- * it guards — checked outside, two concurrent deliveries both see nothing and
- * both apply.
- *
- * Holds an `expireAt` for a Firestore TTL policy. NOTE that writing the field
- * does not enable anything on its own: the TTL policy has to be configured on
- * this collection in the console or via gcloud, pointing at `expireAt`.
- * Without it these documents simply accumulate forever, which is untidy but
- * not dangerous.
- */
-export const rcEventDoc = (eventId: string) =>
-  db.collection("rcEvents").doc(eventId);

@@ -38,9 +38,10 @@ export const FREE_TOKEN_CAP = 40_000;
  *
  * PROVISIONAL. Pricing for pro and max has not been decided, so these are
  * placeholders that must be set from the real per-user cost target before
- * either tier goes on sale. They are unreachable until the RevenueCat webhook
- * exists to write a paid tier onto a document, so a wrong number here cannot
- * affect anyone today — but it silently becomes real the moment it can.
+ * either tier goes on sale. They are unreachable until the RevenueCat
+ * extension is installed and starts writing the customer documents
+ * syncCustomer turns into a paid tier, so a wrong number here cannot affect
+ * anyone today — but it silently becomes real the moment it can.
  *
  * PRO inherits the figure the old single paid tier was measured at. MAX is a
  * guess whose only defensible property is being larger than PRO: a "max" tier
