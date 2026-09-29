@@ -29,7 +29,10 @@ const customerWith = (
   subscriptions: Object.fromEntries(
     Object.values(entitlements).map(({ product_identifier }) => [
       product_identifier,
-      { is_sandbox: sandboxProducts.includes(product_identifier) },
+      {
+        is_sandbox: sandboxProducts.includes(product_identifier),
+        store: "app_store",
+      },
     ]),
   ),
 });
@@ -66,6 +69,8 @@ describe("readSubscription", () => {
       entitlementExpiresAtMs: NOW + 20 * DAY,
       purchasedAtMs: PAID_AT,
       isSandbox: false,
+      productId: MONTHLY_PRO,
+      store: "app_store",
     });
   });
 
@@ -88,6 +93,8 @@ describe("readSubscription", () => {
       entitlementExpiresAtMs: NOW + 5 * DAY,
       purchasedAtMs: PAID_AT,
       isSandbox: false,
+      productId: MONTHLY_MAX,
+      store: "app_store",
     });
   });
 
@@ -126,6 +133,8 @@ describe("readSubscription", () => {
       entitlementExpiresAtMs: NOW + 5 * DAY,
       purchasedAtMs: PAID_AT,
       isSandbox: false,
+      productId: MONTHLY_PRO,
+      store: "app_store",
     });
   });
 
@@ -165,7 +174,10 @@ describe("readSubscription", () => {
       subscriptions: {},
     };
 
-    expect(readSubscription(customer, NOW)).toMatchObject({ isSandbox: true });
+    expect(readSubscription(customer, NOW)).toMatchObject({
+      isSandbox: true,
+      store: null,
+    });
   });
 });
 
@@ -187,6 +199,24 @@ describe("RevenueCatCustomerSchema", () => {
     const parsed = RevenueCatCustomerSchema.parse(stored);
 
     expect(Object.keys(parsed).sort()).toEqual(["entitlements", "subscriptions"]);
+  });
+
+  it("keeps the store each subscription was bought in", () => {
+    const parsed = RevenueCatCustomerSchema.parse(
+      customerWith({ pro: entitlement(MONTHLY_PRO, NOW + 20 * DAY) }),
+    );
+
+    expect(parsed.subscriptions[MONTHLY_PRO]?.store).toBe("app_store");
+  });
+
+  it("accepts a subscription that does not say which store", () => {
+    // Only support reads it. A missing store must not stop a paid plan.
+    const result = RevenueCatCustomerSchema.safeParse({
+      entitlements: { pro: entitlement(MONTHLY_PRO, NOW + 20 * DAY) },
+      subscriptions: { [MONTHLY_PRO]: { is_sandbox: false } },
+    });
+
+    expect(result.success).toBe(true);
   });
 
   it("rejects a document with no entitlements", () => {

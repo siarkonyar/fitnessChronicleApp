@@ -18,6 +18,8 @@ const paid = (overrides: Partial<PaidPlan> = {}): PaidPlan => ({
   entitlementExpiresAtMs: EXPIRES,
   purchasedAtMs: PAID_AT,
   isSandbox: false,
+  productId: "hercule_pro_monthly",
+  store: "app_store",
   ...overrides,
 });
 
@@ -58,6 +60,10 @@ describe("usageChange", () => {
         entitlementExpiresAtMs: EXPIRES,
         lastPurchaseAtMs: PAID_AT,
         resetPeriodEndMs: nextPaidPeriodEnd(EXPIRES, NOW),
+        // Carried through for support, never decided on.
+        productId: "hercule_pro_monthly",
+        store: "app_store",
+        isSandbox: false,
       });
     });
 
@@ -102,6 +108,9 @@ describe("usageChange", () => {
         entitlementExpiresAtMs: NOW + 16 * DAY,
         lastPurchaseAtMs: PAID_AT,
         resetPeriodEndMs: null,
+        productId: "hercule_pro_monthly",
+        store: "app_store",
+        isSandbox: false,
       });
     });
 

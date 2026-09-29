@@ -51,7 +51,9 @@ const proCustomer = ({
         graceEndsAtMs === undefined ? null : iso(graceEndsAtMs),
     },
   },
-  subscriptions: { [MONTHLY_PRO]: { is_sandbox: isSandbox } },
+  subscriptions: {
+    [MONTHLY_PRO]: { is_sandbox: isSandbox, store: "app_store" },
+  },
   // Present on every real document, ignored by the schema.
   aliases: [],
 });
@@ -91,6 +93,13 @@ describe("onRevenueCatCustomerWritten", () => {
     expect(usage?.entitlementExpiresAt.toMillis()).toBe(expiresAtMs);
     // Monthly: the period ends with the plan, and the renewal resets it.
     expect(usage?.periodEnd.toMillis()).toBe(expiresAtMs);
+    // For support: what granted the plan, and when we last wrote it.
+    expect(usage).toMatchObject({
+      productId: MONTHLY_PRO,
+      store: "app_store",
+      isSandbox: false,
+    });
+    expect(usage?.syncedAt).toBeDefined();
   });
 
   it("resets the counter again when the plan renews", async () => {
@@ -175,7 +184,12 @@ describe("onRevenueCatCustomerWritten", () => {
     );
 
     expect(await usageMatches(uid, (usage) => usage.tier === "free")).toBe(true);
-    expect((await readUsage(uid))?.entitlementExpiresAt).toBeUndefined();
+    const usage = await readUsage(uid);
+    expect(usage?.entitlementExpiresAt).toBeUndefined();
+    // No stale product left behind to mislead whoever reads it next.
+    expect(usage?.productId).toBeUndefined();
+    expect(usage?.store).toBeUndefined();
+    expect(usage?.isSandbox).toBeUndefined();
   });
 
   it("accepts a sandbox purchase", async () => {

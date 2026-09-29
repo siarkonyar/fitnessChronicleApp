@@ -65,15 +65,29 @@ const isLiveFirebaseUser = async (appUserId: string): Promise<boolean> => {
 const toMillis = (value: unknown): number | undefined =>
   value instanceof Timestamp ? value.toMillis() : undefined;
 
-/** The aiUsage fields a change writes, merged into the existing document. */
+/**
+ * The aiUsage fields a change writes, merged into the existing document.
+ *
+ * `syncedAt` is written on every change: when this trigger last wrote the
+ * plan. Next to the customer document's own dates, it is how support tells
+ * "RevenueCat never told us" apart from "we were told and refused".
+ */
 const fieldsFor = (
   change: Exclude<UsageChange, { kind: "unchanged" }>,
 ): FirebaseFirestore.DocumentData => {
+  const syncedAt = FieldValue.serverTimestamp();
+
   if (change.kind === "downgrade") {
+    // The support fields describe the plan that just ended. Left behind,
+    // they would tell the next reader this free user holds a product.
     return {
       tier: "free",
       entitlementExpiresAt: FieldValue.delete(),
       periodEnd: Timestamp.fromMillis(change.periodEndMs),
+      productId: FieldValue.delete(),
+      store: FieldValue.delete(),
+      isSandbox: FieldValue.delete(),
+      syncedAt,
     };
   }
 
@@ -81,6 +95,10 @@ const fieldsFor = (
     tier: change.tier,
     entitlementExpiresAt: Timestamp.fromMillis(change.entitlementExpiresAtMs),
     lastPurchaseAt: Timestamp.fromMillis(change.lastPurchaseAtMs),
+    productId: change.productId,
+    store: change.store,
+    isSandbox: change.isSandbox,
+    syncedAt,
     ...(change.resetPeriodEndMs !== null && {
       tokensUsed: 0,
       periodEnd: Timestamp.fromMillis(change.resetPeriodEndMs),

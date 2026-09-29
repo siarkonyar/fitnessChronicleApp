@@ -27,6 +27,10 @@ export type PlanState =
        */
       purchasedAtMs: number;
       isSandbox: boolean;
+      /** The product that granted the plan. For support; decides nothing. */
+      productId: string;
+      /** Where it was bought, if RevenueCat said. For support; decides nothing. */
+      store: string | null;
     };
 
 const activeUntilMs = (
@@ -69,17 +73,18 @@ export const readSubscription = (
     // past this line `entitlement` is safe to read.
     if (entitlementExpiresAtMs === undefined) continue;
 
-    // A product with no subscriptions entry should never happen. If it does
-    // we cannot prove the money was real, so fail closed and call it sandbox.
-    const isSandbox =
-      customerInfo.subscriptions[entitlement.product_identifier]?.is_sandbox ??
-      true;
+    const productId = entitlement.product_identifier;
+    const subscription = customerInfo.subscriptions[productId];
 
     return {
       tier,
       entitlementExpiresAtMs,
       purchasedAtMs: Date.parse(entitlement.purchase_date),
-      isSandbox,
+      // A product with no subscriptions entry should never happen. If it
+      // does we cannot prove the money was real, so fail closed: sandbox.
+      isSandbox: subscription?.is_sandbox ?? true,
+      productId,
+      store: subscription?.store ?? null,
     };
   }
 

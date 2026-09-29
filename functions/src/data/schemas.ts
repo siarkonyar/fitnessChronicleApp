@@ -120,7 +120,17 @@ const RevenueCatEntitlementSchema = z.object({
 export const RevenueCatCustomerSchema = z.object({
   entitlements: z.record(z.string(), RevenueCatEntitlementSchema),
   /** Keyed by product id. */
-  subscriptions: z.record(z.string(), z.object({ is_sandbox: z.boolean() })),
+  subscriptions: z.record(
+    z.string(),
+    z.object({
+      is_sandbox: z.boolean(),
+      /**
+       * "app_store", "play_store", … Optional because only support reads it:
+       * a missing store must never stop a paid plan from being applied.
+       */
+      store: z.string().optional(),
+    }),
+  ),
 });
 
 export type ExerciseSet = z.infer<typeof SetSchema>;

@@ -29,6 +29,10 @@ export type UsageChange =
   /**
    * Write the plan. `resetPeriodEndMs` is non-null only when a payment
    * happened: zero the counter and open a new period ending there.
+   *
+   * productId, store and isSandbox are carried through for support — so
+   * "I paid and it says FREE" can be answered from aiUsage alone. Nothing
+   * here decides anything from them.
    */
   | {
       kind: "paid";
@@ -36,6 +40,9 @@ export type UsageChange =
       entitlementExpiresAtMs: number;
       lastPurchaseAtMs: number;
       resetPeriodEndMs: number | null;
+      productId: string;
+      store: string | null;
+      isSandbox: boolean;
     };
 
 /**
@@ -80,5 +87,8 @@ export const usageChange = (
     resetPeriodEndMs: isNewPayment(stored, plan)
       ? nextPaidPeriodEnd(plan.entitlementExpiresAtMs, nowMs)
       : null,
+    productId: plan.productId,
+    store: plan.store,
+    isSandbox: plan.isSandbox,
   };
 };
