@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  adminDb,
+  clearCustomers,
   clearUsage,
   createTestUser,
   deleteAuthUser,
   readUsage,
+  seedCustomer,
   seedUsage,
+  waitFor,
   waitForUsageToExist,
 } from "./setup.js";
 
@@ -81,6 +85,43 @@ describe("aiUsage cleanup on account deletion", () => {
     // Assert
     expect(await waitForUsageToBeDeleted(deletedUid)).toBe(true);
     expect(await readUsage(survivingUid)).toMatchObject({ tokensUsed: 1_234 });
+  });
+
+  it("deletes the RevenueCat customer document too", async () => {
+    // Arrange — a subscriber, so the extension has written their customer
+    // document. It holds purchase history keyed by their uid, and nothing
+    // else would ever remove it: clients cannot touch it, by design.
+    await clearUsage();
+    await clearCustomers();
+    const { uid } = await createTestUser();
+    expect(await waitForUsageToExist(uid)).toBe(true);
+    const now = Date.now();
+    await seedCustomer(uid, {
+      entitlements: {
+        pro: {
+          product_identifier: "hercule_pro_monthly",
+          purchase_date: new Date(now).toISOString(),
+          expires_date: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      },
+      subscriptions: { hercule_pro_monthly: { is_sandbox: false } },
+    });
+    // Let the sync trigger finish first. Running concurrently with the
+    // deletion, it could pass its account check just before the account goes
+    // and write aiUsage just after onUserDeleted removed it.
+    expect(
+      await waitFor(async () => (await readUsage(uid))?.tier === "pro"),
+    ).toBe(true);
+
+    // Act
+    await deleteAuthUser(uid);
+
+    // Assert
+    const customerRef = adminDb.collection("revenuecatCustomers").doc(uid);
+    expect(
+      await waitFor(async () => !(await customerRef.get()).exists),
+    ).toBe(true);
+    expect(await waitForUsageToBeDeleted(uid)).toBe(true);
   });
 
   it("succeeds for a user with no usage document", async () => {
