@@ -116,21 +116,30 @@ const RevenueCatEntitlementSchema = z.object({
  * Only the fields the trigger reads are declared. The real document carries
  * much more (aliases, first_seen, the extension's own event watermark, every
  * subscription field); zod strips it.
+ *
+ * ONLY `entitlements` IS REQUIRED, because it is all the extension's own
+ * CustomerInfo type promises. The subscriptions map only tells us the store
+ * and whether the money was real, and readSubscription already fails closed
+ * on both — no entry means sandbox. Requiring them here would instead mark
+ * the whole document invalid and leave a paying customer on free.
  */
 export const RevenueCatCustomerSchema = z.object({
   entitlements: z.record(z.string(), RevenueCatEntitlementSchema),
   /** Keyed by product id. */
-  subscriptions: z.record(
-    z.string(),
-    z.object({
-      is_sandbox: z.boolean(),
-      /**
-       * "app_store", "play_store", … Optional because only support reads it:
-       * a missing store must never stop a paid plan from being applied.
-       */
-      store: z.string().optional(),
-    }),
-  ),
+  subscriptions: z
+    .record(
+      z.string(),
+      z.object({
+        /** Missing is read as sandbox — see readSubscription. */
+        is_sandbox: z.boolean().optional(),
+        /**
+         * "app_store", "play_store", … Optional because only support reads it:
+         * a missing store must never stop a paid plan from being applied.
+         */
+        store: z.string().optional(),
+      }),
+    )
+    .default({}),
 });
 
 export type ExerciseSet = z.infer<typeof SetSchema>;

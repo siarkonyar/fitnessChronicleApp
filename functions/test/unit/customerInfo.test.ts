@@ -219,6 +219,33 @@ describe("RevenueCatCustomerSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts a document with no subscriptions map, as sandbox", () => {
+    // The extension only promises entitlements. A missing subscriptions map
+    // must not strand a paying customer on free — readSubscription already
+    // fails closed on the one thing it would have told us.
+    const parsed = RevenueCatCustomerSchema.parse({
+      entitlements: { pro: entitlement(MONTHLY_PRO, NOW + 20 * DAY) },
+    });
+
+    expect(readSubscription(parsed, NOW)).toMatchObject({
+      tier: "pro",
+      isSandbox: true,
+    });
+  });
+
+  it("accepts a subscription that does not say whether it is sandbox, as sandbox", () => {
+    const parsed = RevenueCatCustomerSchema.parse({
+      entitlements: { pro: entitlement(MONTHLY_PRO, NOW + 20 * DAY) },
+      subscriptions: { [MONTHLY_PRO]: { store: "app_store" } },
+    });
+
+    expect(readSubscription(parsed, NOW)).toMatchObject({
+      tier: "pro",
+      isSandbox: true,
+      store: "app_store",
+    });
+  });
+
   it("rejects a document with no entitlements", () => {
     const result = RevenueCatCustomerSchema.safeParse({ subscriptions: {} });
 
