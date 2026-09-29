@@ -1,4 +1,5 @@
 import { RoundedButton } from "@/components/RoundButton";
+import PlanUsageCard from "@/components/cards/PlanUsageCard";
 import ThemedBottomSheetModal from "@/components/ThemedBottomSheetModal";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
@@ -251,8 +252,15 @@ export default function Settings() {
           contentContainerStyle={{ paddingBottom: 48, paddingTop: 8 }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Profile ── */}
+          {/* ── Subscription ── */}
           <ThemedText type="label" className="mb-3 ml-2 mt-4">
+            Subscription
+          </ThemedText>
+
+          <PlanUsageCard />
+
+          {/* ── Profile ── */}
+          <ThemedText type="label" className="mb-3 ml-2 mt-6">
             Profile
           </ThemedText>
 
