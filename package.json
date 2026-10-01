@@ -10,7 +10,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "TZ=UTC jest",
-    "test:watch": "TZ=UTC jest --watch"
+    "test:watch": "TZ=UTC jest --watch",
+    "dev:emu": "bash ./scripts/dev-emulators.sh",
+    "emulators": "sh ./scripts/emulators.sh"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

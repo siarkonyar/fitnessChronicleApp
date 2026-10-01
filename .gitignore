@@ -60,3 +60,7 @@ entities.json
 
 #
 docs/
+
+# firebase emulator data (npm run emulators)
+emulator-data/
+.emulators.log
