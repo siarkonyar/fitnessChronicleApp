@@ -1,10 +1,9 @@
+import { FUNCTIONS_REGION } from "@/constants/firebase";
 import { ProgramSchema, SubscriptionTierSchema } from "@/types/types";
 import { z } from "zod";
 
 import { getApp } from "@react-native-firebase/app";
 import { getFunctions, httpsCallable } from "@react-native-firebase/functions";
-
-const REGION = "europe-west2";
 
 /**
  * Everything the server tells us about our own allowance.
@@ -62,7 +61,7 @@ export const callCoach = async (
   request: CoachRequest,
 ): Promise<CoachResponse> => {
   const coach = httpsCallable<CoachRequest, unknown>(
-    getFunctions(getApp(), REGION),
+    getFunctions(getApp(), FUNCTIONS_REGION),
     "chatWithCoach",
   );
 
@@ -78,7 +77,7 @@ export const callCoach = async (
  */
 export const callAiUsage = async (): Promise<AiUsage> => {
   const aiUsage = httpsCallable<undefined, unknown>(
-    getFunctions(getApp(), REGION),
+    getFunctions(getApp(), FUNCTIONS_REGION),
     "getUsagePercentage",
   );
 
