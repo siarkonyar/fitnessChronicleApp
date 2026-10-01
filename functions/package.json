@@ -17,7 +17,8 @@
     "typecheck": "tsc -p tsconfig.test.json",
     "test:unit": "vitest run test/unit",
     "test:integration": "firebase emulators:exec --only auth,firestore,functions --project demo-hercule \"vitest run test/integration\"",
-    "test": "npm run build && npm run test:unit && npm run test:integration"
+    "test": "npm run build && npm run test:unit && npm run test:integration",
+    "seed:plan": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 tsx scripts/seedEmulatorPlan.ts"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.41.0",
