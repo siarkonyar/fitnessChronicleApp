@@ -1,3 +1,7 @@
+// Must stay first: the Firebase SDKs only accept an emulator before their
+// first request.
+import { isUsingEmulators } from "@/lib/firebase/emulators";
+
 import { ConnectivityProvider } from "@/context/ConnectivityContext";
 import { useAnalyticsConsent } from "@/hooks/useAnalyticsConsent";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -44,9 +48,15 @@ const queryClient = new QueryClient({
   },
 });
 
+// Emulator data gets its own cache, so live data never shows up while testing
+// against the emulators, and emulator data never leaks back into live mode.
+const QUERY_CACHE_KEY = isUsingEmulators
+  ? "HERCULE_QUERY_CACHE_EMULATOR"
+  : "HERCULE_QUERY_CACHE";
+
 const persister = createAsyncStoragePersister({
   storage: AsyncStorage,
-  key: "HERCULE_QUERY_CACHE",
+  key: QUERY_CACHE_KEY,
 });
 
 export default function RootLayout() {
