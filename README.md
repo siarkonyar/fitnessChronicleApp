@@ -27,7 +27,7 @@ The second idea is **consistency you can see**. Days you train are marked on a c
 
 The third is an **AI coach that isn't a generic chatbot**. It runs server-side on Cloud Functions with Genkit, and it reads your actual logs, labels, and programs through tool calls before it answers. It can draft a full workout program, which lands in the app as a proposal card you accept or reject — nothing is written to your account until you say yes. No model code runs on the phone.
 
-It also works **without a connection**. Lose signal and the app routes to an offline mode where you can still log; entries queue in local storage and batch-sync to Firestore when you're back.
+It also has an **offline logging mode**. You can log exercises into a local AsyncStorage queue without a connection. A Firestore batch-sync helper exists, but automatic syncing of that queue on reconnect is not currently connected.
 
 ---
 
@@ -43,19 +43,23 @@ Build reusable program templates with days, labels, exercises, and target rep ra
 
 ### An AI coach with read access to your training
 
-`lib/ai/coachServer.ts` calls a callable Cloud Function in `europe-west2`; everything else happens server-side in Genkit. The coach has tools for reading your exercise logs, labels, and programs, so "am I neglecting pull?" is answered from your data rather than guessed. Program proposals are reconciled against your existing labels by description before being offered, so accepting one doesn't leave you with duplicate labels. Usage is quota-gated per user and shown in-app with a usage bar, and reaching Gemini requires explicit consent you give during onboarding.
+`lib/ai/coachServer.ts` calls a callable Cloud Function in `europe-west2`; everything else happens server-side in Genkit. The coach has tools for reading your exercise logs, labels, and programs, so "am I neglecting pull?" is answered from your data rather than guessed. When you accept a program proposal, its labels are reconciled against your existing labels by description. Usage is quota-gated per user and shown in-app with a usage bar. Coach messages and training data read by its tools are sent to Gemini; the current onboarding consent prompt covers analytics.
+
+### Plan and allowance details
+
+Settings shows your server-reported plan, AI usage percentage, allowance reset date, and paid access expiry when available. The server recognizes `free`, `pro`, and `max`, and includes code to sync RevenueCat customer documents into server-only usage records. The app does not yet include a RevenueCat purchase SDK or paywall, and paid allowance caps are provisional.
 
 ### A calendar that shows the shape of your training
 
 Every logged day is marked. Tap a date to see exactly what you did, tag days with emoji labels that render right on the calendar grid, and share a day as an image straight from the app. Weekly streaks are tracked on write, so the number is correct the moment you save.
 
-### Offline by design, not as an afterthought
+### Local logging while offline
 
-`ConnectivityProvider` watches the network with NetInfo. When you drop offline the router switches to a dedicated offline stack — home plus logging — that writes to AsyncStorage. On reconnect, `syncOfflineExercises()` batches everything to Firestore in one go. Server state is TanStack Query, persisted to AsyncStorage, so cold starts show real data instead of spinners.
+`ConnectivityProvider` watches the network with NetInfo. Network error handling offers a dedicated offline stack — home plus logging — that writes to AsyncStorage. `syncOfflineExercises()` can batch queued exercises to Firestore, but currently has no caller. Server state uses TanStack Query with AsyncStorage persistence and refetches on reconnect; this does not flush the separate exercise queue.
 
 ### Privacy handled explicitly
 
-Analytics ships **off** and is only switched on after the app has read your stored choice, on both platforms. Consent changes are recorded server-side. Account deletion walks and removes every subcollection under your user document, including AI usage records — Firestore doesn't cascade, so this is done by hand rather than hoped for.
+Analytics ships **off** and follows your stored choice on both platforms. Consent changes are recorded server-side. Account deletion reauthenticates first, removes the known subcollections under your user document, then deletes the Auth account. An Auth deletion trigger removes the top-level AI usage and RevenueCat customer records. Consent audit records are retained separately; deleting the account does not cancel a store subscription.
 
 ---
 
@@ -78,11 +82,11 @@ The version that ships to the stores is `expo.version` in [`app.config.js`](app.
 | Routing | [Expo Router](https://docs.expo.dev/router/introduction/) — file-based, typed routes, `Stack.Protected` auth guards |
 | Styling | [NativeWind 4](https://www.nativewind.dev/) (Tailwind CSS 3 for RN), theme tokens in `constants/Colors.ts`, automatic dark/light |
 | Server state | [TanStack Query 5](https://tanstack.com/query) persisted to AsyncStorage |
-| Validation | [Zod 4](https://zod.dev) — every Firestore document is parsed before use |
+| Validation | [Zod 4](https://zod.dev) — domain schemas and callable response validation |
 | Backend | [Firebase](https://firebase.google.com) — Auth (Google + Apple Sign-In), Firestore, Cloud Functions, App Check, Crashlytics, Analytics |
 | AI | [Genkit](https://genkit.dev) + Gemini on Cloud Functions (`europe-west2`), tool-calling over the user's own logs, per-user quota buckets |
 | UI | [@gorhom/bottom-sheet](https://gorhom.dev/react-native-bottom-sheet/) 5, `react-native-reanimated` 4, `react-native-calendars`, `react-native-gifted-charts`, `expo-blur` |
-| Offline | `@react-native-community/netinfo` + AsyncStorage queue with batched Firestore sync |
+| Offline | `@react-native-community/netinfo` + AsyncStorage exercise queue; Firestore sync helper exists, automatic flushing pending |
 | Testing | `jest-expo` (app), `vitest` + Firebase Emulator Suite (functions: unit + integration) |
 | Delivery | EAS Build & Submit, `expo-updates`, GitHub Actions for functions |
 
@@ -93,25 +97,29 @@ The version that ships to the stores is `expo.version` in [`app.config.js`](app.
 | Path | What lives there |
 |---|---|
 | `app/` | Expo Router routes — `(tabs)` (home, AI, calendar, profile), `(screens)` (logging, programs, settings, onboarding), `offline/` |
-| `lib/firebase/` | All Firestore and Auth access, one file per subcollection under `users/{uid}/` |
+| `lib/firebase/` | Client data helpers, sign-in credentials, account deletion, emulator connections |
 | `lib/ai/` | Client-side bridge to the coach Cloud Function |
-| `functions/src/` | Genkit coach flow, its tools, quota buckets, consent and telemetry |
-| `types/types.ts` | Every domain type, as a Zod schema with a `WithId` variant |
+| `functions/src/` | Genkit coach, data tools, quota/period rules, RevenueCat sync, account/consent triggers, telemetry |
+| `types/types.ts` | App domain Zod schemas, with `WithId` variants for document-backed entities |
 | `components/` | Organized by domain — `exercise/`, `calendar/`, `ai/`, `modals/`, `cards/`, `ui/` |
 | `context/` | Auth, connectivity, chat, and active-program providers |
+| `constants/` | Theme tokens, query keys, Firebase region, rep ranges, and tier display definitions |
+| `scripts/` | Local emulator lifecycle and combined Expo/server development workflow |
+| `.agents/skills/` | Reusable Firebase and Genkit agent skills and references |
 
-Deeper guidance on conventions lives in [AGENTS.md](AGENTS.md).
+Project-wide agent rules and architecture guidance live in [AGENTS.md](AGENTS.md); [CLAUDE.md](CLAUDE.md) imports that same file. All project contributions and agent communications must be in English; Turkish is prohibited throughout the project.
 
 ---
 
 ## Running it locally
 
-Requires Node, the Expo CLI, and an Xcode or Android Studio toolchain. The app needs your own Firebase project — the committed `GoogleService-Info.plist` and `google-services.json` point at the production backend and won't work for you.
+Use Node 22 for the server, an Xcode or Android Studio toolchain for native builds, and Java 21+ plus a Firebase CLI on `PATH` for emulators. React Native Firebase requires a native development build; Expo Go cannot run these modules. The committed `GoogleService-Info.plist` and `google-services.json` target this project's backend; use your own Firebase configuration when developing independently.
 
 ```sh
 git clone https://github.com/siarkonyar/fitnessChronicleApp.git
 cd fitnessChronicleApp
-npm install
+npm ci
+npm --prefix functions ci     # separate backend dependency tree
 npx expo prebuild --clean     # native dirs; re-run after native dep changes
 npx expo run:ios              # or: npx expo run:android
 ```
@@ -119,13 +127,17 @@ npx expo run:ios              # or: npx expo run:android
 ```sh
 # Tests
 npm test                      # app (jest-expo)
-cd functions && npm test      # functions (vitest + Firebase emulators)
+npm --prefix functions test   # build + Vitest unit and emulator integration tests
+
+# Typechecks
+npx tsc --noEmit
+npm --prefix functions run typecheck
 
 # Lint
-npx expo lint
+npm run lint
 ```
 
-The functions emulator needs a JDK that `firebase-tools` accepts — export `JAVA_HOME` to a recent JDK before running `npm run serve` in `functions/`.
+Backend tests run separately from app Jest. Integration tests use the `demo-hercule` project via `npm --prefix functions run test:integration`; build the server first when running that command alone. Stop development emulators before starting integration tests to avoid port conflicts. Follow [the backend CI workflow](.github/workflows/functions.yml) for the throwaway `GEMINI_API_KEY` value in the gitignored `functions/.secret.local` used by guard-only tests. Real coach conversations require a real key.
 
 ### Running the dev build against fake Firebase (emulators)
 
@@ -176,7 +188,7 @@ The source is public so you can read it, learn from it, and report what's broken
 
 If you do send code:
 
-- Match the existing conventions in [AGENTS.md](AGENTS.md) — in particular, NativeWind `className` over the `style` prop, and colors from `constants/Colors.ts` rather than hardcoded values.
+- Match the existing conventions in [AGENTS.md](AGENTS.md) — in particular, English only with no Turkish, NativeWind `className` over the `style` prop, and colors from `constants/Colors.ts` rather than hardcoded values.
 - Conventional commit messages (`feat:`, `fix:`, `refactor:`, `chore:`).
 - Add tests for behavior you change.
 

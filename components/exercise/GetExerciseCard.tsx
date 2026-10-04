@@ -5,7 +5,7 @@ import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { logEvent } from "@/lib/analytics/client";
 import { deleteExerciseLog } from "@/lib/firebase/exercise";
 import { deleteOfflineExercise } from "@/lib/offlineStorage";
-import { ExerciseLogWithIdSchema } from "@/types/types"; // path doğruysa sıkıntı yok
+import { ExerciseLogWithIdSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
