@@ -127,6 +127,41 @@ npx expo lint
 
 The functions emulator needs a JDK that `firebase-tools` accepts — export `JAVA_HOME` to a recent JDK before running `npm run serve` in `functions/`.
 
+### Running the dev build against fake Firebase (emulators)
+
+You can run the whole app against the Firebase Emulator Suite instead of the live project. This lets you try backend changes without deploying, and test data never touches real accounts.
+
+```sh
+npm run dev:emu               # emulators + functions watcher + Expo, in one command
+```
+
+This command:
+
+1. Builds `functions/` and starts the **Auth, Firestore and Functions** emulators ([`scripts/emulators.sh`](scripts/emulators.sh)). It picks an installed JDK 21+ automatically.
+2. Waits until the log says `All emulators ready`, then starts `tsc --watch` in `functions/`, so server edits reload when you save.
+3. Starts Expo in the foreground with `EXPO_PUBLIC_USE_EMULATORS=true`. Expo's keys (`r`, `j`, …) work as usual.
+
+Emulator and watcher output goes to `.emulators.log`. Function logs also show in the Emulator UI at <http://localhost:4000>. Pressing **Ctrl+C** in Expo stops everything and saves the fake data to `emulator-data/`. The next start loads it again, so test accounts and logs survive restarts. Both paths are gitignored.
+
+Plain `npm start` still talks to the **live** project. The flag is only set by `dev:emu`, never in `.env.local`.
+
+**How the app switches over.** [`lib/firebase/emulators.ts`](lib/firebase/emulators.ts) is imported first in `app/_layout.tsx`, because the Firebase SDKs only accept an emulator before their first request. When the flag is on, it connects Auth (`9099`), Firestore (`8080`) and Functions (`5001`, the `europe-west2` instance) to the machine Metro is served from. That means it works in the simulator and on a physical phone on the same Wi-Fi. `firebase.json` binds the emulators to `0.0.0.0` for this reason. The switch is also gated on `__DEV__`, so a release build can never use it. Emulator mode gets its own TanStack Query cache key, so live and fake data never mix in the persisted cache.
+
+**Giving a test user a paid plan.** With the emulators running, take the user's uid from Emulator UI → Authentication and run:
+
+```sh
+npm --prefix functions run seed:plan -- <uid> [pro|max] [monthly|yearly]
+```
+
+The script writes the same `revenuecatCustomers/{uid}` document the RevenueCat extension would write. The real `onRevenueCatCustomerWritten` trigger in the Functions emulator then applies the plan, so you are testing the same path a real purchase takes. The script refuses to run unless `FIRESTORE_EMULATOR_HOST` is set, so it can't write to production.
+
+**Caveats**
+
+- The AI coach still calls the real Gemini API. Put a key in `functions/.secret.local` as `GEMINI_API_KEY=...` (gitignored).
+- Analytics and Crashlytics have no emulator.
+- Reinstall the app when switching between live and emulators. The on-device Firestore cache is not separated by host.
+- Google and Apple sign-in work against the Auth emulator. The accounts it creates are fake and live only in `emulator-data/`.
+
 ---
 
 ## Contributing
