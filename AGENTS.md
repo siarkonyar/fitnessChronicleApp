@@ -28,6 +28,8 @@ Decisions, findings, and open work for this project live in **MemPalace** (MCP s
 
 If MemPalace is unavailable, say so rather than silently skipping it, then investigate the current client's MCP registration and server health. A Claude Code plugin installation does not register the server in Codex: verify `mempalace` in `codex mcp list` and the user-level `~/.codex/config.toml`. Use the existing palace rather than initializing an empty replacement. Do not claim a memory search or update succeeded when it could not run.
 
+When Claude Code and Codex use the same local palace concurrently, use one shared loopback hub (`mempalace serve --host 127.0.0.1 --port 8765`). Their stdio MCP connections automatically forward to a live registered hub. A direct server in another client can hold the palace's writer lock and block saves; check the owning process before restarting it. Do not bypass the single-writer protection or create a replacement palace to work around it.
+
 ## Commands
 
 ```bash

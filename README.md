@@ -1,6 +1,6 @@
 <div align="center">
 
-# Hercule
+<h1><img src="assets/images/readme-header.svg" alt="Hercule" width="320"></h1>
 
 **Log any exercise, build a streak you can see, and train with an AI coach that actually knows your history.**
 
