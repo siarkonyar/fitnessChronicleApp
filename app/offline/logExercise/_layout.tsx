@@ -10,8 +10,8 @@ export default function LogExerciseLayout() {
   const navigation = useNavigation();
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: "Log Exercise", // Sayfa başlığı (back yanındaki)
-      headerBackTitle: "Back", // Geri butonu yazısı
+      headerTitle: "Log Exercise", // Title beside the back button
+      headerBackTitle: "Back", // Back button label
       headerTintColor: Colors[theme].background,
       headerBackground: () => (
         <View style={{ flex: 1, backgroundColor: Colors[theme].highlight }} />

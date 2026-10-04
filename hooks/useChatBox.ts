@@ -1,9 +1,6 @@
 import { queryKeys } from "@/constants/QueryKeys";
-import {
-  callCoach,
-  callUsagePercentage,
-  type CoachHistoryMessage,
-} from "@/lib/ai/coachServer";
+import { aiUsageQueryOptions } from "@/lib/ai/aiUsageQuery";
+import { callCoach, type CoachHistoryMessage } from "@/lib/ai/coachServer";
 import { getTodayString } from "@/lib/dateUtils";
 import { getDefaultMeasurement, getDefaultRepType } from "@/lib/offlineStorage";
 import { ChatMessageSchema } from "@/types/types";
@@ -71,13 +68,17 @@ export function useChatBox() {
   // would drift: the cache is what gets persisted to AsyncStorage, so a value
   // kept only in state is lost on close and the stale cached one comes back.
   //
-  // staleTime 0 overrides the global 5-minute default — the allowance can move
-  // on another device, and a rehydrated figure should never outlive one open.
-  const { data: percentUsed = null, error: usageError } = useQuery({
-    queryKey: queryKeys.aiUsage.all,
-    queryFn: callUsagePercentage,
-    staleTime: 0,
-  });
+  // Options come from one shared definition rather than being spelled out
+  // here, because useSubscriptionTier reads the same key — see aiUsageQuery.ts
+  // for why two inline copies are a render-order bug waiting to happen.
+  const { data: usage, error: usageError } = useQuery(aiUsageQueryOptions());
+
+  // Optional-chained rather than destructured with a default, because the
+  // persisted cache can rehydrate a bare number written by a build from before
+  // this endpoint returned an object. Reading a property off it yields
+  // undefined instead of throwing, and staleTime 0 refetches the real shape
+  // immediately.
+  const percentUsed = usage?.percentUsed ?? null;
 
   useEffect(() => {
     if (usageError) handleQueryError(usageError);
@@ -124,7 +125,7 @@ export function useChatBox() {
         history_length: messages.length,
       });
     },
-    onSuccess: ({ reply, program, percentUsed: nextPercentUsed }) => {
+    onSuccess: ({ reply, program, ...nextUsage }) => {
       setMessages((prev) => [
         ...prev,
         { role: "model", text: reply, ...(program && { program }) },
@@ -132,12 +133,16 @@ export function useChatBox() {
       // Written into the cache, not into local state, so the persisted copy
       // matches what's on screen — otherwise the next open rehydrates the old
       // figure and the bar reads stale until another message is sent.
-      queryClient.setQueryData(queryKeys.aiUsage.all, nextPercentUsed);
+      //
+      // The whole usage object goes in, not just the percentage: the reply
+      // carries a complete, fresh copy, so replacing the cached value wholesale
+      // cannot leave a stale reset date sitting beside a fresh percentage.
+      queryClient.setQueryData(queryKeys.aiUsage.all, nextUsage);
 
       logEvent("ai_response_received", {
         latency_ms: elapsedMs(),
         has_program: Boolean(program),
-        percent_used: nextPercentUsed,
+        percent_used: nextUsage.percentUsed,
       });
     },
     onError: (error) => {

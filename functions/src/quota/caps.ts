@@ -33,8 +33,29 @@
  */
 export const FREE_TOKEN_CAP = 40_000;
 
-/** Paid tier allowance per period. */
-export const PREMIUM_TOKEN_CAP = 3_000_000;
+/**
+ * Paid tier allowances per period.
+ *
+ * PROVISIONAL. Pricing for pro and max has not been decided, so these are
+ * placeholders that must be set from the real per-user cost target before
+ * either tier goes on sale. They are unreachable until the RevenueCat
+ * extension is installed and starts writing the customer documents
+ * syncCustomer turns into a paid tier, so a wrong number here cannot affect
+ * anyone today — but it silently becomes real the moment it can.
+ *
+ * PRO inherits the figure the old single paid tier was measured at. MAX is a
+ * guess whose only defensible property is being larger than PRO: a "max" tier
+ * that allows no more than "pro" is a lie told by the tier's name.
+ *
+ * BOTH ARE KNOWN TO BE TOO EXPENSIVE TO SELL AS THEY STAND. 3,000,000 tokens
+ * was measured at roughly $11 per user per month against a stated ceiling of
+ * $4, and MAX is more than three times that again. They are carried over
+ * unchanged only because nothing can reach them yet — whoever sets real
+ * pricing must bring these down to match it, or price the subscription to
+ * match them. Shipping either number as-is sells a subscription at a loss.
+ */
+export const PRO_TOKEN_CAP = 3_000_000;
+export const MAX_TOKEN_CAP = 10_000_000;
 
 /**
  * Refuse a turn when fewer than this many tokens remain.
@@ -58,10 +79,16 @@ export const PREMIUM_TOKEN_CAP = 3_000_000;
  */
 export const MIN_HEADROOM_TOKENS = 5_000;
 
-/** Length of a usage period, counted from periodStart. */
-export const PERIOD_DAYS = 30;
-
-export type Tier = "free" | "premium";
+/**
+ * The tiers, spelled exactly as the app spells them in types/types.ts.
+ *
+ * These two vocabularies MUST stay identical. This file used to say
+ * "free" | "premium" while the app said "free" | "pro" | "max", which was
+ * harmless only because nothing could write a paid tier yet. The day
+ * RevenueCat writes "pro" onto a document, a server that does not know the
+ * word resolves it to free and silently bills someone for the free allowance.
+ */
+export type Tier = "free" | "pro" | "max";
 
 /**
  * How many turns a user may fire back-to-back before the drip rate takes over.
@@ -85,5 +112,22 @@ export const BUCKET_CAPACITY = 5;
  */
 export const REFILL_INTERVAL_MS = 12_000;
 
-export const capForTier = (tier: Tier): number =>
-  tier === "premium" ? PREMIUM_TOKEN_CAP : FREE_TOKEN_CAP;
+const CAP_BY_TIER: Record<Tier, number> = {
+  free: FREE_TOKEN_CAP,
+  pro: PRO_TOKEN_CAP,
+  max: MAX_TOKEN_CAP,
+};
+
+export const capForTier = (tier: Tier): number => CAP_BY_TIER[tier];
+
+/**
+ * Narrows whatever is stored in a document's `tier` field to a real tier.
+ *
+ * Anything unrecognised — missing, misspelt, left over from the old
+ * "premium" vocabulary, or corrupted — becomes "free". That direction is not
+ * arbitrary: a bad value can then only ever cost a user allowance, never
+ * grant it. The opposite default would make a typo in the Firebase console
+ * into an unlimited free upgrade.
+ */
+export const parseTier = (value: unknown): Tier =>
+  value === "pro" || value === "max" ? value : "free";

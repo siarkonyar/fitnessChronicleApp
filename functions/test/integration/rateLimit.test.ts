@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { BUCKET_CAPACITY, PREMIUM_TOKEN_CAP } from "../../src/quota/caps.js";
+import { BUCKET_CAPACITY, PRO_TOKEN_CAP } from "../../src/quota/caps.js";
 import {
+  activeEntitlement,
   callCoach,
   catchCallableError,
   clearUsage,
@@ -29,7 +30,8 @@ describe("rate limiting", () => {
     const { uid } = await createTestUser();
     await seedUsage(uid, {
       // Plenty of allowance left, so nothing but the bucket can refuse this.
-      tier: "premium",
+      tier: "pro",
+      entitlementExpiresAt: activeEntitlement(),
       tokensUsed: 0,
       rateTokens: 0,
       // Recent, so no token refills between the seed and the call.
@@ -48,7 +50,8 @@ describe("rate limiting", () => {
     const { uid } = await createTestUser();
     const seededAt = Date.now();
     await seedUsage(uid, {
-      tier: "premium",
+      tier: "pro",
+      entitlementExpiresAt: activeEntitlement(),
       tokensUsed: 0,
       rateTokens: 0,
       rateLastRefill: seededAt,
@@ -68,11 +71,12 @@ describe("rate limiting", () => {
   it("lets exactly BUCKET_CAPACITY concurrent turns through, and no more", async () => {
     const { uid } = await createTestUser();
     await seedUsage(uid, {
-      tier: "premium",
+      tier: "pro",
+      entitlementExpiresAt: activeEntitlement(),
       // Over quota on purpose. Every one of these turns is refused either way,
       // so none can reach Gemini — but the REASON tells us which gate stopped
       // it, and that is what this test reads.
-      tokensUsed: PREMIUM_TOKEN_CAP,
+      tokensUsed: PRO_TOKEN_CAP,
       rateTokens: BUCKET_CAPACITY,
       rateLastRefill: Date.now(),
     });

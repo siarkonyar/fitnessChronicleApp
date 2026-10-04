@@ -1,6 +1,6 @@
 import { logger } from "firebase-functions";
 import { region } from "firebase-functions/v1";
-import { aiUsageDoc } from "../data/firestore.js";
+import { aiUsageDoc, db, revenueCatCustomerDoc } from "../data/firestore.js";
 
 /**
  * Spelled out rather than imported from index.ts.
@@ -11,7 +11,20 @@ import { aiUsageDoc } from "../data/firestore.js";
 const TRIGGER_REGION = "europe-west2";
 
 /**
- * Deletes the user's AI usage counter once their account is gone.
+ * Deletes the user's server-only documents once their account is gone: the
+ * AI usage counter, and the customer document the RevenueCat extension keeps
+ * for them (their purchase history, keyed by uid).
+ *
+ * Both are deleted in ONE batch, so a failure never leaves one behind while
+ * the other goes, and a retry repeats both.
+ *
+ * KNOWN GAP. This removes OUR copy of the customer. RevenueCat still holds
+ * the customer, and a later event for them (an EXPIRATION, a refund) makes
+ * the extension write the document again. syncCustomer refuses it — the
+ * account no longer exists — but the orphan document stays. Closing that
+ * needs deleting the customer from RevenueCat itself via its REST API, which
+ * waits on the RevenueCat secret key. Deleting the account does not cancel
+ * the store subscription either; the delete-account screen says so.
  *
  * WHY THIS IS A TRIGGER AND NOT A STEP INSIDE deleteAccount()
  *
@@ -50,21 +63,27 @@ export const onUserDeleted = region(TRIGGER_REGION)
     const { uid } = user;
 
     try {
-      await aiUsageDoc(uid).delete();
-      logger.info("Deleted aiUsage after account deletion", { uid });
-    } catch (error) {
-      logger.error("Failed to delete aiUsage after account deletion", {
+      const batch = db.batch();
+      batch.delete(aiUsageDoc(uid));
+      batch.delete(revenueCatCustomerDoc(uid));
+      await batch.commit();
+
+      logger.info("Deleted server-only user documents after account deletion", {
         uid,
-        error,
       });
+    } catch (error) {
+      logger.error(
+        "Failed to delete server-only user documents after account deletion",
+        { uid, error },
+      );
 
       // Rethrown so the runtime retries — the OPPOSITE of what onConsentChanged
       // does, and deliberately so. A retried append writes a duplicate consent
       // row, which is why that trigger swallows its error. A retried delete
       // writes nothing twice: deleting an already-deleted document succeeds
-      // silently. The failure mode here is a usage counter outliving the account
-      // it belonged to, so retrying until it is gone is strictly better than
-      // giving up after one attempt.
+      // silently. The failure mode here is a usage counter or a purchase
+      // history outliving the account it belonged to, so retrying until both
+      // are gone is strictly better than giving up after one attempt.
       throw error;
     }
   });

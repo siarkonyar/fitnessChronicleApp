@@ -15,11 +15,36 @@ import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
 import React, { useState } from "react";
-import { Alert, ScrollView, useColorScheme, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native";
 
 // Google and Apple each report a dismissed sign-in sheet their own way, and
 // neither uses a Firebase error code.
 const CANCELLATION_MARKERS = ["cancel", "1001", "-5"];
+
+// Deleting a Hercule account cannot cancel a store subscription — only the
+// store can. These open the page where the user cancels it themselves.
+const STORE_NAME = Platform.OS === "ios" ? "App Store" : "Google Play";
+const MANAGE_SUBSCRIPTIONS_URL =
+  Platform.OS === "ios"
+    ? "https://apps.apple.com/account/subscriptions"
+    : "https://play.google.com/store/account/subscriptions";
+
+function openSubscriptionSettings() {
+  Linking.openURL(MANAGE_SUBSCRIPTIONS_URL).catch(() => {
+    Alert.alert(
+      "Couldn't open subscriptions",
+      `Open your ${STORE_NAME} subscriptions from your phone's settings to cancel.`,
+    );
+  });
+}
 
 function isCancellation(error: unknown): boolean {
   const description = [
@@ -56,7 +81,7 @@ export default function Index() {
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete Account",
-      "Are you sure you want to permanently delete your account? This action cannot be undone and will delete all your data including:\n\n• All exercise logs\n• Exercise names\n• Labels\n• Account information\n\nYou'll be asked to sign in again first, so we can confirm it's really you. Nothing is deleted until you do.",
+      `Are you sure you want to permanently delete your account? This action cannot be undone and will delete all your data including:\n\n• All exercise logs\n• Exercise names\n• Labels\n• Account information\n\nThis does not cancel a Pro or Max subscription — cancel that in the ${STORE_NAME} first.\n\nYou'll be asked to sign in again first, so we can confirm it's really you. Nothing is deleted until you do.`,
       [
         {
           text: "Cancel",
@@ -212,6 +237,48 @@ export default function Index() {
             </View>
           </View>
         </Card>
+
+        {/* Not red like the list above: this is about what is NOT removed.
+            Shown to everyone rather than only to paid users, because the tier
+            falls back to free while loading or offline — and a paying user is
+            exactly who must not miss it. */}
+        <View
+          className="flex-row items-start rounded-2xl border p-4 mb-4"
+          style={{
+            backgroundColor: Colors[theme].warning + "14",
+            borderColor: Colors[theme].warning + "66",
+          }}
+        >
+          <MaterialIcons
+            name="credit-card"
+            size={24}
+            color={Colors[theme].warning}
+            style={{ marginRight: 12, marginTop: 1 }}
+          />
+          <View className="flex-1">
+            <ThemedText type="defaultSemiBold" className="mb-1">
+              Subscriptions keep billing
+            </ThemedText>
+            <ThemedText className="opacity-90">
+              If you subscribe to Hercule Pro or Max, deleting your account
+              doesn&apos;t cancel it. Cancel it in the {STORE_NAME} first, or
+              you&apos;ll keep being charged.
+            </ThemedText>
+            <TouchableOpacity
+              onPress={openSubscriptionSettings}
+              disabled={isDeleting}
+              accessibilityRole="link"
+              className="mt-2 self-start"
+            >
+              <ThemedText
+                type="defaultSemiBold"
+                style={{ color: Colors[theme].accentBlue }}
+              >
+                Manage subscriptions
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {user && (
           <Card className="mb-6">

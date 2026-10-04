@@ -5,10 +5,14 @@ import { CallableRequest, HttpsError, onCall } from "firebase-functions/https";
 import { defineSecret } from "firebase-functions/params";
 import { coachFlow } from "./ai/flows/coach.js";
 import { COACH_MODEL, COACH_THINKING_LEVEL } from "./ai/genkit.js";
+import { onUserCreated } from "./account/createAiUsage.js";
 import { onUserDeleted } from "./account/deleteAiUsage.js";
 import { onConsentChanged } from "./consent/recordConsentChange.js";
+import { onRevenueCatCustomerWritten } from "./revenuecat/syncCustomer.js";
 import { recordTurn } from "./telemetry/aiTurn.js";
-import { checkQuota, toPercentUsed } from "./quota/check.js";
+import { checkQuota, toPercentUsed, type QuotaDecision } from "./quota/check.js";
+import { billingPeriodOf, type BillingPeriod } from "./revenuecat/billingPeriod.js";
+import type { Tier } from "./quota/caps.js";
 import { recordUsage } from "./quota/record.js";
 import { CoachRequestSchema, isPlausibleToday } from "./types.js";
 
@@ -30,11 +34,69 @@ const geminiApiKey = defineSecret("GEMINI_API_KEY");
 export const REGION = "europe-west2";
 
 /**
+ * Everything the app is allowed to know about its own allowance.
+ *
+ * Deliberately shared by both callables below so the two can never disagree
+ * about the shape — the chat reply carries a fresh copy of exactly what
+ * getUsagePercentage would return, which is what lets the app keep one cached
+ * answer instead of reconciling two.
+ *
+ * `tier` is always "free" today: syncCustomer can write a paid tier, but only
+ * from documents the RevenueCat extension writes, and the extension is not
+ * installed yet. It is sent anyway, and that is the entire
+ * point: a callable's response shape is a contract with every already-
+ * installed app, so adding a field later would break every build in the wild.
+ * Sending it now, while the only possible value is the one the app already
+ * assumes, costs nothing and makes the RevenueCat change additive.
+ *
+ * Never token counts, never cost, never the cap — a percentage tells the user
+ * what they need without publishing what a turn costs us.
+ */
+export interface AiUsageResponse {
+  /** 0-100, rounded. */
+  percentUsed: number;
+  /** ISO 8601, or null when no period has been set. */
+  resetsAt: string | null;
+  tier: Tier;
+  /** ISO 8601. When paid access runs out; null for free users. */
+  activeUntil: string | null;
+  /** From the product id — see billingPeriod.ts. Null when unknown or free. */
+  billingPeriod: BillingPeriod | null;
+}
+
+/** Dates do not survive a callable's JSON boundary as Dates. */
+const toIso = (date: Date | null): string | null =>
+  date === null ? null : date.toISOString();
+
+/**
+ * The one place both callables build the usage half of their response, so a
+ * field added for one can never be forgotten on the other. Only percentUsed
+ * differs between them: the coach reply counts the turn it just spent.
+ */
+const toAiUsageResponse = (
+  quota: QuotaDecision,
+  percentUsed: number,
+): AiUsageResponse => ({
+  percentUsed,
+  resetsAt: toIso(quota.resetsAt),
+  tier: quota.tier,
+  activeUntil: toIso(quota.activeUntil),
+  billingPeriod: billingPeriodOf(quota.productId),
+});
+
+/**
  * Re-exported so it deploys. Defined in ./consent/recordConsentChange.ts —
  * it is a Firestore trigger, not a callable, so nothing in the app calls it
  * directly and it would silently never run if this line were missing.
  */
 export { onConsentChanged };
+
+/**
+ * Re-exported so it deploys. Defined in ./account/createAiUsage.ts — an auth
+ * trigger, so nothing calls it directly and it would silently never run if
+ * this line were missing.
+ */
+export { onUserCreated };
 
 /**
  * Re-exported so it deploys. Defined in ./account/deleteAiUsage.ts — an auth
@@ -43,6 +105,14 @@ export { onConsentChanged };
  * leave every deleted account's usage counter behind with no error anywhere.
  */
 export { onUserDeleted };
+
+/**
+ * Re-exported so it deploys. Defined in ./revenuecat/syncCustomer.ts — a
+ * Firestore trigger on the documents the RevenueCat extension writes. Nothing
+ * calls it directly, so a missing line here would take people's money and
+ * never give them the plan they paid for, with no error anywhere.
+ */
+export { onRevenueCatCustomerWritten };
 
 interface PingResponse {
   uid: string;
@@ -82,11 +152,13 @@ export const ping = onCall(
   },
 );
 
-interface CoachResponse {
+/**
+ * Extends the usage shape rather than restating it, so a field added to one
+ * endpoint can never be forgotten on the other.
+ */
+interface CoachResponse extends AiUsageResponse {
   reply: string;
   program?: unknown;
-  /** 0-100. The only usage figure the app is ever told — never tokens, never cost. */
-  percentUsed: number;
 }
 
 /**
@@ -191,22 +263,36 @@ export const chatWithCoach = onCall(
       usedFallbackReply: result.usedFallbackReply,
     });
 
-    // Only the reply, the proposed program, and a percentage cross the wire.
-    // Never token counts, never cost.
+    // Only the reply, the proposed program, and the usage figures cross the
+    // wire. Never token counts, never cost.
+    //
+    // The usage fields are the same three getUsagePercentage returns, so the
+    // app can drop this straight into the cache it already holds rather than
+    // merging a partial update into it.
     return {
       reply: result.reply,
       ...(result.program && { program: result.program }),
-      percentUsed: toPercentUsed(
-        quota.tokensUsed + result.totalTokens,
-        quota.cap,
+      ...toAiUsageResponse(
+        quota,
+        toPercentUsed(quota.tokensUsed + result.totalTokens, quota.cap),
       ),
     };
   },
 );
 
+/**
+ * The name is now narrower than what this returns — it answers the whole
+ * allowance question, not just the percentage. Renaming it would orphan the
+ * deployed function until someone deletes it by hand, so the name is left
+ * alone until the RevenueCat deploy makes that cleanup worth doing anyway.
+ */
 export const getUsagePercentage = onCall(
-  { region: REGION, secrets: [geminiApiKey], maxInstances: 10 },
-  async (request: CallableRequest): Promise<number> => {
+  // No `secrets` binding, unlike chatWithCoach above, and the asymmetry is
+  // deliberate rather than an oversight: this callable only reads Firestore and
+  // never reaches Gemini, so mounting the key here would hand it to a function
+  // with no use for it.
+  { region: REGION, maxInstances: 10 },
+  async (request: CallableRequest): Promise<AiUsageResponse> => {
     const uid = request.auth?.uid;
     if (!uid) {
       throw new HttpsError("unauthenticated", "You must be signed in.");
@@ -216,8 +302,11 @@ export const getUsagePercentage = onCall(
     // every time the chat box opens, so charging it against the rate-limit
     // bucket would let a user lock themselves out of the coach by opening and
     // closing the chat five times without ever sending a message.
+    //
+    // It also OPENS a free user's first period as a side effect, which is why
+    // a user who has never messaged the coach still gets a real reset date.
     const quota = await checkQuota(uid, new Date(), { spendRateToken: false });
 
-    return toPercentUsed(quota.tokensUsed, quota.cap);
+    return toAiUsageResponse(quota, toPercentUsed(quota.tokensUsed, quota.cap));
   },
 );
