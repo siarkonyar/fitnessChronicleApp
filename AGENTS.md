@@ -26,7 +26,7 @@ Decisions, findings, and open work for this project live in **MemPalace** (MCP s
 
 **RevenueCat to-do list:** drawer `drawer_fitnesschronicleapp_general_863cb973eee151f9b7885c9c`. Mention open items only when the user's question relates to one of them. When an item is done, move it to ALREADY DONE with its commit hash.
 
-If MemPalace is unavailable, say so rather than silently skipping it, then continue using the repository as the source of truth. Do not claim a memory search or update succeeded when it could not run.
+If MemPalace is unavailable, say so rather than silently skipping it, then investigate the current client's MCP registration and server health. A Claude Code plugin installation does not register the server in Codex: verify `mempalace` in `codex mcp list` and the user-level `~/.codex/config.toml`. Use the existing palace rather than initializing an empty replacement. Do not claim a memory search or update succeeded when it could not run.
 
 ## Commands
 
