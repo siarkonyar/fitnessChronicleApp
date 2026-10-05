@@ -421,15 +421,46 @@ describe("getLatestExercisesByName", () => {
 });
 
 describe("deleteExerciseName", () => {
-  // FIXME: the query filters on an undeclared `name` instead of the nameId
-  // argument, and reads `doc.data.name` instead of `doc.data().name`. On device
-  // the call throws, so deleting a suggestion in ExerciseNameInput never works.
-  test.failing("deletes the remembered exercise name", async () => {
+  // ExerciseNameInput passes the suggestion's text, so this deletes by name.
+  test("deletes the remembered exercise name and reports it", async () => {
     seedDoc([...USER, "exerciseNames", "n1"], { name: "squat" });
+    seedDoc([...USER, "exerciseNames", "n2"], { name: "row" });
 
-    await deleteExerciseName("n1");
+    const result = await deleteExerciseName("squat");
+
+    expect(result).toEqual({ deletedNames: ["squat"], message: "Exercise name deleted successfully!" });
+    expect(userNames()).toEqual([`users/${TEST_UID}/exerciseNames/n2`]);
+  });
+
+  test("removes every duplicate of that name in one go", async () => {
+    seedDoc([...USER, "exerciseNames", "n1"], { name: "squat" });
+    seedDoc([...USER, "exerciseNames", "n2"], { name: "squat" });
+
+    await deleteExerciseName("squat");
 
     expect(userNames()).toEqual([]);
+  });
+
+  test("matches the name exactly, so other casings stay", async () => {
+    seedDoc([...USER, "exerciseNames", "n1"], { name: "Squat" });
+
+    await expect(deleteExerciseName("squat")).rejects.toThrow("Exercise name not found.");
+    expect(userNames()).toHaveLength(1);
+  });
+
+  test("keeps past logs of that exercise", async () => {
+    const id = await addExerciseLog(makeLog({ activity: "squat" }));
+
+    await deleteExerciseName("squat");
+
+    expect(readDoc(logPath(id))).toBeDefined();
+  });
+
+  test("never touches another user's names", async () => {
+    seedDoc(["users", "other", "exerciseNames", "n1"], { name: "squat" });
+
+    await expect(deleteExerciseName("squat")).rejects.toThrow("Exercise name not found.");
+    expect(listPaths(["users", "other"])).toHaveLength(1);
   });
 });
 

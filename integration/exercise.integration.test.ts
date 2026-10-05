@@ -161,14 +161,13 @@ describe("editing and deleting", () => {
     await expect(deleteExerciseLog("missing")).rejects.toThrow("Fitness log not found.");
   });
 
-  // FIXME: references an undeclared `name`; on device it always throws.
-  test.failing("deletes a remembered exercise name", async () => {
+  test("deletes a remembered exercise name, as the suggestion list does", async () => {
     await addExerciseLog(makeLog({ activity: "squat" }));
-    const [{ id }] = await getAllExerciseNames();
+    await addExerciseLog(makeLog({ activity: "row" }));
 
-    await deleteExerciseName(id);
+    await deleteExerciseName("squat");
 
-    expect(await getAllExerciseNames()).toEqual([]);
+    expect((await getAllExerciseNames()).map((n) => n.name)).toEqual(["row"]);
   });
 });
 
