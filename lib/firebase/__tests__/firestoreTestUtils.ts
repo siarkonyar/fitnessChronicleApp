@@ -11,6 +11,13 @@
  *   "users/test-user/labels/abc"
  * Sub-collections are just longer paths.
  *
+ * It mirrors @react-native-firebase/firestore v23 where the difference matters:
+ *  - DocumentSnapshot.exists() is a METHOD (it was a property before v22). Code
+ *    that still reads `snap.exists` gets a function, which is always truthy.
+ *  - Writing an `undefined` field throws "Unsupported field value: undefined",
+ *    as the native SDK does unless ignoreUndefinedProperties is set.
+ *  - A batch is atomic and refuses more than 500 writes, like the server.
+ *
  * NOT supported (add later if you start using them): dotted field paths in
  * update(), transactions, onSnapshot, FieldValue.increment.
  */
@@ -58,6 +65,27 @@ const toComparable = (v: unknown): string | number => {
   return v as string | number;
 };
 
+/** Firestore refuses a batch with more writes than this. */
+export const MAX_BATCH_WRITES = 500;
+
+// RNFB serializes every write and throws on the first undefined it meets,
+// at any depth, before anything reaches the database.
+const assertNoUndefined = (value: unknown): void => {
+  if (value === undefined) {
+    throw new Error("Unsupported field value: undefined");
+  }
+  if (isSentinel(value) || value instanceof Date || value instanceof FakeTimestamp) {
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach(assertNoUndefined);
+    return;
+  }
+  if (typeof value === "object" && value !== null) {
+    Object.values(value).forEach(assertNoUndefined);
+  }
+};
+
 // ---------------------------------------------------------------------------
 // The store + write application
 // ---------------------------------------------------------------------------
@@ -65,6 +93,8 @@ type DocData = Record<string, unknown>;
 
 class Store {
   docs = new Map<string, DocData>();
+  /** How many writes each committed batch carried, in commit order. */
+  batchSizes: number[] = [];
   private autoCounter = 0;
   nextId(): string {
     this.autoCounter += 1;
@@ -72,6 +102,7 @@ class Store {
   }
   reset(): void {
     this.docs.clear();
+    this.batchSizes = [];
     this.autoCounter = 0;
   }
 }
@@ -112,12 +143,15 @@ class DocSnapshot {
   get id(): string {
     return this.path.split("/").pop()!;
   }
-  get exists(): boolean {
+  exists(): boolean {
     return this.store.docs.has(this.path);
   }
   data(): DocData | undefined {
     const data = this.store.docs.get(this.path);
     return data ? { ...data } : undefined;
+  }
+  get(field: string): unknown {
+    return this.store.docs.get(this.path)?.[field];
   }
   get ref(): DocRef {
     return new DocRef(this.store, this.path);
@@ -133,8 +167,14 @@ class QueryDocSnapshot {
   get id(): string {
     return this.path.split("/").pop()!;
   }
+  exists(): true {
+    return true;
+  }
   data(): DocData {
     return { ...(this.store.docs.get(this.path) ?? {}) };
+  }
+  get(field: string): unknown {
+    return this.store.docs.get(this.path)?.[field];
   }
   get ref(): DocRef {
     return new DocRef(this.store, this.path);
@@ -224,14 +264,22 @@ class Query {
 
     paths = paths.filter((p) => this.matches(this.store.docs.get(p)!));
 
-    for (const { field, dir } of this.orders) {
-      paths.sort((p1, p2) => {
+    // Like the real server, orderBy(field) silently drops documents that do
+    // not have that field at all.
+    paths = paths.filter((p) =>
+      this.orders.every(({ field }) => field in this.store.docs.get(p)!),
+    );
+
+    // The first orderBy is the primary key; later ones only break ties.
+    paths.sort((p1, p2) => {
+      for (const { field, dir } of this.orders) {
         const a = toComparable(this.store.docs.get(p1)![field]);
         const b = toComparable(this.store.docs.get(p2)![field]);
         const cmp = a < b ? -1 : a > b ? 1 : 0;
-        return dir === "asc" ? cmp : -cmp;
-      });
-    }
+        if (cmp !== 0) return dir === "asc" ? cmp : -cmp;
+      }
+      return 0;
+    });
 
     if (this.limitN !== undefined) paths = paths.slice(0, this.limitN);
 
@@ -273,10 +321,12 @@ class DocRef {
     return new DocSnapshot(this.store, this.path);
   }
   async set(data: DocData, options?: { merge?: boolean }): Promise<void> {
+    assertNoUndefined(data);
     const base = options?.merge ? (this.store.docs.get(this.path) ?? {}) : {};
     this.store.docs.set(this.path, applyWrite(base, data));
   }
   async update(data: DocData): Promise<void> {
+    assertNoUndefined(data);
     const existing = this.store.docs.get(this.path);
     if (!existing) {
       throw new Error(`No document to update: ${this.path}`);
@@ -294,10 +344,12 @@ class DocRef {
 class Batch {
   private ops: (() => Promise<void>)[] = [];
   set(ref: DocRef, data: DocData, options?: { merge?: boolean }): Batch {
+    assertNoUndefined(data);
     this.ops.push(() => ref.set(data, options));
     return this;
   }
   update(ref: DocRef, data: DocData): Batch {
+    assertNoUndefined(data);
     this.ops.push(() => ref.update(data));
     return this;
   }
@@ -305,8 +357,22 @@ class Batch {
     this.ops.push(() => ref.delete());
     return this;
   }
+  constructor(private readonly store: Store) {}
   async commit(): Promise<void> {
-    for (const op of this.ops) await op();
+    if (this.ops.length > MAX_BATCH_WRITES) {
+      throw new Error(
+        `A write batch can contain at most ${MAX_BATCH_WRITES} operations, got ${this.ops.length}.`,
+      );
+    }
+    // All or nothing: a failing op rolls back the ones before it.
+    const before = new Map(this.store.docs);
+    try {
+      for (const op of this.ops) await op();
+    } catch (error) {
+      this.store.docs = before;
+      throw error;
+    }
+    this.store.batchSizes.push(this.ops.length);
   }
 }
 
@@ -319,7 +385,7 @@ const store = new Store();
 const firestoreMock = Object.assign(
   () => ({
     collection: (name: string) => new CollectionRef(store, name),
-    batch: () => new Batch(),
+    batch: () => new Batch(store),
   }),
   {
     FieldValue,
@@ -341,5 +407,14 @@ export const readDoc = (segments: string[]): DocData | undefined => {
   return data ? { ...data } : undefined;
 };
 
-export { firestoreMock };
+/** Every stored path that starts with the given segments. */
+export const listPaths = (segments: string[] = []): string[] => {
+  const prefix = segments.length ? `${segments.join("/")}/` : "";
+  return [...store.docs.keys()].filter((key) => key.startsWith(prefix)).sort();
+};
+
+/** Sizes of the batches committed since the last reset, in order. */
+export const committedBatchSizes = (): number[] => [...store.batchSizes];
+
+export { FakeTimestamp, firestoreMock };
 export default firestoreMock;
