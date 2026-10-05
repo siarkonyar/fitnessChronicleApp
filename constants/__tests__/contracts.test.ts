@@ -94,21 +94,14 @@ describe("Colors", () => {
 
   const COLOUR = /^(#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})|rgba?\([^)]+\)|transparent)$/i;
 
-  test("every other token is a colour React Native can parse", () => {
+  test("every token is a colour React Native can parse", () => {
     for (const theme of [Colors.light, Colors.dark]) {
       for (const [token, value] of Object.entries(theme)) {
-        if (token === "transparent") continue;
         expect([token, value]).toEqual([token, expect.stringMatching(COLOUR)]);
       }
     }
   });
 
-  // FIXME: "FFFFFF00" is missing its "#", so React Native rejects it as a
-  // colour (used by the profile screen and WeightDisplay backgrounds).
-  test.failing("the transparent token is a colour React Native can parse", () => {
-    expect(Colors.light.transparent).toMatch(COLOUR);
-    expect(Colors.dark.transparent).toMatch(COLOUR);
-  });
 });
 
 describe("queryKeys", () => {
