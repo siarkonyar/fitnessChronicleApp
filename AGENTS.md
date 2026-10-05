@@ -151,7 +151,7 @@ Reuse query keys from `constants/QueryKeys.ts` and invalidate affected queries a
 
 ### AI coach (`lib/ai/`, `components/ai/`)
 
-`lib/ai/coachServer.ts` calls a Cloud Function (`httpsCallable`, `europe-west2`) that runs the coach logic in Genkit server-side — no AI/model code runs on-device. It can return a chat `reply` and/or a proposed `program` (a draft `ProgramSchema`). `lib/programLabels.ts` reconciles an AI-proposed program's day labels against the user's existing labels (matching by `description`) before it's accepted. Chat state lives in `hooks/useChatBox.ts`, exposed app-wide via `ChatContext`. UI pieces (`ChatBubble`, `ChatComposer`, `ProgramProposalCard`, `SuggestionPills`, `UsageBar`, `TypingIndicator`, `CoachDisclaimer`) live in `components/ai/`.
+`lib/ai/coachServer.ts` calls a Cloud Function (`httpsCallable`, `europe-west2`) that runs the coach logic in Genkit server-side — no AI/model code runs on-device. It can return a chat `reply` and/or a proposed `program` (a draft `ProgramSchema`). `lib/programLabels.ts` reconciles an AI-proposed program's day labels against the user's existing labels (matching by `description`) before it's accepted. Chat state lives in `hooks/useChatBox.ts`, exposed app-wide via `ChatContext`. `lib/ai/coachErrors.ts` classifies refusals; match callable error codes in both spellings, because React Native Firebase sends them bare (`resource-exhausted`) on device while the Firebase JS SDK prefixes them (`functions/resource-exhausted`). UI pieces (`ChatBubble`, `ChatComposer`, `ProgramProposalCard`, `SuggestionPills`, `UsageBar`, `TypingIndicator`, `CoachDisclaimer`) live in `components/ai/`.
 
 ### Cloud Functions (`functions/src/`)
 
