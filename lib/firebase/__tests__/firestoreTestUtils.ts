@@ -89,6 +89,16 @@ const assertNoUndefined = (value: unknown): void => {
 // ---------------------------------------------------------------------------
 type DocData = Record<string, unknown>;
 
+const cloneValue = (value: unknown): unknown => {
+  if (value instanceof Date) return new Date(value.getTime());
+  if (value instanceof FakeTimestamp) return FakeTimestamp.fromDate(new Date(value.toMillis()));
+  if (Array.isArray(value)) return value.map(cloneValue);
+  if (typeof value === "object" && value !== null) {
+    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, cloneValue(child)]));
+  }
+  return value;
+};
+
 class Store {
   docs = new Map<string, DocData>();
   /** How many writes each committed batch carried, in commit order. */
@@ -134,22 +144,24 @@ const applyWrite = (base: DocData, patch: DocData): DocData => {
 // Snapshots
 // ---------------------------------------------------------------------------
 class DocSnapshot {
+  private readonly captured: DocData | undefined;
   constructor(
     private readonly store: Store,
     readonly path: string,
-  ) {}
+  ) {
+    this.captured = cloneValue(store.docs.get(path)) as DocData | undefined;
+  }
   get id(): string {
     return this.path.split("/").pop()!;
   }
   exists(): boolean {
-    return this.store.docs.has(this.path);
+    return this.captured !== undefined;
   }
   data(): DocData | undefined {
-    const data = this.store.docs.get(this.path);
-    return data ? { ...data } : undefined;
+    return cloneValue(this.captured) as DocData | undefined;
   }
   get(field: string): unknown {
-    return this.store.docs.get(this.path)?.[field];
+    return cloneValue(this.captured?.[field]);
   }
   get ref(): DocRef {
     return new DocRef(this.store, this.path);
@@ -158,10 +170,13 @@ class DocSnapshot {
 
 // A doc inside a query result. Always exists; has .data() and .ref.
 class QueryDocSnapshot {
+  private readonly captured: DocData;
   constructor(
     private readonly store: Store,
     readonly path: string,
-  ) {}
+  ) {
+    this.captured = cloneValue(store.docs.get(path) ?? {}) as DocData;
+  }
   get id(): string {
     return this.path.split("/").pop()!;
   }
@@ -169,10 +184,10 @@ class QueryDocSnapshot {
     return true;
   }
   data(): DocData {
-    return { ...(this.store.docs.get(this.path) ?? {}) };
+    return cloneValue(this.captured) as DocData;
   }
   get(field: string): unknown {
-    return this.store.docs.get(this.path)?.[field];
+    return cloneValue(this.captured[field]);
   }
   get ref(): DocRef {
     return new DocRef(this.store, this.path);

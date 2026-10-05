@@ -27,7 +27,7 @@ jest.mock("@/lib/analytics/client", () => ({
 }));
 
 jest.mock("@/lib/analytics/consent", () => ({
-  applyStoredConsent: () => mockApplyStoredConsent(),
+  applyStoredConsent: (...args: unknown[]) => mockApplyStoredConsent(...args),
 }));
 
 jest.mock("@/context/AuthContext", () => ({
@@ -100,7 +100,7 @@ describe("useAnalyticsConsent", () => {
 
     expect(mockSetUserId).toHaveBeenCalledWith("uid-1");
     expect(mockApplyStoredConsent).toHaveBeenCalledTimes(1);
-    expect(mockSetCollectionEnabled).not.toHaveBeenCalled();
+    expect(mockSetCollectionEnabled).toHaveBeenCalledWith(false);
   });
 
   test("on sign-out, stops collecting before the next person signs in", () => {

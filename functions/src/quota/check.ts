@@ -138,11 +138,10 @@ const readBucket = (
  *
  * Known gap: this function checks the token budget, it does not reserve it.
  * Several concurrent turns can each read the same balance, each pass, and each
- * spend. The bucket now bounds that overshoot hard — at most BUCKET_CAPACITY
- * turns can be in flight at once, so the worst case is roughly
- * MIN_HEADROOM_TOKENS x BUCKET_CAPACITY rather than being unbounded. Closing
- * it completely needs a reserve-then-reconcile design, which also means
- * charging users for turns that fail. Left open deliberately.
+ * spend. The bucket bounds the arrival rate, not in-flight concurrency: it
+ * refills while earlier turns are still running. Neither turn cost nor total
+ * overshoot has a hard bound here. Closing this needs reservations reconciled
+ * with actual usage, including releasing reservations for failed turns.
  */
 export const checkQuota = async (
   uid: string,

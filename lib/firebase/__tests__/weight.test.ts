@@ -10,6 +10,7 @@ import {
 } from "../weight";
 import {
   TEST_UID,
+  firestoreMock,
   committedBatchSizes,
   listPaths,
   readDoc,
@@ -191,6 +192,31 @@ describe("getWeightMeasure", () => {
 });
 
 describe("updateMeasure", () => {
+  // FIXME: Conversion batches commit before the unit field. A failed final
+  // settings write leaves converted values displayed in the old unit, and a
+  // retry converts them twice. Store a unit per entry or make the migration
+  // atomic/resumable before relying on it under network failures.
+  test.failing("a failed unit write cannot leave history converted under the old unit", async () => {
+    seedDoc(USER, { measure: "kg" });
+    seedWeights(451);
+    const ref = firestoreMock().collection("users").doc(TEST_UID);
+    const prototype = Object.getPrototypeOf(ref) as typeof ref;
+    const original = prototype.set;
+    const failure = jest.spyOn(prototype, "set").mockImplementation(function (this: typeof ref, data, options) {
+      if (this.path === `users/${TEST_UID}` && data.measure === "lbs") {
+        return Promise.reject(new Error("Simulated unit-write failure"));
+      }
+      return original.call(this, data, options);
+    });
+    try {
+      await expect(updateMeasure("lbs")).rejects.toThrow("Simulated unit-write failure");
+      expect(readDoc(USER)?.measure).toBe("kg");
+      expect(new Set(storedWeights())).toEqual(new Set([80]));
+    } finally {
+      failure.mockRestore();
+    }
+  });
+
   test("converts every stored weight from kg to lbs and saves the unit", async () => {
     seedDoc(USER, { measure: "kg" });
     seedDoc(weightPath("a"), { weight: 80, date: "2026-06-09" });

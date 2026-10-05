@@ -36,6 +36,7 @@ import { setCollectionEnabled } from "./client";
  * until they turn analytics on in Settings.
  */
 const DEFAULT_CONSENT = false;
+let consentRevision = 0;
 
 /**
  * Reads the stored choice and applies it to the SDK.
@@ -49,10 +50,16 @@ const DEFAULT_CONSENT = false;
  * cost is one session of missing data, where guessing "on" for someone who
  * actually opted out is the exact mistake this whole file exists to prevent.
  */
-export const applyStoredConsent = async (): Promise<void> => {
+export const applyStoredConsent = async (
+  shouldApply: () => boolean = () => true,
+): Promise<void> => {
+  const revision = consentRevision;
   const settings = await getUserSettings();
 
-  setCollectionEnabled(settings.analyticsConsent ?? DEFAULT_CONSENT);
+  // A delayed read must not undo a newer toggle or a change of account.
+  if (shouldApply() && revision === consentRevision) {
+    setCollectionEnabled(settings.analyticsConsent ?? DEFAULT_CONSENT);
+  }
 };
 
 /**
@@ -69,6 +76,7 @@ export const applyStoredConsent = async (): Promise<void> => {
  * and durable regardless, and it is what fires the server-side audit record.
  */
 export const setAnalyticsConsent = (granted: boolean): void => {
+  consentRevision += 1;
   setCollectionEnabled(granted);
 
   updateUserSettings({ analyticsConsent: granted }).catch((error: unknown) => {

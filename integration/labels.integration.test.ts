@@ -71,6 +71,43 @@ describe("creating and editing labels", () => {
 });
 
 describe("assigning labels to days", () => {
+  // FIXME: Same-date assignments are not transactional and use random ids.
+  // Both writers can observe an empty query and create conflicting owners.
+  test.failing("concurrent writers for the same date leave exactly one label owning it", async () => {
+    const push = await createLabel("Push");
+    const pull = await createLabel("Pull");
+    const date = "2026-06-01";
+    // Freeze only the read boundary to reproduce the race deterministically;
+    // every write still goes through the SDK and the real emulator rules.
+    const firestore = (await import("@react-native-firebase/firestore")).default;
+    const query = firestore().collection("users").doc(user.uid).collection("dayAssignments").where("date", "==", date).limit(1);
+    const prototype = Object.getPrototypeOf(query) as typeof query;
+    const originalGet = prototype.get;
+    let reads = 0;
+    let release!: () => void;
+    const bothRead = new Promise<void>((resolve) => { release = resolve; });
+    const gate = jest.spyOn(prototype, "get").mockImplementation(async function (this: typeof query) {
+      const snapshot = await originalGet.call(this);
+      reads++;
+      if (reads === 2) release();
+      await bothRead;
+      return snapshot;
+    });
+    try {
+      await Promise.all([
+        asignLabelToDay({ date, labelId: push }),
+        asignLabelToDay({ date, labelId: pull }),
+      ]);
+    } finally {
+      gate.mockRestore();
+    }
+    const saved = await assignments();
+    expect(saved).toHaveLength(1);
+    for (const id of [push, pull]) {
+      expect(await datesOf(id) ?? []).toEqual(saved[0].labelId === id ? [date] : []);
+    }
+  });
+
   test("assigning records the day on both the assignment and the label", async () => {
     const push = await createLabel("Push");
 
@@ -155,6 +192,23 @@ describe("assigning labels to days", () => {
 });
 
 describe("deleting labels", () => {
+  test("deletes every reference even if the label's dates array is incomplete", async () => {
+    const push = await createLabel("Push");
+    await asignLabelToDay({ date: "2026-06-01", labelId: push });
+    await adminDb.doc(`users/${user.uid}/labels/${push}`).update({ dates: [] });
+    await deleteLabel(push);
+    expect(await assignments()).toEqual([]);
+    expect(await readAsAdmin(`users/${user.uid}/labels/${push}`)).toBeUndefined();
+  });
+
+  test("unassigns a day successfully when its label was already deleted", async () => {
+    const push = await createLabel("Push");
+    await asignLabelToDay({ date: "2026-06-01", labelId: push });
+    await adminDb.doc(`users/${user.uid}/labels/${push}`).delete();
+    await expect(deleteAssignment("2026-06-01")).resolves.toMatchObject({ date: "2026-06-01" });
+    expect(await assignments()).toEqual([]);
+  });
+
   test("removes the label and every assignment pointing at it", async () => {
     const push = await createLabel("Push");
     const pull = await createLabel("Pull");

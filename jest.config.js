@@ -1,5 +1,7 @@
 module.exports = {
   preset: "jest-expo",
+  // Use Jest's file crawler so tests do not depend on a local Watchman daemon.
+  watchman: false,
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },

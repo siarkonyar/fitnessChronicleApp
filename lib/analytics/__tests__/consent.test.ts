@@ -26,6 +26,34 @@ beforeEach(() => {
 });
 
 describe("applyStoredConsent", () => {
+  test("a delayed read cannot undo a newer explicit opt-out", async () => {
+    let resolve!: (settings: unknown) => void;
+    mockGetUserSettings.mockReturnValue(new Promise((done) => { resolve = done; }));
+    mockUpdateUserSettings.mockResolvedValue(undefined);
+    const reading = applyStoredConsent();
+    setAnalyticsConsent(false);
+    resolve({ measure: "kg", analyticsConsent: true });
+    await reading;
+    expect(mockSetCollectionEnabled.mock.calls).toEqual([[false]]);
+  });
+
+  test("a delayed read cannot undo a newer explicit opt-in", async () => {
+    let resolve!: (settings: unknown) => void;
+    mockGetUserSettings.mockReturnValue(new Promise((done) => { resolve = done; }));
+    mockUpdateUserSettings.mockResolvedValue(undefined);
+    const reading = applyStoredConsent();
+    setAnalyticsConsent(true);
+    resolve({ measure: "kg", analyticsConsent: false });
+    await reading;
+    expect(mockSetCollectionEnabled.mock.calls).toEqual([[true]]);
+  });
+
+  test("does not apply an obsolete account's settings", async () => {
+    mockGetUserSettings.mockResolvedValue({ measure: "kg", analyticsConsent: true });
+    await applyStoredConsent(() => false);
+    expect(mockSetCollectionEnabled).not.toHaveBeenCalled();
+  });
+
   test.each([
     [true, true],
     [false, false],

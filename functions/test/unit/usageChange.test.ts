@@ -146,5 +146,20 @@ describe("usageChange", () => {
         ),
       ).toMatchObject({ resetPeriodEndMs: null });
     });
+
+    it("keeps the payment watermark monotonic so an old snapshot cannot make a counted payment new again", () => {
+      const old = usageChange(
+        { tier: "pro", lastPurchaseAtMs: PAID_AT },
+        paid({ purchasedAtMs: PAID_AT - DAY }),
+        NOW,
+      );
+      expect(old.kind).toBe("paid");
+      if (old.kind !== "paid") throw new Error("Expected paid change");
+      expect(old.lastPurchaseAtMs).toBe(PAID_AT);
+      const replay = usageChange(
+        { tier: old.tier, lastPurchaseAtMs: old.lastPurchaseAtMs }, paid(), NOW,
+      );
+      expect(replay).toMatchObject({ resetPeriodEndMs: null });
+    });
   });
 });

@@ -94,6 +94,8 @@ Run checks appropriate to the files changed. Root Jest excludes `functions/` and
 
 App test conventions: data-layer unit tests use the in-memory fake in `lib/firebase/__tests__/firestoreTestUtils.ts` (it mirrors RNFB v23: `exists()` is a method, undefined fields throw, batches are atomic) and the builders in `fixtures.ts`. Hook tests use `hooks/__tests__/queryWrapper.tsx`. App integration tests live in `integration/`, run with `jest.integration.config.js`, and map native modules to `integration/shims/`, which mirror React Native Firebase's device behaviour, including its error codes. Known bugs are pinned with `test.failing` plus a `FIXME:` comment, which Comment Anchors lists; remove both in the same change that fixes the bug. `constants/__tests__/contracts.test.ts` and `lib/firebase/__tests__/account.subcollections.test.ts` check app/server parity and account-deletion coverage, so keep them passing when adding collections or changing shared constants. Integration tests use `demo-hercule` and must run through `test:integration`, which sets emulator hosts. Stop the development emulators first if their ports conflict. Keep Vitest test files sequential because they share emulator state.
 
+The Firestore fake captures immutable read-time snapshots; keep its fidelity tests passing when changing it. Server success-path tests use actual Genkit flows/tools with generation replaced at the network boundary, and callable tests use `onCall.run`. Emulator tests still exercise real request authentication, security rules, triggers, queries, transactions, and atomic increments. See `TESTING.md` for the audit findings and remaining risks.
+
 ## Architecture
 
 **Hercule** is a React Native fitness tracker built with Expo SDK 54, React Native 0.81, React 19, Expo Router (file-based routing), React Native Firebase (auth + Firestore + Cloud Functions), TanStack Query (server state, persisted to AsyncStorage), NativeWind (Tailwind CSS for RN), and an AI coach backed by Genkit running on Cloud Functions.
@@ -110,6 +112,8 @@ AuthProvider                 ← Firebase auth state + signOut/deleteAccount
         ThemeProvider         ← Navigation light/dark theme inside AppSetup
           Stack.Protected     ← Guards (tabs), (screens), offline behind isAuthenticated
 ```
+
+`AccountQueryProvider` waits for auth initialization and keys the query-provider subtree by Firebase UID. `lib/queryCache.ts` creates separate QueryClient instances and persisted keys for each UID (including signed-out state) and backend. Never restore an unscoped cache into a signed-in session; old in-flight requests must stay attached to their old client.
 
 Inside `(tabs)/_layout.tsx`, tab screens are additionally wrapped in `ChatProvider` → `ActiveProgramProvider` (AI chat state and the user's active program, both scoped to the authenticated tab bar).
 
@@ -190,7 +194,7 @@ Collection starts off in `firebase.json` (Android) and `app.config.js` (iOS), th
 
 `lib/firebase/emulators.ts` must remain the first import in `app/_layout.tsx` so SDK connections happen before requests. It gates on `__DEV__` and the flag, discovers the host from Metro, and connects Auth `9099`, Firestore `8080`, and Functions `5001` in `europe-west2`. The old `EXPO_PUBLIC_USE_FUNCTIONS_EMULATOR` switch is superseded. Keep the current flag command-scoped rather than in `.env.local` so plain `npm start` stays live.
 
-The persisted query cache has separate live/emulator keys; the native Firestore cache does not. Reinstall the dev app when switching hosts. Analytics and Crashlytics have no emulator, and the coach still calls Gemini. `seed:plan` writes a fake customer document for an existing emulator Auth UID so the real sync trigger applies the plan.
+The persisted query cache has separate account and live/emulator keys; the native Firestore cache does not. Reinstall the dev app when switching hosts. Analytics and Crashlytics have no emulator, and the coach still calls Gemini. `seed:plan` writes a fake customer document for an existing emulator Auth UID so the real sync trigger applies the plan.
 
 ### Configuration and delivery
 

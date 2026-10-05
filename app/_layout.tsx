@@ -7,7 +7,6 @@ import { useAnalyticsConsent } from "@/hooks/useAnalyticsConsent";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import appCheck from "@react-native-firebase/app-check";
 import {
@@ -15,14 +14,14 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { onlineManager, QueryClient } from "@tanstack/react-query";
+import { onlineManager } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import * as Application from "expo-application";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { CACHE_MAX_AGE_MS, createAccountQueryCache } from "@/lib/queryCache";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
@@ -32,31 +31,6 @@ onlineManager.setEventListener((setOnline) => {
   return NetInfo.addEventListener((state) => {
     setOnline(!!state.isConnected);
   });
-});
-
-const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 min: serve cache without refetching
-      gcTime: CACHE_MAX_AGE_MS, // keep unused data 24h (also enables persistence)
-      retry: 2, // retry failed fetches (flaky mobile networks)
-      refetchOnReconnect: true, // refresh when connectivity returns
-      refetchOnWindowFocus: false, // explicit; off by default on RN
-    },
-  },
-});
-
-// Emulator data gets its own cache, so live data never shows up while testing
-// against the emulators, and emulator data never leaks back into live mode.
-const QUERY_CACHE_KEY = isUsingEmulators
-  ? "HERCULE_QUERY_CACHE_EMULATOR"
-  : "HERCULE_QUERY_CACHE";
-
-const persister = createAsyncStoragePersister({
-  storage: AsyncStorage,
-  key: QUERY_CACHE_KEY,
 });
 
 export default function RootLayout() {
@@ -100,21 +74,48 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
         <ConnectivityProvider>
-          <PersistQueryClientProvider
-            client={queryClient}
-            persistOptions={{
-              persister,
-              maxAge: CACHE_MAX_AGE_MS,
-              buster: Application.nativeApplicationVersion ?? "1",
-            }}
-          >
+          <AccountQueryProvider>
             <BottomSheetModalProvider>
               <AppSetup />
             </BottomSheetModalProvider>
-          </PersistQueryClientProvider>
+          </AccountQueryProvider>
         </ConnectivityProvider>
       </AuthProvider>
     </GestureHandlerRootView>
+  );
+}
+
+function AccountQueryProvider({ children }: { children: React.ReactNode }) {
+  const { user, authLoading } = useAuth();
+  if (authLoading) return null;
+  const uid = user?.uid ?? null;
+  return (
+    <AccountQueryCache key={JSON.stringify(uid)} uid={uid}>
+      {children}
+    </AccountQueryCache>
+  );
+}
+
+function AccountQueryCache({ uid, children }: {
+  uid: string | null;
+  children: React.ReactNode;
+}) {
+  // Remounting on an identity change isolates even requests still in flight
+  // against the old client. They cannot populate the incoming user's cache.
+  const [{ client, persister }] = useState(() =>
+    createAccountQueryCache(uid, isUsingEmulators),
+  );
+  return (
+    <PersistQueryClientProvider
+      client={client}
+      persistOptions={{
+        persister,
+        maxAge: CACHE_MAX_AGE_MS,
+        buster: Application.nativeApplicationVersion ?? "1",
+      }}
+    >
+      {children}
+    </PersistQueryClientProvider>
   );
 }
 

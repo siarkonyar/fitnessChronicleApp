@@ -13,10 +13,14 @@ on:
     branches: [main]
     paths:
       - "functions/**"
+      - "firebase.json"
+      - "firestore.rules"
       - ".github/workflows/functions.yml"
   pull_request:
     paths:
       - "functions/**"
+      - "firebase.json"
+      - "firestore.rules"
       - ".github/workflows/functions.yml"
 
 # A second push to the same branch cancels the first. Without this, two

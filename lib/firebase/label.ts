@@ -129,29 +129,18 @@ export const deleteLabel = async (id: string) => {
     throw new Error("Label not found.");
   }
 
-  const dates: string[] = logDoc.data()?.dates || [];
-
-  if (dates.length > 0) {
-    const assignmentSnapshots = await Promise.all(
-      dates.map((date) =>
-        firestore()
-          .collection("users")
-          .doc(userId)
-          .collection("dayAssignments")
-          .where("date", "==", date)
-          .where("labelId", "==", id)
-          .get(),
-      ),
-    );
-
-    const deletePromises = assignmentSnapshots.flatMap((snapshot) =>
-      snapshot.docs.map((doc) => doc.ref.delete()),
-    );
-
-    await Promise.all(deletePromises);
-  }
-
-  await logRef.delete();
+  // Assignments are the references to erase; the label's denormalized dates
+  // array may be incomplete after an interrupted assignment write.
+  const assignments = await firestore()
+    .collection("users")
+    .doc(userId)
+    .collection("dayAssignments")
+    .where("labelId", "==", id)
+    .get();
+  const batch = firestore().batch();
+  assignments.docs.forEach((doc) => batch.delete(doc.ref));
+  batch.delete(logRef);
+  await batch.commit();
 
   return {
     id: id,
@@ -351,7 +340,8 @@ export const deleteAssignment = async (date: string) => {
   const assignmentId = assignmentDoc.id;
   const labelId = assignmentDoc.data().labelId as string | undefined;
 
-  await assignmentDoc.ref.delete();
+  const batch = firestore().batch();
+  batch.delete(assignmentDoc.ref);
 
   if (labelId) {
     const labelRef = firestore()
@@ -359,10 +349,15 @@ export const deleteAssignment = async (date: string) => {
       .doc(userId)
       .collection("labels")
       .doc(labelId);
-    await labelRef.update({
-      dates: firestore.FieldValue.arrayRemove(date),
-    });
+    const labelDoc = await labelRef.get();
+    if (labelDoc.exists()) {
+      batch.update(labelRef, {
+        dates: firestore.FieldValue.arrayRemove(date),
+      });
+    }
   }
+
+  await batch.commit();
 
   return {
     id: assignmentId,

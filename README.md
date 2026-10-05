@@ -143,6 +143,8 @@ App integration tests (`integration/`) run the real `lib/` code, Zod schemas, `f
 
 Backend tests run separately from app Jest. Integration tests use the `demo-hercule` project via `npm --prefix functions run test:integration`; build the server first when running that command alone. Stop development emulators before starting integration tests to avoid port conflicts. Follow [the backend CI workflow](.github/workflows/functions.yml) for the throwaway `GEMINI_API_KEY` value in the gitignored `functions/.secret.local` used by guard-only tests. Real coach conversations require a real key.
 
+[The testing audit](TESTING.md) records coverage, known-failing regressions, and the remaining risks. [App CI](.github/workflows/app-tests.yml) runs typechecking, lint, unit tests, all seven date-test time zones, and app integration tests. Server unit tests cover successful coach orchestration with deterministic generation; emulator tests cover real Firebase behavior without calling Gemini. TanStack Query caches are scoped to each Firebase UID and backend in both memory and AsyncStorage, so account changes cannot restore another user's snapshot.
+
 ### Running the dev build against fake Firebase (emulators)
 
 You can run the whole app against the Firebase Emulator Suite instead of the live project. This lets you try backend changes without deploying, and test data never touches real accounts.

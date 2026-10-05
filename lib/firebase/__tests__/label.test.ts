@@ -275,6 +275,13 @@ describe("editLabel", () => {
 });
 
 describe("deleteLabel", () => {
+  test("removes referencing assignments even when the label's dates array is incomplete", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: [] }));
+    seedDoc(["users", TEST_UID, "dayAssignments", "orphan"], { date: "2026-06-01", labelId: "push" });
+    await deleteLabel("push");
+    expect(listPaths(["users", TEST_UID])).toEqual([]);
+  });
+
   test("removes the label and every assignment pointing at it", async () => {
     seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: ["2026-06-01", "2026-06-03"] }));
     seedDoc(["users", TEST_UID, "dayAssignments", "a1"], { date: "2026-06-01", labelId: "push" });
@@ -316,6 +323,25 @@ describe("deleteLabel", () => {
 });
 
 describe("asignLabelToDay", () => {
+  // FIXME: Concurrent same-date writers use random assignment ids and can
+  // leave two assignments and dates on both labels. Serialize with a stable
+  // date key/transaction while preserving legacy assignment compatibility.
+  test.failing("concurrent assignments of the same date leave one owner and matching label dates", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
+    seedDoc(["users", TEST_UID, "labels", "pull"], makeLabel());
+    const date = "2026-06-01";
+    await Promise.all([
+      asignLabelToDay({ date, labelId: "push" }),
+      asignLabelToDay({ date, labelId: "pull" }),
+    ]);
+    const paths = listPaths(["users", TEST_UID, "dayAssignments"]);
+    expect(paths).toHaveLength(1);
+    const owner = readDoc(paths[0].split("/"))?.labelId;
+    for (const id of ["push", "pull"]) {
+      expect(readDoc(["users", TEST_UID, "labels", id])?.dates ?? []).toEqual(id === owner ? [date] : []);
+    }
+  });
+
   test("creates an assignment and reports it as new", async () => {
     seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
 
@@ -387,6 +413,12 @@ describe("getLabelAsignmentByDate", () => {
 });
 
 describe("deleteAssignment (edge cases)", () => {
+  test("can remove an orphan assignment without updating a label that no longer exists", async () => {
+    seedDoc(["users", TEST_UID, "dayAssignments", "orphan"], { date: "2026-06-01", labelId: "deleted" });
+    await expect(deleteAssignment("2026-06-01")).resolves.toMatchObject({ date: "2026-06-01" });
+    expect(listPaths(["users", TEST_UID])).toEqual([]);
+  });
+
   test("throws when the date has no assignment", async () => {
     await expect(deleteAssignment("2026-06-01")).rejects.toThrow(
       "No label assignment found for this date.",
