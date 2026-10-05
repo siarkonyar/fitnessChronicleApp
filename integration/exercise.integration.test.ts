@@ -137,10 +137,10 @@ describe("editing and deleting", () => {
     expect(stored?.createdAt.isEqual(created)).toBe(true);
   });
 
-  test("editing a log that does not exist fails with Firestore's not-found code", async () => {
+  test("editing a log that does not exist says it was not found and writes nothing", async () => {
     const error = await caught(() => editExerciseLog("missing", makeLog()));
 
-    expect(error.code).toBe("firestore/not-found");
+    expect(error.message).toBe("Fitness log not found.");
     expect(await logsOf()).toEqual([]);
   });
 
@@ -153,14 +153,11 @@ describe("editing and deleting", () => {
     expect((await getAllExerciseNames()).map((n) => n.name)).toEqual(["squat"]);
   });
 
-  // FIXME: (reproduced on the real backend) RNFB v23's exists() is a
-  // method, so `!doc.exists` never fires and a ZodError escapes instead.
-  test.failing("reading a log that does not exist says it was not found", async () => {
+  test("reading a log that does not exist says it was not found", async () => {
     await expect(getExerciseLogById("missing")).rejects.toThrow("Fitness log not found.");
   });
 
-  // FIXME: resolves as if it deleted something.
-  test.failing("deleting a log that does not exist fails", async () => {
+  test("deleting a log that does not exist fails", async () => {
     await expect(deleteExerciseLog("missing")).rejects.toThrow("Fitness log not found.");
   });
 

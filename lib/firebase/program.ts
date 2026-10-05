@@ -52,7 +52,7 @@ export const getProgram = async (id: string): Promise<ProgramWithId> => {
 
   const doc = await programsCollection(userId).doc(id).get();
 
-  if (!doc.exists) throw new Error("Program not found.");
+  if (!doc.exists()) throw new Error("Program not found.");
 
   return ProgramWithIdSchema.parse({ id: doc.id, ...doc.data() });
 };
@@ -72,7 +72,7 @@ export const deleteProgram = async (id: string): Promise<void> => {
   const ref = programsCollection(userId).doc(id);
   const doc = await ref.get();
 
-  if (!doc.exists) throw new Error("Program not found.");
+  if (!doc.exists()) throw new Error("Program not found.");
 
   await ref.delete();
 };

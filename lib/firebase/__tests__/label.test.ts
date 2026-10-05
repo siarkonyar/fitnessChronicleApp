@@ -179,8 +179,7 @@ describe("getLabelById / getAllLabels", () => {
     expect(await getLabelById("push")).toMatchObject({ id: "push", description: "Push" });
   });
 
-  // FIXME: `!doc.exists` is always false on RNFB v23 (exists is a method).
-  test.failing("reports a missing label as not found", async () => {
+  test("reports a missing label as not found", async () => {
     await expect(getLabelById("missing")).rejects.toThrow("Label not found.");
   });
 
@@ -311,8 +310,7 @@ describe("deleteLabel", () => {
     expect(readDoc(["users", TEST_UID, "labels", "push"])).toBeUndefined();
   });
 
-  // FIXME: resolves "deleted successfully" for a label that never existed.
-  test.failing("reports a missing label as not found", async () => {
+  test("reports a missing label as not found", async () => {
     await expect(deleteLabel("missing")).rejects.toThrow("Label not found.");
   });
 });
@@ -357,9 +355,7 @@ describe("asignLabelToDay", () => {
     ]);
   });
 
-  // FIXME: with the dead exists() check, assigning a deleted label writes
-  // a dangling dayAssignments document before the label update fails.
-  test.failing("refuses a missing label without leaving a dangling assignment", async () => {
+  test("refuses a missing label without leaving a dangling assignment", async () => {
     await expect(
       asignLabelToDay({ date: "2026-06-01", labelId: "missing" }),
     ).rejects.toThrow("Label not found.");
@@ -382,10 +378,7 @@ describe("getLabelAsignmentByDate", () => {
     expect(await getLabelAsignmentByDate("2026-06-01")).toBeNull();
   });
 
-  // FIXME: the self-healing branch for an assignment whose label was
-  // deleted is unreachable (exists is a method), so a ZodError escapes and the
-  // orphan stays.
-  test.failing("cleans up an assignment whose label was deleted", async () => {
+  test("cleans up an assignment whose label was deleted", async () => {
     seedDoc(["users", TEST_UID, "dayAssignments", "a1"], { date: "2026-06-01", labelId: "gone" });
 
     expect(await getLabelAsignmentByDate("2026-06-01")).toBeNull();

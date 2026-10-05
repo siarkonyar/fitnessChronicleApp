@@ -36,7 +36,7 @@ export const getStreak = async (): Promise<number> => {
   const userRef = firestore().collection("users").doc(userId);
   const userDoc = await userRef.get();
 
-  if (!userDoc.exists) return 0;
+  if (!userDoc.exists()) return 0;
 
   const streakWeeks = userDoc.get("streakWeeks");
   return typeof streakWeeks === "number" ? streakWeeks : 0;

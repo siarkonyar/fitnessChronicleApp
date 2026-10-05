@@ -74,7 +74,7 @@ export const deleteWeightLogById = async (id: string) => {
 
   const weightDoc = await doc.get();
 
-  if (!weightDoc.exists) {
+  if (!weightDoc.exists()) {
     throw new Error("Weight log not found.");
   }
 

@@ -300,10 +300,7 @@ describe("getExerciseLogById", () => {
     expect(await getExerciseLogById("abc")).toMatchObject({ id: "abc", notes: "felt strong" });
   });
 
-  // FIXME: RNFB v23 made DocumentSnapshot.exists a method; `!doc.exists`
-  // is always false, so the not-found branch is unreachable and a ZodError
-  // escapes instead. Remove `.failing` once lib/firebase calls exists().
-  test.failing("reports a missing log as not found", async () => {
+  test("reports a missing log as not found", async () => {
     await expect(getExerciseLogById("missing")).rejects.toThrow("Fitness log not found.");
   });
 });
@@ -340,8 +337,7 @@ describe("editExerciseLog", () => {
     expect(userLogs()).toEqual([]);
   });
 
-  // FIXME: same `exists` property/method mix-up as above.
-  test.failing("reports a missing log with the not-found message", async () => {
+  test("reports a missing log with the not-found message", async () => {
     await expect(editExerciseLog("missing", makeLog())).rejects.toThrow("Fitness log not found.");
   });
 });
@@ -364,8 +360,7 @@ describe("deleteExerciseLog", () => {
     expect(userNames()).toHaveLength(1);
   });
 
-  // FIXME: deleting a missing log resolves silently instead of failing.
-  test.failing("reports a missing log as not found", async () => {
+  test("reports a missing log as not found", async () => {
     await expect(deleteExerciseLog("missing")).rejects.toThrow("Fitness log not found.");
   });
 });

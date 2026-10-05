@@ -47,7 +47,7 @@ export const getLabelById = async (id: string) => {
     .doc(id)
     .get();
 
-  if (!doc.exists) {
+  if (!doc.exists()) {
     throw new Error("Label not found.");
   }
 
@@ -125,7 +125,7 @@ export const deleteLabel = async (id: string) => {
     .doc(id);
   const logDoc = await logRef.get();
 
-  if (!logDoc.exists) {
+  if (!logDoc.exists()) {
     throw new Error("Label not found.");
   }
 
@@ -170,7 +170,7 @@ export const editLabel = async (labelId: string, label: Label) => {
     .doc(labelId);
   const labelDoc = await labelRef.get();
 
-  if (!labelDoc.exists) {
+  if (!labelDoc.exists()) {
     throw new Error("Label not found.");
   }
 
@@ -208,7 +208,7 @@ export const asignLabelToDay = async (day: Day) => {
     .doc(day.labelId);
   const labelDoc = await labelRef.get();
 
-  if (!labelDoc.exists) {
+  if (!labelDoc.exists()) {
     throw new Error("Label not found.");
   }
 
@@ -318,7 +318,7 @@ export const getLabelAsignmentByDate = async (date: string) => {
     .doc(assignmentData.labelId);
   const labelDoc = await labelRef.get();
 
-  if (!labelDoc.exists) {
+  if (!labelDoc.exists()) {
     // Label was deleted, automatically delete the assignment
     await assignmentDoc.ref.delete();
     return null; // Return null since the assignment was deleted

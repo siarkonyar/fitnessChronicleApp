@@ -178,7 +178,7 @@ export const getExerciseLogById = async (logId: string) => {
     .doc(logId)
     .get();
 
-  if (!doc.exists) {
+  if (!doc.exists()) {
     throw new Error("Fitness log not found.");
   }
 
@@ -200,7 +200,7 @@ export const deleteExerciseLog = async (logId: string) => {
 
   const logDoc = await doc.get();
 
-  if (!logDoc.exists) {
+  if (!logDoc.exists()) {
     throw new Error("Fitness log not found.");
   }
 
@@ -219,7 +219,7 @@ export const editExerciseLog = async (logId: string, data: ExerciseLog) => {
 
   const logDoc = await log.get();
 
-  if (!logDoc.exists) {
+  if (!logDoc.exists()) {
     throw new Error("Fitness log not found.");
   }
   await log.update(data);

@@ -173,8 +173,7 @@ describe("getWeights / getWeightByDate / deleteWeightLogById", () => {
     expect(listPaths([...USER, "weightLogs"])).toEqual([`users/${TEST_UID}/weightLogs/b`]);
   });
 
-  // FIXME: `!weightDoc.exists` is always false on RNFB v23.
-  test.failing("reports a missing entry as not found", async () => {
+  test("reports a missing entry as not found", async () => {
     await expect(deleteWeightLogById("missing")).rejects.toThrow("Weight log not found.");
   });
 });

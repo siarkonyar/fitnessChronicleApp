@@ -65,8 +65,8 @@ describe("creating and editing labels", () => {
     expect(edited).toMatchObject({ id: push, label: "🔥", description: "Chest", dates: ["2026-06-01"] });
   });
 
-  test("editing a label that does not exist fails with not-found", async () => {
-    expect((await caught(() => editLabel("missing", makeLabel()))).code).toBe("firestore/not-found");
+  test("editing a label that does not exist says it was not found", async () => {
+    expect((await caught(() => editLabel("missing", makeLabel()))).message).toBe("Label not found.");
   });
 });
 
@@ -144,21 +144,14 @@ describe("assigning labels to days", () => {
     expect(await getLabelAsignmentByDate("2026-06-01")).toBeNull();
   });
 
-  // FIXME: (reproduced on the real backend) the label existence check is
-  // dead, so the assignment is written, then the label update fails with
-  // not-found and the dangling assignment stays behind.
-  test.failing("refuses a deleted label without leaving a dangling assignment", async () => {
-    await caught(() => asignLabelToDay({ date: "2026-06-01", labelId: "deleted" }));
+  test("refuses a deleted label without leaving a dangling assignment", async () => {
+    // A stale cache or a second device can offer a label that is gone.
+    const error = await caught(() => asignLabelToDay({ date: "2026-06-01", labelId: "deleted" }));
 
+    expect(error.message).toBe("Label not found.");
     expect(await assignments()).toEqual([]);
   });
 
-  test("documents the dangling assignment the bug above leaves", async () => {
-    const error = await caught(() => asignLabelToDay({ date: "2026-06-01", labelId: "deleted" }));
-
-    expect(error.code).toBe("firestore/not-found");
-    expect(await assignments()).toEqual([expect.objectContaining({ labelId: "deleted" })]);
-  });
 });
 
 describe("deleting labels", () => {
@@ -176,9 +169,7 @@ describe("deleting labels", () => {
     expect(remaining).toEqual([`users/${user.uid}/labels/${pull}`]);
   });
 
-  // FIXME: the auto-cleanup of an orphaned assignment is unreachable, so
-  // a ZodError escapes when the calendar asks about that day.
-  test.failing("cleans up an assignment whose label was deleted behind its back", async () => {
+  test("cleans up an assignment whose label was deleted behind its back", async () => {
     const push = await createLabel("Push");
     await asignLabelToDay({ date: "2026-06-01", labelId: push });
     await adminDb.doc(`users/${user.uid}/labels/${push}`).delete();
@@ -187,13 +178,11 @@ describe("deleting labels", () => {
     expect(await assignments()).toEqual([]);
   });
 
-  // FIXME: a missing label reports success.
-  test.failing("deleting a missing label fails", async () => {
+  test("deleting a missing label fails", async () => {
     await expect(deleteLabel("missing")).rejects.toThrow("Label not found.");
   });
 
-  // FIXME: a missing label throws a ZodError, not "Label not found."
-  test.failing("reading a missing label says it was not found", async () => {
+  test("reading a missing label says it was not found", async () => {
     await expect(getLabelById("missing")).rejects.toThrow("Label not found.");
   });
 });
