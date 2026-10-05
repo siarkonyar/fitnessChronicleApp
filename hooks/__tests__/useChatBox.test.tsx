@@ -138,7 +138,7 @@ describe("sending a message", () => {
     ]);
   });
 
-  // KNOWN RACE: mutationFn reads `messages` from whichever render is current
+  // FIXME: race. mutationFn reads `messages` from whichever render is current
   // when TanStack invokes it, and onMutate has already appended the new
   // message. If React re-renders in between (it always does under act), the
   // message is sent twice: once as `message`, once as the last history item.
@@ -238,7 +238,7 @@ describe("refusals and failures", () => {
     expect(result.current.sendError).toBe("You're sending messages too quickly. Give it a moment.");
   });
 
-  // KNOWN BUG: on device, React Native Firebase reports callable errors
+  // FIXME: on device, React Native Firebase reports callable errors
   // without the "functions/" prefix ("resource-exhausted"), so quota and
   // rate-limit refusals fall through to the generic "Couldn't reach" banner.
   test.failing("recognises the unprefixed code React Native Firebase sends", async () => {

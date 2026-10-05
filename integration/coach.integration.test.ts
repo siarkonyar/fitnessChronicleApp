@@ -166,7 +166,7 @@ describe("chatWithCoach refusals", () => {
     expect(error.details).toEqual({ reason: "rate_limit" });
   });
 
-  // KNOWN BUG (contract): useChatBox only recognises a refusal whose code is
+  // FIXME: (contract) useChatBox only recognises a refusal whose code is
   // "functions/resource-exhausted" — the JS SDK's spelling. React Native
   // Firebase delivers "resource-exhausted" on device (mirrored by the
   // functions shim), so the quota and rate-limit banners never show.

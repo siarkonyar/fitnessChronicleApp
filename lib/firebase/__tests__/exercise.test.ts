@@ -300,7 +300,7 @@ describe("getExerciseLogById", () => {
     expect(await getExerciseLogById("abc")).toMatchObject({ id: "abc", notes: "felt strong" });
   });
 
-  // KNOWN BUG: RNFB v23 made DocumentSnapshot.exists a method; `!doc.exists`
+  // FIXME: RNFB v23 made DocumentSnapshot.exists a method; `!doc.exists`
   // is always false, so the not-found branch is unreachable and a ZodError
   // escapes instead. Remove `.failing` once lib/firebase calls exists().
   test.failing("reports a missing log as not found", async () => {
@@ -340,7 +340,7 @@ describe("editExerciseLog", () => {
     expect(userLogs()).toEqual([]);
   });
 
-  // KNOWN BUG: same `exists` property/method mix-up as above.
+  // FIXME: same `exists` property/method mix-up as above.
   test.failing("reports a missing log with the not-found message", async () => {
     await expect(editExerciseLog("missing", makeLog())).rejects.toThrow("Fitness log not found.");
   });
@@ -364,7 +364,7 @@ describe("deleteExerciseLog", () => {
     expect(userNames()).toHaveLength(1);
   });
 
-  // KNOWN BUG: deleting a missing log resolves silently instead of failing.
+  // FIXME: deleting a missing log resolves silently instead of failing.
   test.failing("reports a missing log as not found", async () => {
     await expect(deleteExerciseLog("missing")).rejects.toThrow("Fitness log not found.");
   });
@@ -426,7 +426,7 @@ describe("getLatestExercisesByName", () => {
 });
 
 describe("deleteExerciseName", () => {
-  // KNOWN BUG: the query filters on an undeclared `name` instead of the nameId
+  // FIXME: the query filters on an undeclared `name` instead of the nameId
   // argument, and reads `doc.data.name` instead of `doc.data().name`. On device
   // the call throws, so deleting a suggestion in ExerciseNameInput never works.
   test.failing("deletes the remembered exercise name", async () => {

@@ -77,7 +77,7 @@ describe(`dates in ${zone}`, () => {
     expect(getISOWeek(new Date(2026, 5, 14, 23, 30))).toBe("2026-W24");
   });
 
-  // KNOWN BUG west of UTC: formatDateAsString parses "YYYY-MM-DD" with
+  // FIXME: west of UTC, formatDateAsString parses "YYYY-MM-DD" with
   // new Date(string), which is UTC midnight, then reads it back in local time
   // — so in New York "2026-06-01" prints as "31st of May 2026".
   (isWestOfUtc ? test.failing : test)(

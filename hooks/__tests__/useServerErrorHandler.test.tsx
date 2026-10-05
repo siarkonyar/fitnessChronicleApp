@@ -138,7 +138,7 @@ describe("classifying errors", () => {
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
-  // KNOWN BUG: React Native Firebase prefixes Firestore error codes with the
+  // FIXME: React Native Firebase prefixes Firestore error codes with the
   // module name ("firestore/unavailable"), so this comparison never matches
   // a Firestore outage on device.
   test.failing("treats a Firestore 'firestore/unavailable' error as a network error", () => {

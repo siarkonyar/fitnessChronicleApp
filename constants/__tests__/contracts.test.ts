@@ -103,7 +103,7 @@ describe("Colors", () => {
     }
   });
 
-  // KNOWN BUG: "FFFFFF00" is missing its "#", so React Native rejects it as a
+  // FIXME: "FFFFFF00" is missing its "#", so React Native rejects it as a
   // colour (used by the profile screen and WeightDisplay backgrounds).
   test.failing("the transparent token is a colour React Native can parse", () => {
     expect(Colors.light.transparent).toMatch(COLOUR);

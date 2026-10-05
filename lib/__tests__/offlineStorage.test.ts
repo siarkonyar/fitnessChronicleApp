@@ -165,7 +165,7 @@ describe("offline exercise queue", () => {
     expect(await clearAllOfflineExercises()).toBe(false);
   });
 
-  // KNOWN BUG: save is read-modify-write with no lock. Two saves that overlap
+  // FIXME: save is read-modify-write with no lock. Two saves that overlap
   // (a double tap on "Save" offline) both read the same queue and the second
   // write drops the first exercise.
   test.failing("keeps both exercises when two saves overlap", async () => {

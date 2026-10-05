@@ -117,7 +117,7 @@ describe("getProgram", () => {
     expect(await getProgram("p1")).toEqual({ id: "p1", name: "PPL", days: [REST_DAY] });
   });
 
-  // KNOWN BUG: `!doc.exists` is always false on RNFB v23 (exists is a method),
+  // FIXME: `!doc.exists` is always false on RNFB v23 (exists is a method),
   // so a ZodError escapes instead of the not-found message.
   test.failing("reports a missing program as not found", async () => {
     await expect(getProgram("missing")).rejects.toThrow("Program not found.");
@@ -169,7 +169,7 @@ describe("deleteProgram", () => {
     expect(readDoc(["users", TEST_UID])?.activeProgramId).toBe("drop");
   });
 
-  // KNOWN BUG: resolves silently for a program that never existed.
+  // FIXME: resolves silently for a program that never existed.
   test.failing("reports a missing program as not found", async () => {
     await expect(deleteProgram("missing")).rejects.toThrow("Program not found.");
   });

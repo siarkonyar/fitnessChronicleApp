@@ -74,7 +74,7 @@ describe("programs", () => {
     expect(await getPrograms()).toEqual([]);
   });
 
-  // KNOWN BUG: exists() is a method on RNFB v23; the not-found check is dead.
+  // FIXME: exists() is a method on RNFB v23; the not-found check is dead.
   test.failing("reading a missing program says it was not found", async () => {
     await expect(getProgram("missing")).rejects.toThrow("Program not found.");
   });

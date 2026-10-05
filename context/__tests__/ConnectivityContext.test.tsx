@@ -134,7 +134,7 @@ describe("offline analytics", () => {
     expect(offlineEvents()).toBe(0);
   });
 
-  // KNOWN BUG: isOnline starts true before the first NetInfo read, so opening
+  // FIXME: isOnline starts true before the first NetInfo read, so opening
   // the app with no signal looks like a dropped connection and is reported —
   // the very case the comment in ConnectivityContext says should not count.
   test.failing("does not report opening the app with no signal as going offline", async () => {

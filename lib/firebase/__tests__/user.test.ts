@@ -67,7 +67,7 @@ describe("getUserSettings", () => {
     expect(readDoc(USER)).toEqual({ measure: "kg", name: "Sam", streakWeeks: 4 });
   });
 
-  // KNOWN BUG: one corrupt optional field fails the whole parse, and the
+  // FIXME: one corrupt optional field fails the whole parse, and the
   // fallback then overwrites a valid "lbs" preference with "kg".
   test.failing("keeps a valid unit when an unrelated setting is corrupt", async () => {
     seedDoc(USER, { measure: "lbs", activeProgramDay: -1 });

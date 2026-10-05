@@ -153,18 +153,18 @@ describe("editing and deleting", () => {
     expect((await getAllExerciseNames()).map((n) => n.name)).toEqual(["squat"]);
   });
 
-  // KNOWN BUG (reproduced on the real backend): RNFB v23's exists() is a
+  // FIXME: (reproduced on the real backend) RNFB v23's exists() is a
   // method, so `!doc.exists` never fires and a ZodError escapes instead.
   test.failing("reading a log that does not exist says it was not found", async () => {
     await expect(getExerciseLogById("missing")).rejects.toThrow("Fitness log not found.");
   });
 
-  // KNOWN BUG: resolves as if it deleted something.
+  // FIXME: resolves as if it deleted something.
   test.failing("deleting a log that does not exist fails", async () => {
     await expect(deleteExerciseLog("missing")).rejects.toThrow("Fitness log not found.");
   });
 
-  // KNOWN BUG: references an undeclared `name`; on device it always throws.
+  // FIXME: references an undeclared `name`; on device it always throws.
   test.failing("deletes a remembered exercise name", async () => {
     await addExerciseLog(makeLog({ activity: "squat" }));
     const [{ id }] = await getAllExerciseNames();

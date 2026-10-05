@@ -144,7 +144,7 @@ describe("assigning labels to days", () => {
     expect(await getLabelAsignmentByDate("2026-06-01")).toBeNull();
   });
 
-  // KNOWN BUG (reproduced on the real backend): the label existence check is
+  // FIXME: (reproduced on the real backend) the label existence check is
   // dead, so the assignment is written, then the label update fails with
   // not-found and the dangling assignment stays behind.
   test.failing("refuses a deleted label without leaving a dangling assignment", async () => {
@@ -176,7 +176,7 @@ describe("deleting labels", () => {
     expect(remaining).toEqual([`users/${user.uid}/labels/${pull}`]);
   });
 
-  // KNOWN BUG: the auto-cleanup of an orphaned assignment is unreachable, so
+  // FIXME: the auto-cleanup of an orphaned assignment is unreachable, so
   // a ZodError escapes when the calendar asks about that day.
   test.failing("cleans up an assignment whose label was deleted behind its back", async () => {
     const push = await createLabel("Push");
@@ -187,12 +187,12 @@ describe("deleting labels", () => {
     expect(await assignments()).toEqual([]);
   });
 
-  // KNOWN BUG: a missing label reports success.
+  // FIXME: a missing label reports success.
   test.failing("deleting a missing label fails", async () => {
     await expect(deleteLabel("missing")).rejects.toThrow("Label not found.");
   });
 
-  // KNOWN BUG: a missing label throws a ZodError, not "Label not found."
+  // FIXME: a missing label throws a ZodError, not "Label not found."
   test.failing("reading a missing label says it was not found", async () => {
     await expect(getLabelById("missing")).rejects.toThrow("Label not found.");
   });
