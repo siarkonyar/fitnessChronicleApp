@@ -138,12 +138,16 @@ describe("sending a message", () => {
     ]);
   });
 
-  // FIXME: race. mutationFn reads `messages` from whichever render is current
-  // when TanStack invokes it, and onMutate has already appended the new
-  // message. If React re-renders in between (it always does under act), the
-  // message is sent twice: once as `message`, once as the last history item.
-  // Building history from the variables passed to mutate() would remove it.
-  test.failing("never sends the new message as part of its own history", async () => {
+  test("sends the very first message with an empty history", async () => {
+    mockCallCoach.mockResolvedValue(reply("ok"));
+    const { result } = renderChat();
+
+    await send(result, "hello");
+
+    expect(mockCallCoach.mock.calls[0][0].history).toEqual([]);
+  });
+
+  test("never sends the new message as part of its own history", async () => {
     mockCallCoach.mockResolvedValueOnce(reply("first answer")).mockResolvedValueOnce(reply("second"));
     const { result } = renderChat();
 

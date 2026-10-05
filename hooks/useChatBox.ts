@@ -34,6 +34,15 @@ export interface SendMessageInput {
   source: AiMessageSource;
 }
 
+/** What the mutation runs with: the input plus the history at send time. */
+type SendMessageVariables = SendMessageInput & {
+  history: CoachHistoryMessage[];
+};
+
+/** The coach only needs who said what; proposed programs stay on the device. */
+const toHistory = (messages: ChatMessage[]): CoachHistoryMessage[] =>
+  messages.map(({ role, text }) => ({ role, text }));
+
 const QUOTA_MESSAGE = "You've used your AI coach allowance for this month.";
 const RATE_LIMIT_MESSAGE =
   "You're sending messages too quickly. Give it a moment.";
@@ -78,16 +87,11 @@ export function useChatBox() {
     sentAtRef.current === null ? 0 : Date.now() - sentAtRef.current;
 
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ text }: SendMessageInput) => {
+    mutationFn: async ({ text, history }: SendMessageVariables) => {
       const [isRepsFixed, measure] = await Promise.all([
         getDefaultRepType(),
         getDefaultMeasurement(),
       ]);
-
-      const history: CoachHistoryMessage[] = messages.map(({ role, text }) => ({
-        role,
-        text,
-      }));
 
       return callCoach({
         message: text,
@@ -96,7 +100,7 @@ export function useChatBox() {
         prefs: { repType: isRepsFixed ? "fixed" : "range", measure },
       });
     },
-    onMutate: ({ text, source }: SendMessageInput) => {
+    onMutate: ({ text, source, history }: SendMessageVariables) => {
       setMessages((prev) => [...prev, { role: "user", text }]);
       setSendError(null);
 
@@ -106,7 +110,7 @@ export function useChatBox() {
       logEvent("ai_message_sent", {
         source,
         message_length: text.length,
-        history_length: messages.length,
+        history_length: history.length,
       });
     },
     onSuccess: ({ reply, program, ...nextUsage }) => {
@@ -164,6 +168,18 @@ export function useChatBox() {
     },
   });
 
+  const { mutate } = sendMessageMutation;
+
+  // History is captured HERE, from the conversation the user is looking at
+  // when they press send. Reading `messages` inside mutationFn instead picks
+  // up whichever render is current when TanStack calls it — and onMutate has
+  // usually appended the new message by then, so it went to the server twice:
+  // once as `message`, once as the last history item.
+  const sendMessage = useCallback(
+    (input: SendMessageInput) => mutate({ ...input, history: toHistory(messages) }),
+    [messages, mutate],
+  );
+
   const clearChat = useCallback(() => {
     logEvent("ai_chat_cleared", { message_count: messages.length });
 
@@ -187,7 +203,7 @@ export function useChatBox() {
 
   return {
     messages,
-    sendMessage: sendMessageMutation.mutate,
+    sendMessage,
     isSending: sendMessageMutation.isPending,
     clearChat,
     percentUsed,
