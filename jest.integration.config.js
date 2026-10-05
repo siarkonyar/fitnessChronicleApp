@@ -13,7 +13,6 @@
  */
 module.exports = {
   testEnvironment: "node",
-  rootDir: __dirname,
   testMatch: ["<rootDir>/integration/**/*.integration.test.ts"],
   transform: { "^.+\\.[jt]sx?$": "babel-jest" },
   // firebase-admin/auth depends on jose, which ships ES modules only.
