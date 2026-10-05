@@ -1,6 +1,9 @@
 import {
   GENDER_OPTIONS,
+  MINIMUM_AGE_YEARS,
+  calculateAge,
   formatDisplayBirthday,
+  isUnderMinimumAge,
   genderLabel,
   isProfileComplete,
   toIsoBirthday,
@@ -134,5 +137,102 @@ describe("toIsoBirthday", () => {
 describe("formatDisplayBirthday", () => {
   test("renders an ISO date as DD / MM / YYYY", () => {
     expect(formatDisplayBirthday("1998-06-05")).toBe("05 / 06 / 1998");
+  });
+});
+
+describe("calculateAge and the minimum-age gate", () => {
+  const at = (year: number, month: number, day: number) =>
+    jest.useFakeTimers({ now: new Date(year, month - 1, day, 12) });
+
+  afterEach(() => jest.useRealTimers());
+
+  test("the minimum age is 13", () => {
+    expect(MINIMUM_AGE_YEARS).toBe(13);
+  });
+
+  test("turns 13 on the birthday itself, not the day after", () => {
+    at(2026, 6, 10);
+
+    expect(calculateAge("10", "06", "2013")).toBe(13);
+    expect(isUnderMinimumAge("10", "06", "2013")).toBe(false);
+  });
+
+  test("is still 12 the day before the 13th birthday", () => {
+    at(2026, 6, 10);
+
+    expect(calculateAge("11", "06", "2013")).toBe(12);
+    expect(isUnderMinimumAge("11", "06", "2013")).toBe(true);
+  });
+
+  test("counts completed years, not the difference between years", () => {
+    // Born on New Year's Eve: 2025 - 2012 = 13, but they are 12 until Dec 31.
+    at(2025, 12, 30);
+    expect(calculateAge("31", "12", "2012")).toBe(12);
+
+    at(2025, 12, 31);
+    expect(calculateAge("31", "12", "2012")).toBe(13);
+  });
+
+  test("a 29 February birthday counts from 1 March in a non-leap year", () => {
+    at(2025, 2, 28);
+    expect(isUnderMinimumAge("29", "02", "2012")).toBe(true);
+
+    at(2025, 3, 1);
+    expect(isUnderMinimumAge("29", "02", "2012")).toBe(false);
+  });
+
+  test("a 29 February birthday counts on the day in a leap year", () => {
+    at(2028, 2, 29);
+
+    expect(calculateAge("29", "02", "2012")).toBe(16);
+  });
+
+  test("accepts unpadded day and month", () => {
+    at(2026, 6, 10);
+
+    expect(calculateAge("1", "1", "2000")).toBe(26);
+  });
+
+  test("a birthday later this year passes validation but fails the age gate", () => {
+    at(2026, 6, 10);
+
+    expect(validateBirthday("31", "12", "2026")).toBeNull();
+    expect(calculateAge("31", "12", "2026")).toBe(-1);
+    expect(isUnderMinimumAge("31", "12", "2026")).toBe(true);
+  });
+
+  test("a centenarian is not under age", () => {
+    at(2026, 6, 10);
+
+    expect(isUnderMinimumAge("01", "01", "1920")).toBe(false);
+  });
+});
+
+describe("validateBirthday (input oddities)", () => {
+  test("accepts digits followed by junk, because parseInt stops at the junk", () => {
+    // Pinned: the onboarding inputs are numeric-only, so this cannot be typed.
+    expect(validateBirthday("12abc", "6", "2000")).toBeNull();
+  });
+
+  test.each([
+    ["0", "6", "2000", "Day must be between 01 and 31."],
+    ["32", "6", "2000", "Day must be between 01 and 31."],
+    ["-1", "6", "2000", "Day must be between 01 and 31."],
+    ["x", "6", "2000", "Day must be between 01 and 31."],
+    ["1", "0", "2000", "Month must be between 01 and 12."],
+    ["1", "13", "2000", "Month must be between 01 and 12."],
+    ["31", "4", "2000", "Invalid date."],
+    ["29", "2", "1900", "Invalid date."], // 1900 is not a leap year
+  ])("rejects %s/%s/%s", (day, month, year, message) => {
+    expect(validateBirthday(day, month, year)).toBe(message);
+  });
+
+  test("accepts 29 February 2000, a leap year divisible by 400", () => {
+    expect(validateBirthday("29", "2", "2000")).toBeNull();
+  });
+
+  test("accepts the earliest allowed year and rejects the one before", () => {
+    expect(validateBirthday("1", "1", "1900")).toBeNull();
+    expect(validateBirthday("31", "12", "1899")).toMatch(/^Year must be between 1900/);
   });
 });
