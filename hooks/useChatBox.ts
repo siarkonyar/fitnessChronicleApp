@@ -1,5 +1,6 @@
 import { queryKeys } from "@/constants/QueryKeys";
 import { aiUsageQueryOptions } from "@/lib/ai/aiUsageQuery";
+import { readRejectionReason } from "@/lib/ai/coachErrors";
 import { callCoach, type CoachHistoryMessage } from "@/lib/ai/coachServer";
 import { getTodayString } from "@/lib/dateUtils";
 import { getDefaultMeasurement, getDefaultRepType } from "@/lib/offlineStorage";
@@ -33,8 +34,6 @@ export interface SendMessageInput {
   source: AiMessageSource;
 }
 
-const QUOTA_ERROR_CODE = "functions/resource-exhausted";
-
 const QUOTA_MESSAGE = "You've used your AI coach allowance for this month.";
 const RATE_LIMIT_MESSAGE =
   "You're sending messages too quickly. Give it a moment.";
@@ -42,21 +41,6 @@ const GENERIC_ERROR_MESSAGE = "Couldn't reach your coach. Please try again.";
 
 /** The usage bar reaches this at exactly the point the server starts refusing. */
 const QUOTA_EXHAUSTED_PERCENT = 100;
-
-/**
- * Firebase has no distinct too-many-requests code, so the server sends both
- * refusals as resource-exhausted and separates them with details.reason.
- */
-const readRejectionReason = (error: unknown): "quota" | "rate_limit" | null => {
-  const { code, details } = error as {
-    code?: string;
-    details?: { reason?: string };
-  };
-
-  if (code !== QUOTA_ERROR_CODE) return null;
-
-  return details?.reason === "rate_limit" ? "rate_limit" : "quota";
-};
 
 export function useChatBox() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);

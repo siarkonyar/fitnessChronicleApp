@@ -238,16 +238,25 @@ describe("refusals and failures", () => {
     expect(result.current.sendError).toBe("You're sending messages too quickly. Give it a moment.");
   });
 
-  // FIXME: on device, React Native Firebase reports callable errors
-  // without the "functions/" prefix ("resource-exhausted"), so quota and
-  // rate-limit refusals fall through to the generic "Couldn't reach" banner.
-  test.failing("recognises the unprefixed code React Native Firebase sends", async () => {
+  test("locks the composer for the unprefixed quota code React Native Firebase sends", async () => {
     mockCallCoach.mockRejectedValue(refusal("resource-exhausted", "quota"));
     const { result } = renderChat();
 
     await send(result, "hi");
 
     expect(result.current.isQuotaExhausted).toBe(true);
+    expect(result.current.sendError).toBe("You've used your AI coach allowance for this month.");
+  });
+
+  test("explains the unprefixed rate-limit code React Native Firebase sends", async () => {
+    mockCallCoach.mockRejectedValue(refusal("resource-exhausted", "rate_limit"));
+    const { result } = renderChat();
+
+    await send(result, "hi");
+
+    expect(result.current.isQuotaExhausted).toBe(false);
+    expect(result.current.sendError).toBe("You're sending messages too quickly. Give it a moment.");
+    expect(mockHandleMutationError).not.toHaveBeenCalled();
   });
 
   test("an offline failure leaves the banner to the offline alert", async () => {

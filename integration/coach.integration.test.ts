@@ -8,6 +8,7 @@
  * validation or quota first, which is also how a long history is proven to
  * pass validation without running the model.
  */
+import { readRejectionReason } from "@/lib/ai/coachErrors";
 import { callAiUsage, callCoach, type CoachRequest } from "@/lib/ai/coachServer";
 import { getTodayString } from "@/lib/dateUtils";
 import { toPlanCardState } from "@/lib/planSummary";
@@ -166,13 +167,27 @@ describe("chatWithCoach refusals", () => {
     expect(error.details).toEqual({ reason: "rate_limit" });
   });
 
-  // FIXME: (contract) useChatBox only recognises a refusal whose code is
-  // "functions/resource-exhausted" — the JS SDK's spelling. React Native
-  // Firebase delivers "resource-exhausted" on device (mirrored by the
-  // functions shim), so the quota and rate-limit banners never show.
-  test.failing("the refusal code matches the one useChatBox checks for", async () => {
+  test("the app reads the server's real refusals with the device-shaped code", async () => {
+    // The functions shim delivers codes the way React Native Firebase does on
+    // device ("resource-exhausted", no prefix): the spelling that used to
+    // fall through to the generic error banner.
     await seedUsage(user.uid, { tokensUsed: EXHAUSTED });
+    expect(readRejectionReason(await caught(() => callCoach(request())))).toBe("quota");
 
-    expect((await caught(() => callCoach(request()))).code).toBe("functions/resource-exhausted");
+    await seedUsage(user.uid, {
+      tier: "pro",
+      entitlementExpiresAt: daysFromNow(300),
+      tokensUsed: 0,
+      rateTokens: 0,
+      rateLastRefill: Date.now(),
+    });
+    expect(readRejectionReason(await caught(() => callCoach(request())))).toBe("rate_limit");
+  });
+
+  test("the app does not mistake validation or auth errors for a refusal", async () => {
+    expect(readRejectionReason(await caught(() => callCoach(request({ message: "" }))))).toBeNull();
+
+    await signOutUser();
+    expect(readRejectionReason(await caught(() => callCoach(request())))).toBeNull();
   });
 });
