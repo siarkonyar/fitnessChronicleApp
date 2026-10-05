@@ -34,7 +34,10 @@ export class RnfbUser {
     return this.js.providerData;
   }
   updateProfile(profile: { displayName?: string | null; photoURL?: string | null }) {
-    return jsAuth.updateProfile(this.js, profile);
+    // RNFB clears the name with null. The JS SDK sends null as-is, which the
+    // Auth emulator rejects ("displayName must be string"); "" clears it too.
+    const displayName = profile.displayName === null ? "" : profile.displayName;
+    return jsAuth.updateProfile(this.js, { ...profile, displayName });
   }
   reload(): Promise<void> {
     return this.js.reload();
