@@ -16,7 +16,8 @@
  *    that still reads `snap.exists` gets a function, which is always truthy.
  *  - Writing an `undefined` field throws "Unsupported field value: undefined",
  *    as the native SDK does unless ignoreUndefinedProperties is set.
- *  - A batch is atomic and refuses more than 500 writes, like the server.
+ *  - A batch is atomic. (There is no write-count cap: Firestore removed the
+ *    old 500-writes-per-commit limit in March 2023.)
  *
  * NOT supported (add later if you start using them): dotted field paths in
  * update(), transactions, onSnapshot, FieldValue.increment.
@@ -64,9 +65,6 @@ const toComparable = (v: unknown): string | number => {
   if (v instanceof Date) return v.getTime();
   return v as string | number;
 };
-
-/** Firestore refuses a batch with more writes than this. */
-export const MAX_BATCH_WRITES = 500;
 
 // RNFB serializes every write and throws on the first undefined it meets,
 // at any depth, before anything reaches the database.
@@ -359,11 +357,6 @@ class Batch {
   }
   constructor(private readonly store: Store) {}
   async commit(): Promise<void> {
-    if (this.ops.length > MAX_BATCH_WRITES) {
-      throw new Error(
-        `A write batch can contain at most ${MAX_BATCH_WRITES} operations, got ${this.ops.length}.`,
-      );
-    }
     // All or nothing: a failing op rolls back the ones before it.
     const before = new Map(this.store.docs);
     try {

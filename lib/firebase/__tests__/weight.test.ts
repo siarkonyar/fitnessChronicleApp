@@ -248,7 +248,7 @@ describe("updateMeasure", () => {
     expect(readDoc(USER)).toEqual({ measure: "lbs" });
   });
 
-  test("splits large histories into batches below Firestore's limit", async () => {
+  test("converts large histories in batches of 450", async () => {
     seedDoc(USER, { measure: "kg" });
     seedWeights(451);
 

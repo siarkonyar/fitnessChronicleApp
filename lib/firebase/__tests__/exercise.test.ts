@@ -15,8 +15,8 @@ import { getISOWeek } from "../../dateUtils";
 import { kgSet, makeLog } from "./fixtures";
 import {
   FakeTimestamp,
-  MAX_BATCH_WRITES,
   TEST_UID,
+  committedBatchSizes,
   listPaths,
   readDoc,
   resetFirestore,
@@ -494,13 +494,12 @@ describe("syncOfflineExercises", () => {
     expect(userLogs()).toEqual([]);
   });
 
-  // KNOWN LIMITATION: everything goes into one batch, and Firestore refuses a
-  // batch of more than 500 writes, so a long offline stretch can never sync.
-  test.failing("syncs a queue longer than one Firestore batch", async () => {
-    const queue = Array.from({ length: MAX_BATCH_WRITES + 1 }, () => makeLog());
+  test("syncs a long queue in a single commit", async () => {
+    // Firestore dropped its 500-writes-per-commit limit in March 2023; only
+    // the 10 MiB request size still bounds one batch.
+    await syncOfflineExercises(Array.from({ length: 501 }, () => makeLog()));
 
-    await syncOfflineExercises(queue);
-
-    expect(userLogs()).toHaveLength(MAX_BATCH_WRITES + 1);
+    expect(userLogs()).toHaveLength(501);
+    expect(committedBatchSizes()[0]).toBe(501);
   });
 });

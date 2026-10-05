@@ -14,5 +14,7 @@ module.exports = {
   // Its suites import from "vitest", so Jest collecting them here fails every
   // one of them on the import alone, burying the app's real results. Run them
   // with `npm test` inside functions/ instead.
-  testPathIgnorePatterns: ["/node_modules/", "<rootDir>/functions/"],
+  // integration/ needs the emulators; `npm run test:integration` runs it with
+  // its own config (jest.integration.config.js).
+  testPathIgnorePatterns: ["/node_modules/", "<rootDir>/functions/", "<rootDir>/integration/"],
 };
