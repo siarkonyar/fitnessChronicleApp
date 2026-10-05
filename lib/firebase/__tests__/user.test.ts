@@ -67,14 +67,48 @@ describe("getUserSettings", () => {
     expect(readDoc(USER)).toEqual({ measure: "kg", name: "Sam", streakWeeks: 4 });
   });
 
-  // FIXME: one corrupt optional field fails the whole parse, and the
-  // fallback then overwrites a valid "lbs" preference with "kg".
-  test.failing("keeps a valid unit when an unrelated setting is corrupt", async () => {
+  test("keeps a valid unit when an unrelated setting is corrupt", async () => {
     seedDoc(USER, { measure: "lbs", activeProgramDay: -1 });
 
     await getUserSettings();
 
     expect(readDoc(USER)?.measure).toBe("lbs");
+  });
+
+  test("returns every valid setting and drops only the corrupt one", async () => {
+    seedDoc(USER, {
+      measure: "lbs",
+      activeProgramId: "p1",
+      activeProgramDay: 1.5,
+      activeProgramDayDate: "2026-06-10",
+      analyticsConsent: "yes",
+    });
+
+    expect(await getUserSettings()).toEqual({
+      measure: "lbs",
+      activeProgramId: "p1",
+      activeProgramDayDate: "2026-06-10",
+    });
+  });
+
+  test("writes nothing when only an optional setting is corrupt", async () => {
+    const stored = { measure: "lbs", activeProgramDay: -1, streakWeeks: 3 };
+    seedDoc(USER, stored);
+
+    await getUserSettings();
+
+    expect(readDoc(USER)).toEqual(stored);
+  });
+
+  test("defaults only the missing unit and keeps the other valid settings", async () => {
+    seedDoc(USER, { activeProgramId: "p1", analyticsConsent: true });
+
+    expect(await getUserSettings()).toEqual({
+      measure: "kg",
+      activeProgramId: "p1",
+      analyticsConsent: true,
+    });
+    expect(readDoc(USER)).toEqual({ measure: "kg", activeProgramId: "p1", analyticsConsent: true });
   });
 
   test("requires a signed-in user", async () => {

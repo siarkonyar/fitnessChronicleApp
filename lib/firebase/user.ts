@@ -12,23 +12,38 @@ const getCurrentUserId = () => {
   return user.uid;
 };
 
-export const getUserSettings = async () => {
+const DEFAULT_MEASURE: UserSettings["measure"] = "kg";
+
+/**
+ * Every setting that validates on its own, minus the ones that do not.
+ *
+ * Read field by field rather than all-or-nothing: one corrupt optional value
+ * (say a negative activeProgramDay) used to fail the whole parse, and the
+ * fallback then overwrote a perfectly good "lbs" with "kg" — without
+ * converting the stored weights, which were then shown in the wrong unit.
+ */
+const readValidSettings = (data: Record<string, unknown>): Partial<UserSettings> =>
+  Object.fromEntries(
+    Object.entries(UserSettingsSchema.shape).flatMap(([key, schema]) => {
+      const parsed = schema.safeParse(data[key]);
+      return parsed.success && parsed.data !== undefined ? [[key, parsed.data]] : [];
+    }),
+  );
+
+export const getUserSettings = async (): Promise<UserSettings> => {
   const userId = getCurrentUserId();
 
   const userRef = firestore().collection("users").doc(userId);
   const doc = await userRef.get();
-  const parsedSettings = UserSettingsSchema.safeParse(doc.data());
+  const { measure, ...rest } = readValidSettings(doc.data() ?? {});
 
-  if (parsedSettings.success) {
-    return parsedSettings.data;
+  if (measure) {
+    return { measure, ...rest };
   }
 
-  const defaultSettings: UserSettings = {
-    measure: "kg",
-  };
-
-  await userRef.set(defaultSettings, { merge: true });
-  return defaultSettings;
+  // Only the unit is required. Write just that, so nothing else is touched.
+  await userRef.set({ measure: DEFAULT_MEASURE }, { merge: true });
+  return { measure: DEFAULT_MEASURE, ...rest };
 };
 
 export const updateUserSettings = async (
