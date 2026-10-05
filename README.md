@@ -107,7 +107,7 @@ The version that ships to the stores is `expo.version` in [`app.config.js`](app.
 | `scripts/` | Local emulator lifecycle and combined Expo/server development workflow |
 | `.agents/skills/` | Reusable Firebase and Genkit agent skills and references |
 
-Project-wide agent rules and architecture guidance live in [AGENTS.md](AGENTS.md); [CLAUDE.md](CLAUDE.md) imports that same file. All project contributions and agent communications must be in English; Turkish is prohibited throughout the project.
+Project-wide agent rules and architecture guidance live in [AGENTS.md](AGENTS.md); [CLAUDE.md](CLAUDE.md) imports that same file. All project contributions must be in English; agents may reply to the user in Turkish in conversation, but nothing written into the repository may be in Turkish.
 
 ---
 
@@ -192,7 +192,7 @@ The source is public so you can read it, learn from it, and report what's broken
 
 If you do send code:
 
-- Match the existing conventions in [AGENTS.md](AGENTS.md) — in particular, English only with no Turkish, NativeWind `className` over the `style` prop, and colors from `constants/Colors.ts` rather than hardcoded values.
+- Match the existing conventions in [AGENTS.md](AGENTS.md) — in particular, English only (no Turkish) in everything committed to the repository, NativeWind `className` over the `style` prop, and colors from `constants/Colors.ts` rather than hardcoded values.
 - Conventional commit messages (`feat:`, `fix:`, `refactor:`, `chore:`).
 - Add tests for behavior you change.
 

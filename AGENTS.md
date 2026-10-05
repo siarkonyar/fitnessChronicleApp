@@ -2,11 +2,12 @@
 
 This file provides guidance to AI coding agents (Claude Code, Codex, Cursor, and others) when working with code in this repository. `CLAUDE.md` only imports this file, so edit this one.
 
-## Language — English only, no Turkish anywhere
+## Language — English in the project, Turkish allowed in conversation
 
-- Use English for all agent responses, plans, explanations, code comments, documentation, identifiers, UI copy, error messages, logs, prompts, test descriptions, fixtures, commit messages, and PR text.
-- Do not write Turkish anywhere in this project or in communications about it, even when the request or source material is in Turkish. Translate any Turkish prose encountered in files you edit into English.
-- Apply this rule across the whole repository, including Markdown guidance and task-specific skill output.
+- Agents may talk to the user in Turkish: chat replies, plans, and explanations given in the conversation can be in Turkish when the user writes in Turkish.
+- Everything that lands in the project stays English only: code comments, documentation, identifiers, UI copy, error messages, logs, prompts, test descriptions, fixtures, commit messages, PR text, and MemPalace drawers.
+- Translate any Turkish prose encountered in files you edit into English.
+- Apply the English-only rule across the whole repository, including Markdown guidance and task-specific skill output.
 
 ## Guidance and source of truth
 
