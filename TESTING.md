@@ -6,7 +6,7 @@ Reviewed on 2026-10-05 against branch `test/cover`. Scope: app data/business log
 
 The app's data-layer coverage was already broad. The main gaps were server success paths, asynchronous identity changes, multi-write failures, and sequences of subscription events. This audit added executable checks for those gaps and repaired seven production defects. The test infrastructure now matches the installed Expo SDK and preserves Firestore read-time snapshots.
 
-The suites provide a strong foundation, but a green run does **not** mean every edge case is resolved: six tests intentionally assert still-broken behavior using `test.failing`. Two newly reproduced defects need data-consistency work before the affected features can be called robust.
+The suites provide a strong foundation, but a green run does **not** mean every edge case is resolved: five tests currently assert still-broken behavior using `test.failing`. The body-weight migration regression has since been fixed; concurrent label assignment is the next repair.
 
 ## Verified results
 
@@ -17,7 +17,7 @@ The suites provide a strong foundation, but a green run does **not** mean every 
 | Server unit | 98 / 7 suites | 232 / 15 suites | Pure logic, actual Genkit flow/tool validation, callable and trigger orchestration with external dependencies replaced |
 | Server integration | 49 / 7 suites | 60 / 8 suites | Real callables/triggers and direct server readers/quota helpers against emulators |
 
-App totals include five expected-failing regressions; app integration includes one. Server suites have no expected failures. The date suite also passed in UTC, Europe/London, Europe/Istanbul, America/New_York, America/Los_Angeles, Pacific/Auckland, and Asia/Kolkata (7 tests per zone).
+The original audit totals included five expected-failing regressions; app integration included one. Server suites have no expected failures. The date suite also passed in UTC, Europe/London, Europe/Istanbul, America/New_York, America/Los_Angeles, Pacific/Auckland, and Asia/Kolkata (7 tests per zone).
 
 App coverage of `lib/`, `hooks/`, `context/`, `constants/`, and `types/`: **97.97% lines, 95.19% statements, 89.40% branches, 98.33% functions**. These figures exclude test helpers and do not measure screens/components, server code, native modules, or correctness. Expected-failing tests also contribute coverage. No arbitrary coverage threshold was introduced.
 
@@ -51,11 +51,12 @@ App and server TypeScript checks passed. Lint passed with two pre-existing warni
 6. **Incomplete label deletion:** assignments absent from a label's denormalized `dates` array survived deletion. Cleanup now queries references by `labelId` and batches their deletion with the label.
 7. **Orphan assignment deletion:** removing an assignment whose label was gone deleted the assignment and then threw. Cleanup now checks the label and batches any existing label update with assignment deletion.
 
+8. **Interrupted body-weight conversion (follow-up):** weight entries now store `measure` alongside the numeric value. Chunk transactions read current documents and write each value/unit together, so retries cannot double-convert an entry. Both readers normalize mixed-unit history to the selected user unit; new entries capture their unit transactionally. Legacy entries without a unit use the current user setting until migrated. Unit regressions cover final-setting failure, a failed second chunk, retries, mixed/legacy histories, and opposing concurrent changes; emulator tests cover final-setting failure/retry and concurrent logging. The UI-facing weight shape is unchanged. Older app builds that ignore per-entry units cannot safely read a partially migrated history; release this reader/writer change together.
+
 ## Remaining regressions
 
 | Priority | Reproduced condition | Test | Required direction |
 | --- | --- | --- | --- |
-| High | A final unit-setting write fails after body-weight conversion batches committed. History is in lbs while the user still has kg selected; a retry converts it again | `lib/firebase/__tests__/weight.test.ts` | Make unit conversion atomic or resumable; storing the unit per entry avoids a global migration assumption |
 | Medium | Two writers assign different labels to the same date after both read an empty assignment query. Random IDs create two owners; both labels retain the date | `lib/firebase/__tests__/label.test.ts`, `integration/labels.integration.test.ts` | Stable per-date identity and transactional ownership changes, with a compatibility/migration plan for existing random-ID assignments |
 | Medium, previously deferred | Overlapping offline saves lose one exercise | `lib/__tests__/offlineStorage.test.ts` | Serialize read-modify-write storage operations before enabling offline mode |
 | Low, previously deferred | `firestore/unavailable` is not recognized as the offline network error | `hooks/__tests__/useServerErrorHandler.test.tsx` | Normalize the native SDK's namespaced codes |

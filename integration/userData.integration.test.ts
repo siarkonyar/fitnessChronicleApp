@@ -3,6 +3,7 @@
  * including the Auth emulator for the display name and the server-side
  * consent trigger that fires on the settings write.
  */
+import firestore from "@react-native-firebase/firestore";
 import { addProgram, deleteProgram, getProgram, getPrograms, updateProgram } from "@/lib/firebase/program";
 import { getStreak, updateStreak } from "@/lib/firebase/streaks";
 import { getUserProfile, getUserSettings, updateUserProfile, updateUserSettings } from "@/lib/firebase/user";
@@ -80,6 +81,44 @@ describe("programs", () => {
 });
 
 describe("body weight", () => {
+  test("a failed settings write leaves mixed-unit history readable and retryable", async () => {
+    await updateUserSettings({ measure: "kg" });
+    const batch = adminDb.batch();
+    for (let i = 0; i < 451; i++) {
+      batch.set(adminDb.doc(`users/${user.uid}/weightLogs/w${i}`), { weight: 80, date: "2026-01-01" });
+    }
+    await batch.commit();
+    const ref = firestore().collection("users").doc(user.uid);
+    const prototype = Object.getPrototypeOf(ref) as typeof ref;
+    const original = prototype.set;
+    const failure = jest.spyOn(prototype, "set").mockImplementation(function (this: typeof ref, data, options) {
+      if (this.path === ref.path && data.measure === "lbs") return Promise.reject(new Error("Simulated settings failure"));
+      return original.call(this, data, options);
+    });
+    try {
+      await expect(updateMeasure("lbs")).rejects.toThrow("Simulated settings failure");
+      expect((await readAsAdmin(ref.path))?.measure).toBe("kg");
+      expect(new Set((await getWeights()).map((entry) => entry.weight))).toEqual(new Set([80]));
+    } finally {
+      failure.mockRestore();
+    }
+    await updateMeasure("lbs");
+    expect(new Set((await getWeights()).map((entry) => entry.weight))).toEqual(new Set([176.37]));
+    await updateMeasure("kg");
+    expect(new Set((await getWeights()).map((entry) => entry.weight))).toEqual(new Set([80]));
+  });
+
+  test("concurrent migration and new entries retain their explicit units", async () => {
+    await updateUserSettings({ measure: "kg" });
+    await addWeightLog(80);
+    await Promise.all([updateMeasure("lbs"), addWeightLog(80)]);
+    const logs = (await adminDb.collection(`users/${user.uid}/weightLogs`).get()).docs.map((doc) => doc.data());
+    expect(logs).toHaveLength(2);
+    expect(logs.every((log) => ["kg", "lbs"].includes(log.measure))).toBe(true);
+    const expected = logs.map((log) => log.measure === "kg" ? Math.round(log.weight * 2.2046226218 * 100) / 100 : log.weight).sort();
+    expect((await getWeights()).map((entry) => entry.weight).sort()).toEqual(expected);
+  });
+
   test("logs today's weight and reports today as logged", async () => {
     expect(await getIfTodayLogged()).toBe(false);
 
@@ -89,7 +128,7 @@ describe("body weight", () => {
     expect((await getWeights()).map((entry) => entry.weight)).toEqual([80.13]);
   });
 
-  test("switching units converts history with real batches, then back again", async () => {
+  test("switching units converts tagged history transactionally, then back again", async () => {
     await addWeightLog(80);
     await addWeightLog(100);
 

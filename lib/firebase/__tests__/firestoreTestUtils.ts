@@ -20,7 +20,7 @@
  *    old 500-writes-per-commit limit in March 2023.)
  *
  * NOT supported (add later if you start using them): dotted field paths in
- * update(), transactions, onSnapshot, FieldValue.increment.
+ * update(), onSnapshot, FieldValue.increment.
  */
 
 export const TEST_UID = "test-user";
@@ -384,17 +384,70 @@ class Batch {
   }
 }
 
+// Optimistic transactions capture every read, retry on conflicts, and apply
+// all writes synchronously only after the callback completes successfully.
+class Transaction {
+  readonly reads = new Map<string, DocData | undefined>();
+  private writes: { ref: DocRef; data?: DocData; merge?: boolean; update?: boolean }[] = [];
+  constructor(private readonly store: Store) {}
+  async get(ref: DocRef): Promise<DocSnapshot> {
+    if (this.writes.length) throw new Error("Transactions require all reads before writes");
+    this.reads.set(ref.path, this.store.docs.get(ref.path));
+    return new DocSnapshot(this.store, ref.path);
+  }
+  set(ref: DocRef, data: DocData, options?: { merge?: boolean }): Transaction {
+    assertNoUndefined(data);
+    this.writes.push({ ref, data, merge: options?.merge });
+    return this;
+  }
+  update(ref: DocRef, data: DocData): Transaction {
+    assertNoUndefined(data);
+    this.writes.push({ ref, data, update: true });
+    return this;
+  }
+  delete(ref: DocRef): Transaction {
+    this.writes.push({ ref });
+    return this;
+  }
+  commit(): boolean {
+    if ([...this.reads].some(([path, data]) => this.store.docs.get(path) !== data)) return false;
+    const next = new Map(this.store.docs);
+    for (const { ref, data, merge, update } of this.writes) {
+      if (!data) next.delete(ref.path);
+      else {
+        if (update && !next.has(ref.path)) throw new Error(`No document to update: ${ref.path}`);
+        next.set(ref.path, applyWrite(update || merge ? next.get(ref.path) ?? {} : {}, data));
+      }
+    }
+    this.store.docs = next;
+    if (this.writes.length) this.store.batchSizes.push(this.writes.length);
+    return true;
+  }
+}
+
+const runTransaction = async <T>(callback: (transaction: Transaction) => Promise<T>): Promise<T> => {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const transaction = new Transaction(store);
+    const result = await callback(transaction);
+    if (transaction.commit()) return result;
+  }
+  throw new Error("Transaction aborted after repeated conflicts");
+};
+
 // ---------------------------------------------------------------------------
 // The mock module: a callable firestore() with static FieldValue/Timestamp,
 // plus test-only helpers (_reset, _seed, _read) hung off the same function.
 // ---------------------------------------------------------------------------
 const store = new Store();
 
+const instance = {
+  collection: (name: string) => new CollectionRef(store, name),
+  batch: () => new Batch(store),
+  runTransaction,
+};
+
 const firestoreMock = Object.assign(
-  () => ({
-    collection: (name: string) => new CollectionRef(store, name),
-    batch: () => new Batch(store),
-  }),
+  () => instance,
   {
     FieldValue,
     Timestamp: FakeTimestamp,

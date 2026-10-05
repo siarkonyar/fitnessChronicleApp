@@ -59,6 +59,7 @@ describe("addWeightLog", () => {
     const [path] = listPaths([...USER, "weightLogs"]);
     expect(readDoc(path.split("/"))).toEqual({
       weight: 81.5,
+      measure: "kg",
       date: "2026-06-10",
       createdAt: NOW,
     });
@@ -192,11 +193,7 @@ describe("getWeightMeasure", () => {
 });
 
 describe("updateMeasure", () => {
-  // FIXME: Conversion batches commit before the unit field. A failed final
-  // settings write leaves converted values displayed in the old unit, and a
-  // retry converts them twice. Store a unit per entry or make the migration
-  // atomic/resumable before relying on it under network failures.
-  test.failing("a failed unit write cannot leave history converted under the old unit", async () => {
+  test("a failed unit write cannot leave history converted under the old unit", async () => {
     seedDoc(USER, { measure: "kg" });
     seedWeights(451);
     const ref = firestoreMock().collection("users").doc(TEST_UID);
@@ -211,10 +208,13 @@ describe("updateMeasure", () => {
     try {
       await expect(updateMeasure("lbs")).rejects.toThrow("Simulated unit-write failure");
       expect(readDoc(USER)?.measure).toBe("kg");
-      expect(new Set(storedWeights())).toEqual(new Set([80]));
+      expect(new Set((await getWeights()).map((entry) => entry.weight))).toEqual(new Set([80]));
     } finally {
       failure.mockRestore();
     }
+    await updateMeasure("lbs");
+    expect(new Set((await getWeights()).map((entry) => entry.weight))).toEqual(new Set([176.37]));
+    expect(new Set(storedWeights())).toEqual(new Set([176.37]));
   });
 
   test("converts every stored weight from kg to lbs and saves the unit", async () => {
@@ -247,14 +247,14 @@ describe("updateMeasure", () => {
     expect(readDoc(USER)).toEqual({ measure: "kg" });
   });
 
-  test("does not convert anything when the unit is unchanged", async () => {
+  test("tags legacy entries without converting when the unit is unchanged", async () => {
     seedDoc(USER, { measure: "lbs" });
     seedDoc(weightPath("a"), { weight: 176.37, date: "2026-06-09" });
 
     await updateMeasure("lbs");
 
     expect(storedWeights()).toEqual([176.37]);
-    expect(committedBatchSizes()).toEqual([]);
+    expect(readDoc(weightPath("a"))?.measure).toBe("lbs");
   });
 
   test("skips entries whose weight is not a number", async () => {
@@ -290,6 +290,55 @@ describe("updateMeasure", () => {
     await updateMeasure("lbs");
 
     expect(committedBatchSizes()).toEqual([450, 450]);
+  });
+
+  test("a failed second chunk leaves every weight readable and retries safely", async () => {
+    seedDoc(USER, { measure: "kg" });
+    seedWeights(451);
+    const instance = firestoreMock();
+    const original = instance.runTransaction;
+    let calls = 0;
+    const failure = jest.spyOn(instance, "runTransaction").mockImplementation(async (callback) => {
+      calls++;
+      if (calls === 2) throw new Error("Simulated chunk failure");
+      return original(callback);
+    });
+    try {
+      await expect(updateMeasure("lbs")).rejects.toThrow("Simulated chunk failure");
+      expect(readDoc(USER)?.measure).toBe("kg");
+      expect(new Set(storedWeights())).toEqual(new Set([80, 176.37]));
+      expect(new Set((await getWeights()).map((entry) => entry.weight))).toEqual(new Set([80]));
+      expect((await getWeightByDate("2026-06-01"))[0].weight).toBe(80);
+    } finally {
+      failure.mockRestore();
+    }
+    await updateMeasure("lbs");
+    expect(new Set(storedWeights())).toEqual(new Set([176.37]));
+  });
+
+  test("reads a mixture of tagged and legacy entries in the selected unit", async () => {
+    seedDoc(USER, { measure: "lbs" });
+    seedDoc(weightPath("a"), { weight: 80, measure: "kg", date: "2026-06-09" });
+    seedDoc(weightPath("b"), { weight: 176.37, date: "2026-06-09" });
+    expect((await getWeights()).map((entry) => entry.weight)).toEqual([176.37, 176.37]);
+    expect((await getWeightByDate("2026-06-09")).map((entry) => entry.weight)).toEqual([176.37, 176.37]);
+  });
+
+  test("new entries carry their unit and repeated changes do not convert twice", async () => {
+    seedDoc(USER, { measure: "lbs" });
+    await addWeightLog(176.37);
+    expect(readDoc(listPaths([...USER, "weightLogs"])[0].split("/"))?.measure).toBe("lbs");
+    await updateMeasure("kg");
+    await updateMeasure("kg");
+    expect((await getWeights())[0].weight).toBe(80);
+  });
+
+  test("concurrent opposing unit changes leave values consistent with the final setting", async () => {
+    seedDoc(USER, { measure: "kg" });
+    seedWeights(451);
+    await Promise.all([updateMeasure("lbs"), updateMeasure("kg")]);
+    const expected = readDoc(USER)?.measure === "lbs" ? 176.37 : 80;
+    expect(new Set((await getWeights()).map((entry) => entry.weight))).toEqual(new Set([expected]));
   });
 
   test("keeps the old alias pointing at the same function", () => {

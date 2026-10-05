@@ -155,10 +155,32 @@ class WriteBatch {
   }
 }
 
+class Transaction {
+  constructor(private readonly transaction: fs.Transaction) {}
+  async get(ref: DocumentReference): Promise<DocumentSnapshot> {
+    return new DocumentSnapshot(await this.transaction.get(ref.js));
+  }
+  set(ref: DocumentReference, data: Data, options?: fs.SetOptions): Transaction {
+    if (options) this.transaction.set(ref.js, data, options);
+    else this.transaction.set(ref.js, data);
+    return this;
+  }
+  update(ref: DocumentReference, data: Data): Transaction {
+    this.transaction.update(ref.js, data);
+    return this;
+  }
+  delete(ref: DocumentReference): Transaction {
+    this.transaction.delete(ref.js);
+    return this;
+  }
+}
+
 const instance = {
   collection: (path: string) => new CollectionReference(fs.collection(jsDb, path)),
   doc: (path: string) => new DocumentReference(fs.doc(jsDb, path)),
   batch: () => new WriteBatch(),
+  runTransaction: <T>(callback: (transaction: Transaction) => Promise<T>): Promise<T> =>
+    rnfb(fs.runTransaction(jsDb, (transaction) => callback(new Transaction(transaction)))),
 };
 
 const FieldValue = {
