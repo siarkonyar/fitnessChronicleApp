@@ -11,6 +11,7 @@
     "lint": "expo lint",
     "test": "TZ=UTC jest",
     "test:watch": "TZ=UTC jest --watch",
+    "test:tz": "for tz in UTC Europe/London Europe/Istanbul America/New_York America/Los_Angeles Pacific/Auckland Asia/Kolkata; do echo \"TZ=$tz\"; TZ=$tz jest --silent lib/__tests__/dateUtils.timezones.test.ts || exit 1; done",
     "dev:emu": "bash ./scripts/dev-emulators.sh",
     "emulators": "sh ./scripts/emulators.sh"
   },
