@@ -3,6 +3,7 @@
  * arrayRemove applied by the server, assignment cascades, month queries, and
  * the orphan cases the exists() bug leaves behind.
  */
+import firestore from "@react-native-firebase/firestore";
 import {
   addLabel,
   asignLabelToDay,
@@ -71,28 +72,32 @@ describe("creating and editing labels", () => {
 });
 
 describe("assigning labels to days", () => {
-  // FIXME: Same-date assignments are not transactional and use random ids.
-  // Both writers can observe an empty query and create conflicting owners.
-  test.failing("concurrent writers for the same date leave exactly one label owning it", async () => {
+  test("concurrent writers retry and leave exactly one label owning the date", async () => {
     const push = await createLabel("Push");
     const pull = await createLabel("Pull");
     const date = "2026-06-01";
-    // Freeze only the read boundary to reproduce the race deterministically;
-    // every write still goes through the SDK and the real emulator rules.
-    const firestore = (await import("@react-native-firebase/firestore")).default;
-    const query = firestore().collection("users").doc(user.uid).collection("dayAssignments").where("date", "==", date).limit(1);
-    const prototype = Object.getPrototypeOf(query) as typeof query;
-    const originalGet = prototype.get;
+    const instance = firestore();
+    const original = instance.runTransaction.bind(instance);
     let reads = 0;
+    let attempts = 0;
     let release!: () => void;
     const bothRead = new Promise<void>((resolve) => { release = resolve; });
-    const gate = jest.spyOn(prototype, "get").mockImplementation(async function (this: typeof query) {
-      const snapshot = await originalGet.call(this);
-      reads++;
-      if (reads === 2) release();
-      await bothRead;
-      return snapshot;
-    });
+    // Both first attempts read the absent canonical document. The real SDK
+    // must retry one of them; only the first two reads are gated.
+    const gate = jest.spyOn(instance, "runTransaction").mockImplementation((callback) => original(async (transaction) => {
+      attempts++;
+      const get = transaction.get.bind(transaction);
+      transaction.get = async (ref) => {
+        const snapshot = await get(ref);
+        if (ref.path === `users/${user.uid}/dayAssignments/${date}` && reads < 2) {
+          reads++;
+          if (reads === 2) release();
+          await bothRead;
+        }
+        return snapshot;
+      };
+      return callback(transaction);
+    }));
     try {
       await Promise.all([
         asignLabelToDay({ date, labelId: push }),
@@ -101,11 +106,88 @@ describe("assigning labels to days", () => {
     } finally {
       gate.mockRestore();
     }
+    expect(attempts).toBeGreaterThanOrEqual(3);
     const saved = await assignments();
     expect(saved).toHaveLength(1);
+    expect((await adminDb.collection(`users/${user.uid}/dayAssignments`).get()).docs[0].id).toBe(date);
     for (const id of [push, pull]) {
       expect(await datesOf(id) ?? []).toEqual(saved[0].labelId === id ? [date] : []);
     }
+  });
+
+  test("migrates legacy duplicate owners into the date document", async () => {
+    const date = "2026-06-01";
+    const push = await createLabel("Push");
+    const pull = await createLabel("Pull");
+    const legs = await createLabel("Legs");
+    const batch = adminDb.batch();
+    for (const id of [push, pull]) {
+      batch.update(adminDb.doc(`users/${user.uid}/labels/${id}`), { dates: [date] });
+      batch.set(adminDb.doc(`users/${user.uid}/dayAssignments/legacy-${id}`), { date, labelId: id });
+    }
+    await batch.commit();
+    await asignLabelToDay({ date, labelId: legs });
+    expect(await assignments()).toEqual([expect.objectContaining({ date, labelId: legs })]);
+    expect(await datesOf(push)).toEqual([]);
+    expect(await datesOf(pull)).toEqual([]);
+    expect(await datesOf(legs)).toEqual([date]);
+    expect(await getLabelAsignmentByDate(date)).toMatchObject({ id: legs });
+    await deleteAssignment(date);
+    expect(await assignments()).toEqual([]);
+    expect(await datesOf(legs)).toEqual([]);
+  });
+
+  test("a rejected transaction cannot partially migrate or move a date", async () => {
+    const date = "2026-06-01";
+    const push = await createLabel("Push");
+    const pull = await createLabel("Pull");
+    await adminDb.doc(`users/${user.uid}/labels/${push}`).update({ dates: [date] });
+    await adminDb.doc(`users/${user.uid}/dayAssignments/legacy`).set({ date, labelId: push });
+    const instance = firestore();
+    const original = instance.runTransaction.bind(instance);
+    const failure = jest.spyOn(instance, "runTransaction").mockImplementation((callback) => original(async (transaction) => {
+      const result = await callback(transaction);
+      // The actual rules reject this extra write and roll back all writes,
+      // including the canonical assignment and both denormalized date arrays.
+      transaction.update(instance.collection("aiUsage").doc(user.uid), { tier: "max" });
+      return result;
+    }));
+    try {
+      expect((await caught(() => asignLabelToDay({ date, labelId: pull }))).code).toBe("firestore/permission-denied");
+    } finally {
+      failure.mockRestore();
+    }
+    expect(await readAsAdmin(`users/${user.uid}/dayAssignments/${date}`)).toBeUndefined();
+    expect(await assignments()).toEqual([{ date, labelId: push }]);
+    expect(await datesOf(push)).toEqual([date]);
+    expect(await datesOf(pull) ?? []).toEqual([]);
+  });
+
+  test("a target deleted after reading aborts rather than leaving an orphan", async () => {
+    const date = "2026-06-01";
+    const push = await createLabel("Push");
+    const path = `users/${user.uid}/labels/${push}`;
+    const instance = firestore();
+    const original = instance.runTransaction.bind(instance);
+    let removed = false;
+    const race = jest.spyOn(instance, "runTransaction").mockImplementation((callback) => original(async (transaction) => {
+      const get = transaction.get.bind(transaction);
+      transaction.get = async (ref) => {
+        const snapshot = await get(ref);
+        if (ref.path === path && !removed) {
+          removed = true;
+          await adminDb.doc(path).delete();
+        }
+        return snapshot;
+      };
+      return callback(transaction);
+    }));
+    try {
+      await expect(asignLabelToDay({ date, labelId: push })).rejects.toThrow("Label not found.");
+    } finally {
+      race.mockRestore();
+    }
+    expect(await assignments()).toEqual([]);
   });
 
   test("assigning records the day on both the assignment and the label", async () => {

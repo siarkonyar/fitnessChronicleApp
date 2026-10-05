@@ -6,9 +6,9 @@ Reviewed on 2026-10-05 against branch `test/cover`. Scope: app data/business log
 
 The app's data-layer coverage was already broad. The main gaps were server success paths, asynchronous identity changes, multi-write failures, and sequences of subscription events. This audit added executable checks for those gaps and repaired seven production defects. The test infrastructure now matches the installed Expo SDK and preserves Firestore read-time snapshots.
 
-The suites provide a strong foundation, but a green run does **not** mean every edge case is resolved: five tests currently assert still-broken behavior using `test.failing`. The body-weight migration regression has since been fixed; concurrent label assignment is the next repair.
+The suites provide a strong foundation, but a green run does **not** mean every edge case is resolved: three tests currently assert still-broken offline behavior using `test.failing`. Both data-consistency regressions discovered in this audit have since been repaired.
 
-## Verified results
+## Original audit results
 
 | Suite | Before audit | After audit | Verification boundary |
 | --- | ---: | ---: | --- |
@@ -49,25 +49,30 @@ App and server TypeScript checks passed. Lint passed with two pre-existing warni
 4. **Impossible server dates:** `Date.parse` normalized February 30 and non-leap February 29. Calendar-date round trips now validate the callable's date and tool ranges before reads.
 5. **Missing reps in coach formatting:** a kg/lbs set without a `reps` property lost the unknown-reps marker. Formatting now selects reps by measure and consistently renders the missing value.
 6. **Incomplete label deletion:** assignments absent from a label's denormalized `dates` array survived deletion. Cleanup now queries references by `labelId` and batches their deletion with the label.
-7. **Orphan assignment deletion:** removing an assignment whose label was gone deleted the assignment and then threw. Cleanup now checks the label and batches any existing label update with assignment deletion.
+7. **Orphan assignment deletion:** removing an assignment whose label was gone deleted the assignment and then threw. Cleanup now checks the label and applies any existing label update atomically with assignment deletion.
 
 8. **Interrupted body-weight conversion (follow-up):** weight entries now store `measure` alongside the numeric value. Chunk transactions read current documents and write each value/unit together, so retries cannot double-convert an entry. Both readers normalize mixed-unit history to the selected user unit; new entries capture their unit transactionally. Legacy entries without a unit use the current user setting until migrated. Unit regressions cover final-setting failure, a failed second chunk, retries, mixed/legacy histories, and opposing concurrent changes; emulator tests cover final-setting failure/retry and concurrent logging. The UI-facing weight shape is unchanged. Older app builds that ignore per-entry units cannot safely read a partially migrated history; release this reader/writer change together.
+
+9. **Concurrent date ownership (follow-up):** new assignments use the date as the document ID. A transaction reads that reference and the affected labels, then commits the assignment and all label date changes together. Concurrent writers retry; same-date legacy random-ID documents are folded into the canonical assignment and all former owners are cleaned. Deletion removes all discovered duplicates transactionally, and orphan cleanup rechecks current ownership before deleting. Tests cover duplicate legacy owners, missing previous labels, rollback, invalid dates, concurrent deletion/reassignment, actual SDK retry after two absent reads, rule-denied rollback, and a target label deleted after reading. Both label `test.failing` markers and their `FIXME:` comments were removed. Existing random-ID records remain readable and are migrated when reassigned; older writers that keep creating random IDs are outside this contract.
+
+## Follow-up verification
+
+After both consistency repairs, the app unit suite passes **685 tests / 34 suites**, including only the three previously deferred offline expected failures. TypeScript and lint pass, with the same two pre-existing lint warnings. The complete app emulator suite passes **141 tests / 7 suites**, with no expected failures. Original audit coverage figures above remain the original measurement; they were not recomputed for this follow-up. Backend code is unchanged by the follow-up.
 
 ## Remaining regressions
 
 | Priority | Reproduced condition | Test | Required direction |
 | --- | --- | --- | --- |
-| Medium | Two writers assign different labels to the same date after both read an empty assignment query. Random IDs create two owners; both labels retain the date | `lib/firebase/__tests__/label.test.ts`, `integration/labels.integration.test.ts` | Stable per-date identity and transactional ownership changes, with a compatibility/migration plan for existing random-ID assignments |
 | Medium, previously deferred | Overlapping offline saves lose one exercise | `lib/__tests__/offlineStorage.test.ts` | Serialize read-modify-write storage operations before enabling offline mode |
 | Low, previously deferred | `firestore/unavailable` is not recognized as the offline network error | `hooks/__tests__/useServerErrorHandler.test.tsx` | Normalize the native SDK's namespaced codes |
 | Low, previously deferred | Opening the app with no signal reports an offline transition | `context/__tests__/ConnectivityContext.test.tsx` | Distinguish initial network state from entering offline mode |
 
-The label integration regression gates both reads so it reproduces the race deterministically; writes and rule evaluation still use the real emulator. A `test.failing` passing in Jest means the defect was reproduced, not fixed. Remove the marker and its `FIXME:` together when implementing a repair.
+The repaired label regression is now a normal test: it gates the two initial transactional reads of the absent date document and verifies that the real SDK retries a conflicting writer. The original expected-failure version used an unsupported dynamic import in Jest, which could mask the intended failure; this follow-up replaced it with a static import and an explicit retry assertion. A remaining `test.failing` passing in Jest means its offline defect was reproduced, not fixed. Remove the marker and its `FIXME:` together when implementing a repair.
 
 ## Other limits identified by code review
 
 - **History cost:** `CoachRequestSchema` limits the new message but not each history text. Keeping only the newest 20 messages bounds their count, not their size. Add a history-text budget that accommodates legitimate model replies, and client trimming compatible with that budget.
-- **Multiple-write recovery:** exercise logging commits the log before streak/name updates; label assignment commits its document before updating both labels. A later failure can return an error after part of the operation succeeded. Retries and error recovery need tests alongside an atomic/idempotent design.
+- **Multiple-write recovery:** exercise logging commits the log before streak/name updates. Label assignment and ownership changes now commit transactionally. A later failure can return an error after part of the operation succeeded. Retries and error recovery need tests alongside an atomic/idempotent design.
 - **Deletion consistency:** the repaired label deletion batches are atomic, but a query of references does not prevent a concurrent assignment from being created afterward. Account deletion covers the six known flat subcollections; arbitrary/deeper subcollections allowed by the rules are not recursively erased.
 - **Quota concurrency:** simultaneous turns can pass using the same allowance balance. The token bucket bounds arrival rate, not a fixed number of in-flight requests as its comment currently claims. Delayed completions, a period boundary, or subscription changes during generation need a reservation/reconciliation policy. A successful chat response calculates percentage from its pre-turn snapshot, so concurrent replies can temporarily show stale usage.
 - **Server document corruption:** quota reads cast timestamp fields and trust numeric counters. Malformed Admin-written state can still throw or produce invalid percentages. Finite/nonnegative counter handling and timestamp validation need an explicit fail-closed policy.

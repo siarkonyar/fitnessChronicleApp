@@ -5,7 +5,7 @@ import {
   LabelWithIdSchema,
 } from "@/types/types";
 import auth from "@react-native-firebase/auth";
-import firestore from "@react-native-firebase/firestore";
+import firestore, { FirebaseFirestoreTypes } from "@react-native-firebase/firestore";
 import { z } from "zod";
 import { findMostRecentSessionDate, getTodayString } from "../dateUtils";
 
@@ -186,184 +186,129 @@ export const editLabel = async (labelId: string, label: Label) => {
   });
 };
 
+// The canonical document id is the calendar date. Legacy random-id documents
+// are discovered outside the transaction, then re-read and removed inside it.
+// Every current writer also reads the canonical ref, including when absent,
+// so Firestore retries competing ownership changes instead of creating twins.
+const dateAssignmentRefs = async (
+  userRef: FirebaseFirestoreTypes.DocumentReference,
+  date: string,
+) => {
+  const collection = userRef.collection("dayAssignments");
+  const legacy = await collection.where("date", "==", date).get();
+  return [
+    collection.doc(date),
+    ...legacy.docs.filter((doc) => doc.id !== date).map((doc) => doc.ref),
+  ];
+};
+
+const assignmentLabelIds = (docs: FirebaseFirestoreTypes.DocumentSnapshot[]) =>
+  [...new Set(docs.flatMap((doc) => {
+    const id = doc.data()?.labelId;
+    return typeof id === "string" && id.length > 0 ? [id] : [];
+  }))];
+
 export const asignLabelToDay = async (day: Day) => {
   const userId = GetCurrentUserId();
-  if (!userId) throw new Error("User not authenticated");
+  const { date, labelId } = DaySchema.parse(day);
+  const userRef = firestore().collection("users").doc(userId);
+  const refs = await dateAssignmentRefs(userRef, date);
 
-  const labelRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("labels")
-    .doc(day.labelId);
-  const labelDoc = await labelRef.get();
+  return firestore().runTransaction(async (transaction) => {
+    const snapshots = await Promise.all(refs.map((ref) => transaction.get(ref)));
+    const existing = snapshots.filter((doc) => doc.exists());
+    const labelIds = [...new Set([labelId, ...assignmentLabelIds(existing)])];
+    const labels = await Promise.all(
+      labelIds.map((id) => transaction.get(userRef.collection("labels").doc(id))),
+    );
+    const target = labels[0];
+    if (!target.exists()) throw new Error("Label not found.");
 
-  if (!labelDoc.exists()) {
-    throw new Error("Label not found.");
-  }
-
-  // Check if there's already an assignment for this date
-  const existingAssignmentSnapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("dayAssignments")
-    .where("date", "==", day.date)
-    .limit(1)
-    .get();
-
-  let assignmentId: string;
-  let isUpdate = false;
-  let previousLabelId: string | null = null;
-
-  if (!existingAssignmentSnapshot.empty) {
-    // Update existing assignment
-    const existingDoc = existingAssignmentSnapshot.docs[0];
-    assignmentId = existingDoc.id;
-    isUpdate = true;
-    previousLabelId = existingDoc.data().labelId;
-
-    await existingDoc.ref.update({
-      labelId: day.labelId,
-      updatedAt: firestore.FieldValue.serverTimestamp(),
+    const isUpdate = existing.length > 0;
+    const timestamp = firestore.FieldValue.serverTimestamp();
+    transaction.set(refs[0], {
+      date,
+      labelId,
+      createdAt: existing[0]?.data()?.createdAt ?? timestamp,
+      ...(isUpdate ? { updatedAt: timestamp } : {}),
     });
-  } else {
-    // Create new assignment
-    const newAssignmentRef = firestore()
-      .collection("users")
-      .doc(userId)
-      .collection("dayAssignments")
-      .doc();
+    existing.filter((doc) => doc.id !== date).forEach((doc) => transaction.delete(doc.ref));
+    transaction.update(target.ref, { dates: firestore.FieldValue.arrayUnion(date) });
+    for (const previous of labels.slice(1)) {
+      if (previous.exists()) transaction.update(previous.ref, { dates: firestore.FieldValue.arrayRemove(date) });
+    }
 
-    assignmentId = newAssignmentRef.id;
-
-    await newAssignmentRef.set({
-      date: day.date,
-      labelId: day.labelId,
-      createdAt: firestore.FieldValue.serverTimestamp(),
-    });
-  }
-
-  // Update the label's dates array
-  const labelData = labelDoc.data();
-  const currentDates = labelData?.dates || [];
-
-  // Add the date if it's not already in the array
-  if (!currentDates.includes(day.date)) {
-    await labelRef.update({
-      dates: firestore.FieldValue.arrayUnion(day.date),
-    });
-  }
-
-  // If this was an update and the previous label is different, remove the date from the previous label
-  if (isUpdate && previousLabelId && previousLabelId !== day.labelId) {
-    const previousLabelRef = firestore()
-      .collection("users")
-      .doc(userId)
-      .collection("labels")
-      .doc(previousLabelId);
-    await previousLabelRef.update({
-      dates: firestore.FieldValue.arrayRemove(day.date),
-    });
-  }
-
-  return {
-    id: assignmentId,
-    date: day.date,
-    labelId: day.labelId,
-    message: isUpdate
-      ? "Label assignment updated successfully!"
-      : "Label assigned to day successfully!",
-  };
+    return {
+      id: date,
+      date,
+      labelId,
+      message: isUpdate
+        ? "Label assignment updated successfully!"
+        : "Label assigned to day successfully!",
+    };
+  });
 };
 
 export const getLabelAsignmentByDate = async (date: string) => {
   const userId = GetCurrentUserId();
-  if (!userId) throw new Error("User not authenticated");
-
-  // Find the assignment for this date
-  const assignmentSnapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("dayAssignments")
-    .where("date", "==", date)
-    .limit(1)
-    .get();
-
-  if (assignmentSnapshot.empty) {
-    return null; // No assignment found for this date
+  const validatedDate = DaySchema.shape.date.parse(date);
+  const userRef = firestore().collection("users").doc(userId);
+  const collection = userRef.collection("dayAssignments");
+  const canonical = await collection.doc(validatedDate).get();
+  const assignment = canonical.exists()
+    ? canonical
+    : (await collection.where("date", "==", validatedDate).limit(1).get()).docs[0];
+  if (!assignment) return null;
+  const labelId = assignment.data()?.labelId;
+  if (typeof labelId === "string" && labelId) {
+    const label = await userRef.collection("labels").doc(labelId).get();
+    if (label.exists()) return LabelWithIdSchema.parse({ id: label.id, ...label.data() });
   }
 
-  const assignmentDoc = assignmentSnapshot.docs[0];
-  const assignmentData = assignmentDoc.data();
-
-  if (!assignmentData) {
-    return null;
-  }
-
-  // Get the full label data
-  const labelRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("labels")
-    .doc(assignmentData.labelId);
-  const labelDoc = await labelRef.get();
-
-  if (!labelDoc.exists()) {
-    // Label was deleted, automatically delete the assignment
-    await assignmentDoc.ref.delete();
-    return null; // Return null since the assignment was deleted
-  }
-
-  return LabelWithIdSchema.parse({
-    id: labelDoc.id,
-    ...labelDoc.data(),
+  // Recheck the orphan inside a transaction so cleanup cannot erase a date
+  // that another writer reassigned after our initial read.
+  return firestore().runTransaction(async (transaction) => {
+    const current = await transaction.get(assignment.ref);
+    if (!current.exists()) return null;
+    const currentLabelId = current.data()?.labelId;
+    if (typeof currentLabelId !== "string" || !currentLabelId) {
+      transaction.delete(current.ref);
+      return null;
+    }
+    const label = await transaction.get(userRef.collection("labels").doc(currentLabelId));
+    if (!label.exists()) {
+      transaction.delete(current.ref);
+      return null;
+    }
+    return LabelWithIdSchema.parse({ id: label.id, ...label.data() });
   });
 };
 
 export const deleteAssignment = async (date: string) => {
   const userId = GetCurrentUserId();
-  if (!userId) throw new Error("User not authenticated");
+  const validatedDate = DaySchema.shape.date.parse(date);
+  const userRef = firestore().collection("users").doc(userId);
+  const refs = await dateAssignmentRefs(userRef, validatedDate);
 
-  // Find the assignment for this date
-  const assignmentSnapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("dayAssignments")
-    .where("date", "==", date)
-    .limit(1)
-    .get();
-
-  if (assignmentSnapshot.empty) {
-    throw new Error("No label assignment found for this date.");
-  }
-
-  const assignmentDoc = assignmentSnapshot.docs[0];
-  const assignmentId = assignmentDoc.id;
-  const labelId = assignmentDoc.data().labelId as string | undefined;
-
-  const batch = firestore().batch();
-  batch.delete(assignmentDoc.ref);
-
-  if (labelId) {
-    const labelRef = firestore()
-      .collection("users")
-      .doc(userId)
-      .collection("labels")
-      .doc(labelId);
-    const labelDoc = await labelRef.get();
-    if (labelDoc.exists()) {
-      batch.update(labelRef, {
-        dates: firestore.FieldValue.arrayRemove(date),
-      });
+  return firestore().runTransaction(async (transaction) => {
+    const snapshots = await Promise.all(refs.map((ref) => transaction.get(ref)));
+    const existing = snapshots.filter((doc) => doc.exists());
+    if (!existing.length) throw new Error("No label assignment found for this date.");
+    const labels = await Promise.all(
+      assignmentLabelIds(existing).map((id) =>
+        transaction.get(userRef.collection("labels").doc(id)),
+      ),
+    );
+    existing.forEach((doc) => transaction.delete(doc.ref));
+    for (const label of labels) {
+      if (label.exists()) transaction.update(label.ref, { dates: firestore.FieldValue.arrayRemove(validatedDate) });
     }
-  }
-
-  await batch.commit();
-
-  return {
-    id: assignmentId,
-    date: date,
-    message: "Label assignment deleted successfully!",
-  };
+    return {
+      id: existing[0].id,
+      date: validatedDate,
+      message: "Label assignment deleted successfully!",
+    };
+  });
 };
 
 export const getPrevExercisesFromLabel = async (label: Label) => {

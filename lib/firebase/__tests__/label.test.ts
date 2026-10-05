@@ -13,6 +13,7 @@ import {
 import { makeLabel, makeLog } from "./fixtures";
 import {
   TEST_UID,
+  firestoreMock,
   listPaths,
   readDoc,
   resetFirestore,
@@ -323,10 +324,7 @@ describe("deleteLabel", () => {
 });
 
 describe("asignLabelToDay", () => {
-  // FIXME: Concurrent same-date writers use random assignment ids and can
-  // leave two assignments and dates on both labels. Serialize with a stable
-  // date key/transaction while preserving legacy assignment compatibility.
-  test.failing("concurrent assignments of the same date leave one owner and matching label dates", async () => {
+  test("concurrent assignments of the same date leave one owner and matching label dates", async () => {
     seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
     seedDoc(["users", TEST_UID, "labels", "pull"], makeLabel());
     const date = "2026-06-01";
@@ -340,6 +338,60 @@ describe("asignLabelToDay", () => {
     for (const id of ["push", "pull"]) {
       expect(readDoc(["users", TEST_UID, "labels", id])?.dates ?? []).toEqual(id === owner ? [date] : []);
     }
+  });
+
+  test("migrates duplicate legacy assignments and cleans every former owner", async () => {
+    const date = "2026-06-01";
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: [date, "2026-06-02"] }));
+    seedDoc(["users", TEST_UID, "labels", "pull"], makeLabel({ dates: [date] }));
+    seedDoc(["users", TEST_UID, "labels", "legs"], makeLabel());
+    const createdAt = new Date("2026-01-01");
+    seedDoc(["users", TEST_UID, "dayAssignments", "legacy-push"], { date, labelId: "push", createdAt });
+    seedDoc(["users", TEST_UID, "dayAssignments", "legacy-pull"], { date, labelId: "pull" });
+    const result = await asignLabelToDay({ date, labelId: "legs" });
+    expect(result.id).toBe(date);
+    expect(listPaths(["users", TEST_UID, "dayAssignments"])).toEqual([`users/${TEST_UID}/dayAssignments/${date}`]);
+    expect(readDoc(["users", TEST_UID, "dayAssignments", date])?.createdAt).toEqual(createdAt);
+    expect(readDoc(["users", TEST_UID, "labels", "push"])?.dates).toEqual(["2026-06-02"]);
+    expect(readDoc(["users", TEST_UID, "labels", "pull"])?.dates).toEqual([]);
+    expect(readDoc(["users", TEST_UID, "labels", "legs"])?.dates).toEqual([date]);
+  });
+
+  test("can replace a legacy assignment whose previous label is gone", async () => {
+    const date = "2026-06-01";
+    seedDoc(["users", TEST_UID, "dayAssignments", "legacy"], { date, labelId: "gone" });
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
+    await asignLabelToDay({ date, labelId: "push" });
+    expect(readDoc(["users", TEST_UID, "dayAssignments", "legacy"])).toBeUndefined();
+    expect(readDoc(["users", TEST_UID, "labels", "push"])?.dates).toEqual([date]);
+  });
+
+  test("a failed label write rolls back migration and the assignment change", async () => {
+    const date = "2026-06-01";
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: [date] }));
+    seedDoc(["users", TEST_UID, "labels", "pull"], makeLabel());
+    seedDoc(["users", TEST_UID, "dayAssignments", "legacy"], { date, labelId: "push" });
+    const instance = firestoreMock();
+    const original = instance.runTransaction;
+    const failure = jest.spyOn(instance, "runTransaction").mockImplementation((callback) => original(async (transaction) => {
+      const result = await callback(transaction);
+      transaction.update(instance.collection("labels").doc("missing"), { dates: [date] });
+      return result;
+    }));
+    try {
+      await expect(asignLabelToDay({ date, labelId: "pull" })).rejects.toThrow("No document to update");
+      expect(readDoc(["users", TEST_UID, "dayAssignments", date])).toBeUndefined();
+      expect(readDoc(["users", TEST_UID, "dayAssignments", "legacy"])?.labelId).toBe("push");
+      expect(readDoc(["users", TEST_UID, "labels", "push"])?.dates).toEqual([date]);
+      expect(readDoc(["users", TEST_UID, "labels", "pull"])?.dates).toEqual([]);
+    } finally {
+      failure.mockRestore();
+    }
+  });
+
+  test("rejects invalid calendar dates before creating document paths", async () => {
+    await expect(asignLabelToDay({ date: "2026-02-30", labelId: "push" })).rejects.toThrow();
+    expect(listPaths(["users", TEST_UID])).toEqual([]);
   });
 
   test("creates an assignment and reports it as new", async () => {
@@ -417,6 +469,28 @@ describe("deleteAssignment (edge cases)", () => {
     seedDoc(["users", TEST_UID, "dayAssignments", "orphan"], { date: "2026-06-01", labelId: "deleted" });
     await expect(deleteAssignment("2026-06-01")).resolves.toMatchObject({ date: "2026-06-01" });
     expect(listPaths(["users", TEST_UID])).toEqual([]);
+  });
+
+  test("removes all legacy duplicates and their label dates", async () => {
+    const date = "2026-06-01";
+    for (const id of ["push", "pull"]) {
+      seedDoc(["users", TEST_UID, "labels", id], makeLabel({ dates: [date] }));
+      seedDoc(["users", TEST_UID, "dayAssignments", `legacy-${id}`], { date, labelId: id });
+    }
+    await deleteAssignment(date);
+    expect(listPaths(["users", TEST_UID, "dayAssignments"])).toEqual([]);
+    for (const id of ["push", "pull"]) expect(readDoc(["users", TEST_UID, "labels", id])?.dates).toEqual([]);
+  });
+
+  test("concurrent deletion and reassignment finish with matching assignment and label dates", async () => {
+    const date = "2026-06-01";
+    for (const id of ["push", "pull"]) seedDoc(["users", TEST_UID, "labels", id], makeLabel());
+    await asignLabelToDay({ date, labelId: "push" });
+    await Promise.all([deleteAssignment(date), asignLabelToDay({ date, labelId: "pull" })]);
+    const saved = readDoc(["users", TEST_UID, "dayAssignments", date]);
+    for (const id of ["push", "pull"]) {
+      expect(readDoc(["users", TEST_UID, "labels", id])?.dates).toEqual(saved?.labelId === id ? [date] : []);
+    }
   });
 
   test("throws when the date has no assignment", async () => {

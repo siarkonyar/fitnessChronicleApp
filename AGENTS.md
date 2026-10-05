@@ -149,6 +149,8 @@ Client data helpers live in `lib/firebase/`; auth state is managed in `context/A
 | `credentials.ts` | — | Google/Apple sign-in credential helpers, shared by sign-in and reauthentication |
 | `emulators.ts` | — | Development-only SDK connection setup, imported first by the root layout |
 
+Day assignments use the local calendar date as the document ID. Assignment and deletion helpers transactionally update the assignment and all affected label `dates` arrays. Reassignment folds existing random-ID records for that date into the canonical document and removes their former owners' date references. Keep all ownership writes in the transaction; old clients that still create random IDs do not participate in this concurrency contract.
+
 Body-weight documents store a `measure` field alongside `weight`. `lib/firebase/weight.ts` converts mixed-unit history to the user's selected unit when reading. Legacy entries without `measure` use the user setting until a unit change tags/converts them in chunk transactions. Keep each value and its unit in the same write; new entries capture the setting transactionally so interrupted conversions and retries remain safe.
 
 Validate domain documents with Zod schemas in `types/types.ts`. Document schemas have `WithId` variants where a Firestore document ID is needed (e.g. `ExerciseLogWithIdSchema`); scalar and settings schemas do not all have one. Server equivalents live in `functions/src/data/schemas.ts` and request/response schemas in `functions/src/types.ts`; keep shared shapes aligned when changing them.
