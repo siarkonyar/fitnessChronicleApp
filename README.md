@@ -87,7 +87,7 @@ The version that ships to the stores is `expo.version` in [`app.config.js`](app.
 | AI | [Genkit](https://genkit.dev) + Gemini on Cloud Functions (`europe-west2`), tool-calling over the user's own logs, per-user quota buckets |
 | UI | [@gorhom/bottom-sheet](https://gorhom.dev/react-native-bottom-sheet/) 5, `react-native-reanimated` 4, `react-native-calendars`, `react-native-gifted-charts`, `expo-blur` |
 | Offline | `@react-native-community/netinfo` + AsyncStorage exercise queue; Firestore sync helper exists, automatic flushing pending |
-| Testing | `jest-expo` (app), `vitest` + Firebase Emulator Suite (functions: unit + integration) |
+| Testing | `jest-expo` + Testing Library (app unit), Jest + Firebase Emulator Suite (app integration), `vitest` + Firebase Emulator Suite (functions: unit + integration) |
 | Delivery | EAS Build & Submit, `expo-updates`, GitHub Actions for functions |
 
 ---
@@ -126,7 +126,9 @@ npx expo run:ios              # or: npx expo run:android
 
 ```sh
 # Tests
-npm test                      # app (jest-expo)
+npm test                      # app unit tests (jest-expo)
+npm run test:tz               # app date logic re-run under seven time zones
+npm run test:integration      # app lib/ code against the Auth, Firestore and Functions emulators
 npm --prefix functions test   # build + Vitest unit and emulator integration tests
 
 # Typechecks
@@ -136,6 +138,8 @@ npm --prefix functions run typecheck
 # Lint
 npm run lint
 ```
+
+App integration tests (`integration/`) run the real `lib/` code, Zod schemas, `firestore.rules` and Cloud Functions against fresh emulators under `demo-hercule`. Native React Native Firebase modules are replaced by shims over the Firebase JS SDK in `integration/shims/`, which keep device behaviour such as `exists()` being a method and React Native Firebase error codes. The command builds the server and needs `npm --prefix functions ci` first, because the suite reuses the server's `firebase-admin`. Tests marked `test.failing` pin known bugs; when a fix lands, Jest reports them as passing and the marker must be removed.
 
 Backend tests run separately from app Jest. Integration tests use the `demo-hercule` project via `npm --prefix functions run test:integration`; build the server first when running that command alone. Stop development emulators before starting integration tests to avoid port conflicts. Follow [the backend CI workflow](.github/workflows/functions.yml) for the throwaway `GEMINI_API_KEY` value in the gitignored `functions/.secret.local` used by guard-only tests. Real coach conversations require a real key.
 

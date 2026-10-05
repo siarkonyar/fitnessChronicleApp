@@ -63,9 +63,14 @@ npx expo prebuild --clean
 eas build --platform ios --profile production
 eas build --platform android --profile production
 
-# Tests (jest-expo)
+# App unit tests (jest-expo); test:tz re-runs the date suite in seven time zones
 npm test
 npm run test:watch
+npm run test:tz
+
+# App integration tests: lib/ against the Auth, Firestore and Functions emulators
+# (builds functions; needs `npm --prefix functions ci`; stop dev emulators first)
+npm run test:integration
 
 # Server checks (separate TypeScript project and Vitest runner)
 npm --prefix functions run typecheck
@@ -84,7 +89,9 @@ Use a native development build for React Native Firebase; Expo Go does not inclu
 
 `functions/.secret.local` supplies `GEMINI_API_KEY` to the local Functions emulator. Guard-only integration tests use a throwaway value (see `.github/workflows/functions.yml`); actual coach conversations need a real Gemini key. Keep this file and `.env*.local` out of Git.
 
-Run checks appropriate to the files changed. Root Jest excludes `functions/`; backend checks must run separately. Integration tests use `demo-hercule` and must run through `test:integration`, which sets emulator hosts. Stop the development emulators first if their ports conflict. Keep Vitest test files sequential because they share emulator state.
+Run checks appropriate to the files changed. Root Jest excludes `functions/` and `integration/`; backend checks and app integration tests must run separately.
+
+App test conventions: data-layer unit tests use the in-memory fake in `lib/firebase/__tests__/firestoreTestUtils.ts` (it mirrors RNFB v23: `exists()` is a method, undefined fields throw, batches are atomic) and the builders in `fixtures.ts`. Hook tests use `hooks/__tests__/queryWrapper.tsx`. App integration tests live in `integration/`, run with `jest.integration.config.js`, and map native modules to `integration/shims/`, which mirror React Native Firebase's device behaviour, including its error codes. Known bugs are pinned with `test.failing` plus a `KNOWN BUG` comment; remove the marker in the same change that fixes the bug. `constants/__tests__/contracts.test.ts` and `lib/firebase/__tests__/account.subcollections.test.ts` check app/server parity and account-deletion coverage, so keep them passing when adding collections or changing shared constants. Integration tests use `demo-hercule` and must run through `test:integration`, which sets emulator hosts. Stop the development emulators first if their ports conflict. Keep Vitest test files sequential because they share emulator state.
 
 ## Architecture
 
