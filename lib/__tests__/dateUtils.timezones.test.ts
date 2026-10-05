@@ -20,9 +20,6 @@ jest.mock("@react-native-firebase/firestore", () => ({
 
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-/** Positive getTimezoneOffset means the zone is behind UTC (the Americas). */
-const isWestOfUtc = new Date(2026, 5, 1).getTimezoneOffset() > 0;
-
 afterEach(() => {
   jest.useRealTimers();
 });
@@ -77,16 +74,17 @@ describe(`dates in ${zone}`, () => {
     expect(getISOWeek(new Date(2026, 5, 14, 23, 30))).toBe("2026-W24");
   });
 
-  // FIXME: west of UTC, formatDateAsString parses "YYYY-MM-DD" with
-  // new Date(string), which is UTC midnight, then reads it back in local time
-  // — so in New York "2026-06-01" prints as "31st of May 2026".
-  (isWestOfUtc ? test.failing : test)(
-    "formats a stored date as that same calendar day",
-    () => {
-      jest.useFakeTimers({ now: new Date(2026, 5, 20, 12) });
+  test("formats a stored date as that same calendar day", () => {
+    jest.useFakeTimers({ now: new Date(2026, 5, 20, 12) });
 
-      expect(formatDateAsString("2026-06-01")).toBe("1st of June 2026");
-      expect(formatDateAsString("2027-01-01")).toBe("1st of January 2027");
-    },
-  );
+    expect(formatDateAsString("2026-06-01")).toBe("1st of June 2026");
+    expect(formatDateAsString("2027-01-01")).toBe("1st of January 2027");
+    expect(formatDateAsString("2026-12-31")).toBe("31st of December 2026");
+  });
+
+  test("still says Today for today's date late in the evening", () => {
+    jest.useFakeTimers({ now: new Date(2026, 5, 20, 23, 30) });
+
+    expect(formatDateAsString("2026-06-20")).toBe("Today");
+  });
 });
