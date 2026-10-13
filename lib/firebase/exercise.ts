@@ -178,7 +178,7 @@ export const getExerciseLogById = async (logId: string) => {
     .doc(logId)
     .get();
 
-  if (!doc.exists) {
+  if (!doc.exists()) {
     throw new Error("Fitness log not found.");
   }
 
@@ -200,7 +200,7 @@ export const deleteExerciseLog = async (logId: string) => {
 
   const logDoc = await doc.get();
 
-  if (!logDoc.exists) {
+  if (!logDoc.exists()) {
     throw new Error("Fitness log not found.");
   }
 
@@ -219,7 +219,7 @@ export const editExerciseLog = async (logId: string, data: ExerciseLog) => {
 
   const logDoc = await log.get();
 
-  if (!logDoc.exists) {
+  if (!logDoc.exists()) {
     throw new Error("Fitness log not found.");
   }
   await log.update(data);
@@ -276,7 +276,14 @@ export const getLatestExercisesByName = async (name: string) => {
   return logs;
 };
 
-export const deleteExerciseName = async (nameId: string) => {
+/**
+ * Forgets a remembered exercise name, so it stops being suggested.
+ *
+ * Deletes by the name itself, not a document id: the suggestion list only
+ * knows the text. Every duplicate of that exact name goes, and past logs of
+ * the exercise are left alone.
+ */
+export const deleteExerciseName = async (name: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
@@ -297,7 +304,7 @@ export const deleteExerciseName = async (nameId: string) => {
 
   snapshot.docs.forEach((doc) => {
     batch.delete(doc.ref);
-    deletedNames.push(doc.data.name);
+    deletedNames.push(doc.data().name);
   });
 
   await batch.commit();

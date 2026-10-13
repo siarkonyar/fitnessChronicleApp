@@ -66,7 +66,9 @@ export const formatSet = (set: ExerciseSet): string => {
 
   // Only kg and lbs carry reps; time, distance and steps have no reps field.
   const withReps =
-    "reps" in set ? `${value} x ${set.reps ?? MISSING_VALUE}` : value;
+    set.measure === "kg" || set.measure === "lbs"
+      ? `${value} x ${set.reps ?? MISSING_VALUE}`
+      : value;
 
   return set.setType === "normal" ? withReps : `${withReps} (${set.setType})`;
 };

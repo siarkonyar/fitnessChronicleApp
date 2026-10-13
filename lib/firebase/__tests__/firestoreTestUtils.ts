@@ -11,8 +11,16 @@
  *   "users/test-user/labels/abc"
  * Sub-collections are just longer paths.
  *
+ * It mirrors @react-native-firebase/firestore v23 where the difference matters:
+ *  - DocumentSnapshot.exists() is a METHOD (it was a property before v22). Code
+ *    that still reads `snap.exists` gets a function, which is always truthy.
+ *  - Writing an `undefined` field throws "Unsupported field value: undefined",
+ *    as the native SDK does unless ignoreUndefinedProperties is set.
+ *  - A batch is atomic. (There is no write-count cap: Firestore removed the
+ *    old 500-writes-per-commit limit in March 2023.)
+ *
  * NOT supported (add later if you start using them): dotted field paths in
- * update(), transactions, onSnapshot, FieldValue.increment.
+ * update(), onSnapshot, FieldValue.increment.
  */
 
 export const TEST_UID = "test-user";
@@ -58,13 +66,43 @@ const toComparable = (v: unknown): string | number => {
   return v as string | number;
 };
 
+// RNFB serializes every write and throws on the first undefined it meets,
+// at any depth, before anything reaches the database.
+const assertNoUndefined = (value: unknown): void => {
+  if (value === undefined) {
+    throw new Error("Unsupported field value: undefined");
+  }
+  if (isSentinel(value) || value instanceof Date || value instanceof FakeTimestamp) {
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach(assertNoUndefined);
+    return;
+  }
+  if (typeof value === "object" && value !== null) {
+    Object.values(value).forEach(assertNoUndefined);
+  }
+};
+
 // ---------------------------------------------------------------------------
 // The store + write application
 // ---------------------------------------------------------------------------
 type DocData = Record<string, unknown>;
 
+const cloneValue = (value: unknown): unknown => {
+  if (value instanceof Date) return new Date(value.getTime());
+  if (value instanceof FakeTimestamp) return FakeTimestamp.fromDate(new Date(value.toMillis()));
+  if (Array.isArray(value)) return value.map(cloneValue);
+  if (typeof value === "object" && value !== null) {
+    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, cloneValue(child)]));
+  }
+  return value;
+};
+
 class Store {
   docs = new Map<string, DocData>();
+  /** How many writes each committed batch carried, in commit order. */
+  batchSizes: number[] = [];
   private autoCounter = 0;
   nextId(): string {
     this.autoCounter += 1;
@@ -72,6 +110,7 @@ class Store {
   }
   reset(): void {
     this.docs.clear();
+    this.batchSizes = [];
     this.autoCounter = 0;
   }
 }
@@ -105,19 +144,24 @@ const applyWrite = (base: DocData, patch: DocData): DocData => {
 // Snapshots
 // ---------------------------------------------------------------------------
 class DocSnapshot {
+  private readonly captured: DocData | undefined;
   constructor(
     private readonly store: Store,
     readonly path: string,
-  ) {}
+  ) {
+    this.captured = cloneValue(store.docs.get(path)) as DocData | undefined;
+  }
   get id(): string {
     return this.path.split("/").pop()!;
   }
-  get exists(): boolean {
-    return this.store.docs.has(this.path);
+  exists(): boolean {
+    return this.captured !== undefined;
   }
   data(): DocData | undefined {
-    const data = this.store.docs.get(this.path);
-    return data ? { ...data } : undefined;
+    return cloneValue(this.captured) as DocData | undefined;
+  }
+  get(field: string): unknown {
+    return cloneValue(this.captured?.[field]);
   }
   get ref(): DocRef {
     return new DocRef(this.store, this.path);
@@ -126,15 +170,24 @@ class DocSnapshot {
 
 // A doc inside a query result. Always exists; has .data() and .ref.
 class QueryDocSnapshot {
+  private readonly captured: DocData;
   constructor(
     private readonly store: Store,
     readonly path: string,
-  ) {}
+  ) {
+    this.captured = cloneValue(store.docs.get(path) ?? {}) as DocData;
+  }
   get id(): string {
     return this.path.split("/").pop()!;
   }
+  exists(): true {
+    return true;
+  }
   data(): DocData {
-    return { ...(this.store.docs.get(this.path) ?? {}) };
+    return cloneValue(this.captured) as DocData;
+  }
+  get(field: string): unknown {
+    return cloneValue(this.captured[field]);
   }
   get ref(): DocRef {
     return new DocRef(this.store, this.path);
@@ -224,14 +277,22 @@ class Query {
 
     paths = paths.filter((p) => this.matches(this.store.docs.get(p)!));
 
-    for (const { field, dir } of this.orders) {
-      paths.sort((p1, p2) => {
+    // Like the real server, orderBy(field) silently drops documents that do
+    // not have that field at all.
+    paths = paths.filter((p) =>
+      this.orders.every(({ field }) => field in this.store.docs.get(p)!),
+    );
+
+    // The first orderBy is the primary key; later ones only break ties.
+    paths.sort((p1, p2) => {
+      for (const { field, dir } of this.orders) {
         const a = toComparable(this.store.docs.get(p1)![field]);
         const b = toComparable(this.store.docs.get(p2)![field]);
         const cmp = a < b ? -1 : a > b ? 1 : 0;
-        return dir === "asc" ? cmp : -cmp;
-      });
-    }
+        if (cmp !== 0) return dir === "asc" ? cmp : -cmp;
+      }
+      return 0;
+    });
 
     if (this.limitN !== undefined) paths = paths.slice(0, this.limitN);
 
@@ -273,10 +334,12 @@ class DocRef {
     return new DocSnapshot(this.store, this.path);
   }
   async set(data: DocData, options?: { merge?: boolean }): Promise<void> {
+    assertNoUndefined(data);
     const base = options?.merge ? (this.store.docs.get(this.path) ?? {}) : {};
     this.store.docs.set(this.path, applyWrite(base, data));
   }
   async update(data: DocData): Promise<void> {
+    assertNoUndefined(data);
     const existing = this.store.docs.get(this.path);
     if (!existing) {
       throw new Error(`No document to update: ${this.path}`);
@@ -294,10 +357,12 @@ class DocRef {
 class Batch {
   private ops: (() => Promise<void>)[] = [];
   set(ref: DocRef, data: DocData, options?: { merge?: boolean }): Batch {
+    assertNoUndefined(data);
     this.ops.push(() => ref.set(data, options));
     return this;
   }
   update(ref: DocRef, data: DocData): Batch {
+    assertNoUndefined(data);
     this.ops.push(() => ref.update(data));
     return this;
   }
@@ -305,10 +370,69 @@ class Batch {
     this.ops.push(() => ref.delete());
     return this;
   }
+  constructor(private readonly store: Store) {}
   async commit(): Promise<void> {
-    for (const op of this.ops) await op();
+    // All or nothing: a failing op rolls back the ones before it.
+    const before = new Map(this.store.docs);
+    try {
+      for (const op of this.ops) await op();
+    } catch (error) {
+      this.store.docs = before;
+      throw error;
+    }
+    this.store.batchSizes.push(this.ops.length);
   }
 }
+
+// Optimistic transactions capture every read, retry on conflicts, and apply
+// all writes synchronously only after the callback completes successfully.
+class Transaction {
+  readonly reads = new Map<string, DocData | undefined>();
+  private writes: { ref: DocRef; data?: DocData; merge?: boolean; update?: boolean }[] = [];
+  constructor(private readonly store: Store) {}
+  async get(ref: DocRef): Promise<DocSnapshot> {
+    if (this.writes.length) throw new Error("Transactions require all reads before writes");
+    this.reads.set(ref.path, this.store.docs.get(ref.path));
+    return new DocSnapshot(this.store, ref.path);
+  }
+  set(ref: DocRef, data: DocData, options?: { merge?: boolean }): Transaction {
+    assertNoUndefined(data);
+    this.writes.push({ ref, data, merge: options?.merge });
+    return this;
+  }
+  update(ref: DocRef, data: DocData): Transaction {
+    assertNoUndefined(data);
+    this.writes.push({ ref, data, update: true });
+    return this;
+  }
+  delete(ref: DocRef): Transaction {
+    this.writes.push({ ref });
+    return this;
+  }
+  commit(): boolean {
+    if ([...this.reads].some(([path, data]) => this.store.docs.get(path) !== data)) return false;
+    const next = new Map(this.store.docs);
+    for (const { ref, data, merge, update } of this.writes) {
+      if (!data) next.delete(ref.path);
+      else {
+        if (update && !next.has(ref.path)) throw new Error(`No document to update: ${ref.path}`);
+        next.set(ref.path, applyWrite(update || merge ? next.get(ref.path) ?? {} : {}, data));
+      }
+    }
+    this.store.docs = next;
+    if (this.writes.length) this.store.batchSizes.push(this.writes.length);
+    return true;
+  }
+}
+
+const runTransaction = async <T>(callback: (transaction: Transaction) => Promise<T>): Promise<T> => {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const transaction = new Transaction(store);
+    const result = await callback(transaction);
+    if (transaction.commit()) return result;
+  }
+  throw new Error("Transaction aborted after repeated conflicts");
+};
 
 // ---------------------------------------------------------------------------
 // The mock module: a callable firestore() with static FieldValue/Timestamp,
@@ -316,11 +440,14 @@ class Batch {
 // ---------------------------------------------------------------------------
 const store = new Store();
 
+const instance = {
+  collection: (name: string) => new CollectionRef(store, name),
+  batch: () => new Batch(store),
+  runTransaction,
+};
+
 const firestoreMock = Object.assign(
-  () => ({
-    collection: (name: string) => new CollectionRef(store, name),
-    batch: () => new Batch(),
-  }),
+  () => instance,
   {
     FieldValue,
     Timestamp: FakeTimestamp,
@@ -341,5 +468,14 @@ export const readDoc = (segments: string[]): DocData | undefined => {
   return data ? { ...data } : undefined;
 };
 
-export { firestoreMock };
+/** Every stored path that starts with the given segments. */
+export const listPaths = (segments: string[] = []): string[] => {
+  const prefix = segments.length ? `${segments.join("/")}/` : "";
+  return [...store.docs.keys()].filter((key) => key.startsWith(prefix)).sort();
+};
+
+/** Sizes of the batches committed since the last reset, in order. */
+export const committedBatchSizes = (): number[] => [...store.batchSizes];
+
+export { FakeTimestamp, firestoreMock };
 export default firestoreMock;

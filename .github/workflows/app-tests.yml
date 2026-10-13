@@ -1,0 +1,44 @@
+name: app tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: app-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            functions/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install app and server dependencies
+        run: |
+          npm ci
+          npm --prefix functions ci
+      - name: Typecheck app and integration tests
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: App unit tests
+        run: npm test -- --runInBand
+      - name: Date tests in seven time zones
+        run: npm run test:tz
+      - name: App integration tests
+        run: npm run test:integration -- --watchman=false

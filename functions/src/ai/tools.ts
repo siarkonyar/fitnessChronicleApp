@@ -15,6 +15,7 @@
  */
 import { z } from "genkit";
 import { ai } from "./genkit.js";
+import { isCalendarDate } from "../types.js";
 import { getExerciseLogsByDateRange } from "../data/exerciseLogs.js";
 import { getAllLabels } from "../data/labels.js";
 import { getPrograms } from "../data/programs.js";
@@ -110,6 +111,12 @@ export const getWorkoutLogsTool = ai.defineTool(
   },
   async ({ startDate, endDate }, { context }) => {
     const uid = requireUid(context);
+
+    // Genkit exposes regexes to the model, but a regex cannot validate month
+    // lengths. Return a correctable error before querying for impossible dates.
+    if (!isCalendarDate(startDate) || !isCalendarDate(endDate)) {
+      return { error: "Dates must be real calendar dates in YYYY-MM-DD format." };
+    }
 
     // Returned as data, not thrown: a bad range is the model's mistake to fix,
     // and it can only fix it if it gets told what was wrong.

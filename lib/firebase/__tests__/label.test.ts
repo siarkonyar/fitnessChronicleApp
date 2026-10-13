@@ -1,10 +1,20 @@
 import {
+  addLabel,
   asignLabelToDay,
   deleteAssignment,
+  deleteLabel,
+  editLabel,
+  getAllLabels,
+  getAllLabelsFromMonth,
+  getLabelAsignmentByDate,
+  getLabelById,
   getPrevExercisesFromLabel,
 } from "../label";
+import { makeLabel, makeLog } from "./fixtures";
 import {
   TEST_UID,
+  firestoreMock,
+  listPaths,
   readDoc,
   resetFirestore,
   seedDoc,
@@ -137,5 +147,400 @@ describe("getPrevExercisesFromLabel", () => {
     // Assert — the "last session" should be the 20th (the real one), NOT null
     expect(result).not.toBeNull();
     expect(result?.[0].date).toBe("2020-05-20");
+  });
+});
+
+describe("addLabel", () => {
+  test("stores the label with a creation timestamp", async () => {
+    await addLabel({ label: "🦵", description: "Legs", dates: [] });
+
+    const [path] = listPaths(["users", TEST_UID, "labels"]);
+    expect(readDoc(path.split("/"))).toMatchObject({
+      label: "🦵",
+      description: "Legs",
+      dates: [],
+    });
+    expect(readDoc(path.split("/"))?.createdAt).toBeInstanceOf(Date);
+  });
+
+  test("allows two labels with the same description", async () => {
+    // Uniqueness is only enforced when an AI program is accepted
+    // (lib/programLabels.ts), not here.
+    await addLabel({ label: "A", description: "Push" });
+    await addLabel({ label: "B", description: "Push" });
+
+    expect(listPaths(["users", TEST_UID, "labels"])).toHaveLength(2);
+  });
+});
+
+describe("getLabelById / getAllLabels", () => {
+  test("returns one label with its id", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
+
+    expect(await getLabelById("push")).toMatchObject({ id: "push", description: "Push" });
+  });
+
+  test("reports a missing label as not found", async () => {
+    await expect(getLabelById("missing")).rejects.toThrow("Label not found.");
+  });
+
+  test("lists labels newest first", async () => {
+    seedDoc(["users", TEST_UID, "labels", "old"], {
+      ...makeLabel({ description: "Old" }),
+      createdAt: new Date("2026-01-01"),
+    });
+    seedDoc(["users", TEST_UID, "labels", "new"], {
+      ...makeLabel({ description: "New" }),
+      createdAt: new Date("2026-06-01"),
+    });
+
+    const labels = await getAllLabels();
+
+    expect(labels.map((label) => label.id)).toEqual(["new", "old"]);
+  });
+
+  test("omits labels that were stored without createdAt", async () => {
+    // Firestore's orderBy drops documents missing the ordered field.
+    seedDoc(["users", TEST_UID, "labels", "legacy"], makeLabel());
+
+    expect(await getAllLabels()).toEqual([]);
+  });
+
+  test("fills in default dates for a label stored without any", async () => {
+    seedDoc(["users", TEST_UID, "labels", "bare"], { label: "X", description: "Bare" });
+
+    expect((await getLabelById("bare")).dates).toEqual([]);
+  });
+});
+
+describe("getAllLabelsFromMonth", () => {
+  const assign = (id: string, date: string, labelId = "push") =>
+    seedDoc(["users", TEST_UID, "dayAssignments", id], { date, labelId });
+
+  test("returns only assignments inside the month, boundaries included", async () => {
+    assign("a", "2026-01-31");
+    assign("b", "2026-02-01", "pull");
+    assign("c", "2026-02-28", "legs");
+    assign("d", "2026-03-01");
+
+    const result = await getAllLabelsFromMonth("2026-02");
+
+    expect(result).toEqual(
+      expect.arrayContaining([
+        { date: "2026-02-01", labelId: "pull" },
+        { date: "2026-02-28", labelId: "legs" },
+      ]),
+    );
+    expect(result).toHaveLength(2);
+  });
+
+  test("includes 29 February in a leap year", async () => {
+    assign("leap", "2028-02-29");
+
+    expect(await getAllLabelsFromMonth("2028-02")).toEqual([
+      { date: "2028-02-29", labelId: "push" },
+    ]);
+  });
+
+  test("returns an empty list for a month without assignments", async () => {
+    expect(await getAllLabelsFromMonth("2026-02")).toEqual([]);
+  });
+
+  test.each(["2026-2", "2026/02", "26-02", "2026-02-01", ""])(
+    "rejects the malformed month %p",
+    async (month) => {
+      await expect(getAllLabelsFromMonth(month)).rejects.toThrow();
+    },
+  );
+});
+
+describe("editLabel", () => {
+  test("updates emoji and description but keeps the assigned dates", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: ["2026-06-01"] }));
+
+    const updated = await editLabel("push", { label: "🔥", description: "Chest" });
+
+    expect(updated).toMatchObject({
+      id: "push",
+      label: "🔥",
+      description: "Chest",
+      dates: ["2026-06-01"],
+    });
+    expect(readDoc(["users", TEST_UID, "labels", "push"])?.updatedAt).toBeInstanceOf(Date);
+  });
+
+  test("does not create a label that does not exist", async () => {
+    await expect(editLabel("missing", makeLabel())).rejects.toThrow();
+    expect(listPaths(["users", TEST_UID, "labels"])).toEqual([]);
+  });
+});
+
+describe("deleteLabel", () => {
+  test("removes referencing assignments even when the label's dates array is incomplete", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: [] }));
+    seedDoc(["users", TEST_UID, "dayAssignments", "orphan"], { date: "2026-06-01", labelId: "push" });
+    await deleteLabel("push");
+    expect(listPaths(["users", TEST_UID])).toEqual([]);
+  });
+
+  test("removes the label and every assignment pointing at it", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: ["2026-06-01", "2026-06-03"] }));
+    seedDoc(["users", TEST_UID, "dayAssignments", "a1"], { date: "2026-06-01", labelId: "push" });
+    seedDoc(["users", TEST_UID, "dayAssignments", "a2"], { date: "2026-06-03", labelId: "push" });
+    seedDoc(["users", TEST_UID, "dayAssignments", "a3"], { date: "2026-06-02", labelId: "pull" });
+
+    const result = await deleteLabel("push");
+
+    expect(result).toEqual({ id: "push", message: "Label deleted successfully!" });
+    expect(listPaths(["users", TEST_UID])).toEqual([
+      `users/${TEST_UID}/dayAssignments/a3`,
+    ]);
+  });
+
+  test("leaves another label's assignment on a shared date alone", async () => {
+    // The label's dates array is stale: 2026-06-01 was reassigned to pull.
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: ["2026-06-01"] }));
+    seedDoc(["users", TEST_UID, "dayAssignments", "a1"], { date: "2026-06-01", labelId: "pull" });
+
+    await deleteLabel("push");
+
+    expect(readDoc(["users", TEST_UID, "dayAssignments", "a1"])).toEqual({
+      date: "2026-06-01",
+      labelId: "pull",
+    });
+  });
+
+  test("deletes a label that has never been assigned", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
+
+    await deleteLabel("push");
+
+    expect(readDoc(["users", TEST_UID, "labels", "push"])).toBeUndefined();
+  });
+
+  test("reports a missing label as not found", async () => {
+    await expect(deleteLabel("missing")).rejects.toThrow("Label not found.");
+  });
+});
+
+describe("asignLabelToDay", () => {
+  test("concurrent assignments of the same date leave one owner and matching label dates", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
+    seedDoc(["users", TEST_UID, "labels", "pull"], makeLabel());
+    const date = "2026-06-01";
+    await Promise.all([
+      asignLabelToDay({ date, labelId: "push" }),
+      asignLabelToDay({ date, labelId: "pull" }),
+    ]);
+    const paths = listPaths(["users", TEST_UID, "dayAssignments"]);
+    expect(paths).toHaveLength(1);
+    const owner = readDoc(paths[0].split("/"))?.labelId;
+    for (const id of ["push", "pull"]) {
+      expect(readDoc(["users", TEST_UID, "labels", id])?.dates ?? []).toEqual(id === owner ? [date] : []);
+    }
+  });
+
+  test("migrates duplicate legacy assignments and cleans every former owner", async () => {
+    const date = "2026-06-01";
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: [date, "2026-06-02"] }));
+    seedDoc(["users", TEST_UID, "labels", "pull"], makeLabel({ dates: [date] }));
+    seedDoc(["users", TEST_UID, "labels", "legs"], makeLabel());
+    const createdAt = new Date("2026-01-01");
+    seedDoc(["users", TEST_UID, "dayAssignments", "legacy-push"], { date, labelId: "push", createdAt });
+    seedDoc(["users", TEST_UID, "dayAssignments", "legacy-pull"], { date, labelId: "pull" });
+    const result = await asignLabelToDay({ date, labelId: "legs" });
+    expect(result.id).toBe(date);
+    expect(listPaths(["users", TEST_UID, "dayAssignments"])).toEqual([`users/${TEST_UID}/dayAssignments/${date}`]);
+    expect(readDoc(["users", TEST_UID, "dayAssignments", date])?.createdAt).toEqual(createdAt);
+    expect(readDoc(["users", TEST_UID, "labels", "push"])?.dates).toEqual(["2026-06-02"]);
+    expect(readDoc(["users", TEST_UID, "labels", "pull"])?.dates).toEqual([]);
+    expect(readDoc(["users", TEST_UID, "labels", "legs"])?.dates).toEqual([date]);
+  });
+
+  test("can replace a legacy assignment whose previous label is gone", async () => {
+    const date = "2026-06-01";
+    seedDoc(["users", TEST_UID, "dayAssignments", "legacy"], { date, labelId: "gone" });
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
+    await asignLabelToDay({ date, labelId: "push" });
+    expect(readDoc(["users", TEST_UID, "dayAssignments", "legacy"])).toBeUndefined();
+    expect(readDoc(["users", TEST_UID, "labels", "push"])?.dates).toEqual([date]);
+  });
+
+  test("a failed label write rolls back migration and the assignment change", async () => {
+    const date = "2026-06-01";
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: [date] }));
+    seedDoc(["users", TEST_UID, "labels", "pull"], makeLabel());
+    seedDoc(["users", TEST_UID, "dayAssignments", "legacy"], { date, labelId: "push" });
+    const instance = firestoreMock();
+    const original = instance.runTransaction;
+    const failure = jest.spyOn(instance, "runTransaction").mockImplementation((callback) => original(async (transaction) => {
+      const result = await callback(transaction);
+      transaction.update(instance.collection("labels").doc("missing"), { dates: [date] });
+      return result;
+    }));
+    try {
+      await expect(asignLabelToDay({ date, labelId: "pull" })).rejects.toThrow("No document to update");
+      expect(readDoc(["users", TEST_UID, "dayAssignments", date])).toBeUndefined();
+      expect(readDoc(["users", TEST_UID, "dayAssignments", "legacy"])?.labelId).toBe("push");
+      expect(readDoc(["users", TEST_UID, "labels", "push"])?.dates).toEqual([date]);
+      expect(readDoc(["users", TEST_UID, "labels", "pull"])?.dates).toEqual([]);
+    } finally {
+      failure.mockRestore();
+    }
+  });
+
+  test("rejects invalid calendar dates before creating document paths", async () => {
+    await expect(asignLabelToDay({ date: "2026-02-30", labelId: "push" })).rejects.toThrow();
+    expect(listPaths(["users", TEST_UID])).toEqual([]);
+  });
+
+  test("creates an assignment and reports it as new", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
+
+    const result = await asignLabelToDay({ date: "2026-06-01", labelId: "push" });
+
+    expect(result).toMatchObject({
+      date: "2026-06-01",
+      labelId: "push",
+      message: "Label assigned to day successfully!",
+    });
+    expect(readDoc(["users", TEST_UID, "dayAssignments", result.id])).toMatchObject({
+      date: "2026-06-01",
+      labelId: "push",
+    });
+  });
+
+  test("assigning the same label twice keeps one assignment and one date", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
+
+    await asignLabelToDay({ date: "2026-06-01", labelId: "push" });
+    const second = await asignLabelToDay({ date: "2026-06-01", labelId: "push" });
+
+    expect(second.message).toBe("Label assignment updated successfully!");
+    expect(listPaths(["users", TEST_UID, "dayAssignments"])).toHaveLength(1);
+    expect(readDoc(["users", TEST_UID, "labels", "push"])?.dates).toEqual(["2026-06-01"]);
+  });
+
+  test("one label can own many dates", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel());
+
+    await asignLabelToDay({ date: "2026-06-01", labelId: "push" });
+    await asignLabelToDay({ date: "2026-06-08", labelId: "push" });
+
+    expect(readDoc(["users", TEST_UID, "labels", "push"])?.dates).toEqual([
+      "2026-06-01",
+      "2026-06-08",
+    ]);
+  });
+
+  test("refuses a missing label without leaving a dangling assignment", async () => {
+    await expect(
+      asignLabelToDay({ date: "2026-06-01", labelId: "missing" }),
+    ).rejects.toThrow("Label not found.");
+    expect(listPaths(["users", TEST_UID, "dayAssignments"])).toEqual([]);
+  });
+});
+
+describe("getLabelAsignmentByDate", () => {
+  test("returns the full label assigned to the date", async () => {
+    seedDoc(["users", TEST_UID, "labels", "push"], makeLabel({ dates: ["2026-06-01"] }));
+    seedDoc(["users", TEST_UID, "dayAssignments", "a1"], { date: "2026-06-01", labelId: "push" });
+
+    expect(await getLabelAsignmentByDate("2026-06-01")).toMatchObject({
+      id: "push",
+      description: "Push",
+    });
+  });
+
+  test("returns null for an unassigned date", async () => {
+    expect(await getLabelAsignmentByDate("2026-06-01")).toBeNull();
+  });
+
+  test("cleans up an assignment whose label was deleted", async () => {
+    seedDoc(["users", TEST_UID, "dayAssignments", "a1"], { date: "2026-06-01", labelId: "gone" });
+
+    expect(await getLabelAsignmentByDate("2026-06-01")).toBeNull();
+    expect(readDoc(["users", TEST_UID, "dayAssignments", "a1"])).toBeUndefined();
+  });
+});
+
+describe("deleteAssignment (edge cases)", () => {
+  test("can remove an orphan assignment without updating a label that no longer exists", async () => {
+    seedDoc(["users", TEST_UID, "dayAssignments", "orphan"], { date: "2026-06-01", labelId: "deleted" });
+    await expect(deleteAssignment("2026-06-01")).resolves.toMatchObject({ date: "2026-06-01" });
+    expect(listPaths(["users", TEST_UID])).toEqual([]);
+  });
+
+  test("removes all legacy duplicates and their label dates", async () => {
+    const date = "2026-06-01";
+    for (const id of ["push", "pull"]) {
+      seedDoc(["users", TEST_UID, "labels", id], makeLabel({ dates: [date] }));
+      seedDoc(["users", TEST_UID, "dayAssignments", `legacy-${id}`], { date, labelId: id });
+    }
+    await deleteAssignment(date);
+    expect(listPaths(["users", TEST_UID, "dayAssignments"])).toEqual([]);
+    for (const id of ["push", "pull"]) expect(readDoc(["users", TEST_UID, "labels", id])?.dates).toEqual([]);
+  });
+
+  test("concurrent deletion and reassignment finish with matching assignment and label dates", async () => {
+    const date = "2026-06-01";
+    for (const id of ["push", "pull"]) seedDoc(["users", TEST_UID, "labels", id], makeLabel());
+    await asignLabelToDay({ date, labelId: "push" });
+    await Promise.all([deleteAssignment(date), asignLabelToDay({ date, labelId: "pull" })]);
+    const saved = readDoc(["users", TEST_UID, "dayAssignments", date]);
+    for (const id of ["push", "pull"]) {
+      expect(readDoc(["users", TEST_UID, "labels", id])?.dates).toEqual(saved?.labelId === id ? [date] : []);
+    }
+  });
+
+  test("throws when the date has no assignment", async () => {
+    await expect(deleteAssignment("2026-06-01")).rejects.toThrow(
+      "No label assignment found for this date.",
+    );
+  });
+
+  test("removes an assignment that has no labelId without touching labels", async () => {
+    seedDoc(["users", TEST_UID, "dayAssignments", "a1"], { date: "2026-06-01" });
+
+    const result = await deleteAssignment("2026-06-01");
+
+    expect(result).toEqual({
+      id: "a1",
+      date: "2026-06-01",
+      message: "Label assignment deleted successfully!",
+    });
+    expect(listPaths(["users", TEST_UID])).toEqual([]);
+  });
+});
+
+describe("getPrevExercisesFromLabel (edge cases)", () => {
+  test("returns null for a label that was never used", async () => {
+    expect(await getPrevExercisesFromLabel(makeLabel({ dates: [] }))).toBeNull();
+  });
+
+  test("returns null for a label without a dates field", async () => {
+    expect(await getPrevExercisesFromLabel({ label: "X", description: "Y" })).toBeNull();
+  });
+
+  test("ignores today's session and future plans", async () => {
+    jest.useFakeTimers({ now: new Date("2026-06-10T12:00:00Z") });
+    seedDoc(["users", TEST_UID, "fitnessLogs", "today"], makeLog({ date: "2026-06-10" }));
+    seedDoc(["users", TEST_UID, "fitnessLogs", "past"], makeLog({ date: "2026-06-03", activity: "squat" }));
+
+    const result = await getPrevExercisesFromLabel(
+      makeLabel({ dates: ["2026-06-03", "2026-06-10", "2026-06-17"] }),
+    );
+
+    expect(result?.map((log) => log.activity)).toEqual(["squat"]);
+    jest.useRealTimers();
+  });
+
+  test("returns nothing when no past assigned day was ever trained", async () => {
+    // Note: the loop falls through and resolves undefined, not null.
+    const result = await getPrevExercisesFromLabel(
+      makeLabel({ dates: ["2020-01-01", "2020-01-08"] }),
+    );
+
+    expect(result ?? null).toBeNull();
   });
 });

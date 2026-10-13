@@ -167,6 +167,25 @@ describe("onRevenueCatCustomerWritten", () => {
     expect((await readUsage(uid))?.tokensUsed).toBe(5_000);
   });
 
+  it("does not count a payment twice after an older customer state is applied", async () => {
+    const uid = await freshUser();
+    const purchasedAtMs = Date.now() - DAY;
+    const expiresAtMs = Date.now() + 30 * DAY;
+    const current = proCustomer({ purchasedAtMs, expiresAtMs });
+    await seedCustomer(uid, current);
+    expect(await usageMatches(uid, (usage) => usage.lastPurchaseAt?.toMillis() === purchasedAtMs)).toBe(true);
+    await seedUsage(uid, { tokensUsed: 5_000 });
+
+    await seedCustomer(uid, proCustomer({ purchasedAtMs: purchasedAtMs - DAY, expiresAtMs }));
+    await syncCustomer(uid);
+    expect((await readUsage(uid))?.lastPurchaseAt.toMillis()).toBe(purchasedAtMs);
+    expect((await readUsage(uid))?.tokensUsed).toBe(5_000);
+
+    await seedCustomer(uid, current);
+    await syncCustomer(uid);
+    expect((await readUsage(uid))?.tokensUsed).toBe(5_000);
+  });
+
   it("downgrades a paid user whose plan has ended", async () => {
     const uid = await freshUser();
     await seedCustomer(

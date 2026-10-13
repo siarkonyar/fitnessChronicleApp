@@ -87,7 +87,7 @@ The version that ships to the stores is `expo.version` in [`app.config.js`](app.
 | AI | [Genkit](https://genkit.dev) + Gemini on Cloud Functions (`europe-west2`), tool-calling over the user's own logs, per-user quota buckets |
 | UI | [@gorhom/bottom-sheet](https://gorhom.dev/react-native-bottom-sheet/) 5, `react-native-reanimated` 4, `react-native-calendars`, `react-native-gifted-charts`, `expo-blur` |
 | Offline | `@react-native-community/netinfo` + AsyncStorage exercise queue; Firestore sync helper exists, automatic flushing pending |
-| Testing | `jest-expo` (app), `vitest` + Firebase Emulator Suite (functions: unit + integration) |
+| Testing | `jest-expo` + Testing Library (app unit), Jest + Firebase Emulator Suite (app integration), `vitest` + Firebase Emulator Suite (functions: unit + integration) |
 | Delivery | EAS Build & Submit, `expo-updates`, GitHub Actions for functions |
 
 ---
@@ -107,7 +107,7 @@ The version that ships to the stores is `expo.version` in [`app.config.js`](app.
 | `scripts/` | Local emulator lifecycle and combined Expo/server development workflow |
 | `.agents/skills/` | Reusable Firebase and Genkit agent skills and references |
 
-Project-wide agent rules and architecture guidance live in [AGENTS.md](AGENTS.md); [CLAUDE.md](CLAUDE.md) imports that same file. All project contributions and agent communications must be in English; Turkish is prohibited throughout the project.
+Project-wide agent rules and architecture guidance live in [AGENTS.md](AGENTS.md); [CLAUDE.md](CLAUDE.md) imports that same file. All project contributions must be in English; agents may reply to the user in Turkish in conversation, but nothing written into the repository may be in Turkish.
 
 ---
 
@@ -126,7 +126,9 @@ npx expo run:ios              # or: npx expo run:android
 
 ```sh
 # Tests
-npm test                      # app (jest-expo)
+npm test                      # app unit tests (jest-expo)
+npm run test:tz               # app date logic re-run under seven time zones
+npm run test:integration      # app lib/ code against the Auth, Firestore and Functions emulators
 npm --prefix functions test   # build + Vitest unit and emulator integration tests
 
 # Typechecks
@@ -137,7 +139,11 @@ npm --prefix functions run typecheck
 npm run lint
 ```
 
+App integration tests (`integration/`) run the real `lib/` code, Zod schemas, `firestore.rules` and Cloud Functions against fresh emulators under `demo-hercule`. Native React Native Firebase modules are replaced by shims over the Firebase JS SDK in `integration/shims/`, which keep device behaviour such as `exists()` being a method and React Native Firebase error codes. The command builds the server and needs `npm --prefix functions ci` first, because the suite reuses the server's `firebase-admin`. Tests marked `test.failing` pin known bugs; when a fix lands, Jest reports them as passing and the marker must be removed.
+
 Backend tests run separately from app Jest. Integration tests use the `demo-hercule` project via `npm --prefix functions run test:integration`; build the server first when running that command alone. Stop development emulators before starting integration tests to avoid port conflicts. Follow [the backend CI workflow](.github/workflows/functions.yml) for the throwaway `GEMINI_API_KEY` value in the gitignored `functions/.secret.local` used by guard-only tests. Real coach conversations require a real key.
+
+[The testing audit](TESTING.md) records coverage, known-failing regressions, and the remaining risks. [App CI](.github/workflows/app-tests.yml) runs typechecking, lint, unit tests, all seven date-test time zones, and app integration tests. Server unit tests cover successful coach orchestration with deterministic generation; emulator tests cover real Firebase behavior without calling Gemini. TanStack Query caches are scoped to each Firebase UID and backend in both memory and AsyncStorage, so account changes cannot restore another user's snapshot.
 
 ### Running the dev build against fake Firebase (emulators)
 
@@ -188,7 +194,7 @@ The source is public so you can read it, learn from it, and report what's broken
 
 If you do send code:
 
-- Match the existing conventions in [AGENTS.md](AGENTS.md) — in particular, English only with no Turkish, NativeWind `className` over the `style` prop, and colors from `constants/Colors.ts` rather than hardcoded values.
+- Match the existing conventions in [AGENTS.md](AGENTS.md) — in particular, English only (no Turkish) in everything committed to the repository, NativeWind `className` over the `style` prop, and colors from `constants/Colors.ts` rather than hardcoded values.
 - Conventional commit messages (`feat:`, `fix:`, `refactor:`, `chore:`).
 - Add tests for behavior you change.
 

@@ -19,11 +19,11 @@ import { GOOGLE_PROVIDER_ID, getCredentialForUser } from "./credentials";
  * they asked us to erase it. That is the entire reason this list exists.
  *
  * ADDING A SUBCOLLECTION ANYWHERE UNDER users/{uid} MEANS ADDING IT HERE.
- * Nothing checks that this list is complete, and nothing can: a missing entry
- * looks exactly like a successful deletion from inside the app, and surfaces
- * only as rows sitting in the console long after the account they belonged to
- * is gone. programs, weightLogs and dayAssignments were each missed for
- * precisely that reason.
+ * account.subcollections.test.ts checks the literal collection names used by
+ * client helpers. It cannot discover arbitrary or nested collections a client
+ * writes directly. A missing entry looks like a successful deletion inside
+ * the app while the data survives in Firestore. programs, weightLogs and
+ * dayAssignments were each missed for precisely that reason.
  */
 const SUBCOLLECTIONS = [
   "fitnessLogs",

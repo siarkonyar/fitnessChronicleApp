@@ -35,6 +35,23 @@ export const timestampToMillis = (value: unknown): number => {
   return 0;
 };
 
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * A "YYYY-MM-DD" string as that calendar day at local midnight.
+ *
+ * new Date("YYYY-MM-DD") means UTC midnight, which is still the previous day
+ * everywhere west of UTC — in New York "2026-06-01" would read back as 31 May.
+ * Anything that is not a plain date falls back to the Date parser.
+ */
+const parseLocalDate = (dateString: string): Date => {
+  const match = ISO_DATE.exec(dateString);
+  if (!match) return new Date(dateString);
+
+  const [, year, month, day] = match.map(Number);
+  return new Date(year, month - 1, day);
+};
+
 export const formatDateAsString = (dateString: string): string => {
   const today = getTodayString();
 
@@ -43,7 +60,7 @@ export const formatDateAsString = (dateString: string): string => {
     return "Today";
   }
 
-  const date = new Date(dateString);
+  const date = parseLocalDate(dateString);
   const day = date.getDate();
   const month = date.toLocaleDateString("en-US", { month: "long" });
   const year = date.getFullYear();

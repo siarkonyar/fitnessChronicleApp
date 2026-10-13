@@ -45,7 +45,16 @@ export const MAX_MESSAGE_CHARS = 2000;
  */
 export const TodaySchema = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "today must be YYYY-MM-DD");
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "today must be YYYY-MM-DD")
+  .refine(isCalendarDate, "today must be a real calendar date");
+
+/** Date.parse normalizes February 30; the round trip rejects that rollover. */
+export function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const milliseconds = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(milliseconds) &&
+    new Date(milliseconds).toISOString().slice(0, 10) === value;
+}
 
 export const ChatRoleSchema = z.enum(["user", "model"]);
 
@@ -122,6 +131,7 @@ export const isPlausibleToday = (
   today: string,
   now: Date = new Date()
 ): boolean => {
+  if (!isCalendarDate(today)) return false;
   const claimed = Date.parse(`${today}T00:00:00Z`);
   if (Number.isNaN(claimed)) return false;
 

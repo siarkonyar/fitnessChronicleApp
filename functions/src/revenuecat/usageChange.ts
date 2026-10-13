@@ -83,7 +83,12 @@ export const usageChange = (
     kind: "paid",
     tier: plan.tier,
     entitlementExpiresAtMs: plan.entitlementExpiresAtMs,
-    lastPurchaseAtMs: plan.purchasedAtMs,
+    // Never move the counted-payment watermark backwards. Otherwise an old
+    // snapshot followed by a replay of the current purchase resets twice.
+    lastPurchaseAtMs: Math.max(
+      stored.lastPurchaseAtMs ?? plan.purchasedAtMs,
+      plan.purchasedAtMs,
+    ),
     resetPeriodEndMs: isNewPayment(stored, plan)
       ? nextPaidPeriodEnd(plan.entitlementExpiresAtMs, nowMs)
       : null,

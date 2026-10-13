@@ -1,5 +1,6 @@
 import { queryKeys } from "@/constants/QueryKeys";
 import { aiUsageQueryOptions } from "@/lib/ai/aiUsageQuery";
+import { readRejectionReason } from "@/lib/ai/coachErrors";
 import { callCoach, type CoachHistoryMessage } from "@/lib/ai/coachServer";
 import { getTodayString } from "@/lib/dateUtils";
 import { getDefaultMeasurement, getDefaultRepType } from "@/lib/offlineStorage";
@@ -33,7 +34,14 @@ export interface SendMessageInput {
   source: AiMessageSource;
 }
 
-const QUOTA_ERROR_CODE = "functions/resource-exhausted";
+/** What the mutation runs with: the input plus the history at send time. */
+type SendMessageVariables = SendMessageInput & {
+  history: CoachHistoryMessage[];
+};
+
+/** The coach only needs who said what; proposed programs stay on the device. */
+const toHistory = (messages: ChatMessage[]): CoachHistoryMessage[] =>
+  messages.map(({ role, text }) => ({ role, text }));
 
 const QUOTA_MESSAGE = "You've used your AI coach allowance for this month.";
 const RATE_LIMIT_MESSAGE =
@@ -42,21 +50,6 @@ const GENERIC_ERROR_MESSAGE = "Couldn't reach your coach. Please try again.";
 
 /** The usage bar reaches this at exactly the point the server starts refusing. */
 const QUOTA_EXHAUSTED_PERCENT = 100;
-
-/**
- * Firebase has no distinct too-many-requests code, so the server sends both
- * refusals as resource-exhausted and separates them with details.reason.
- */
-const readRejectionReason = (error: unknown): "quota" | "rate_limit" | null => {
-  const { code, details } = error as {
-    code?: string;
-    details?: { reason?: string };
-  };
-
-  if (code !== QUOTA_ERROR_CODE) return null;
-
-  return details?.reason === "rate_limit" ? "rate_limit" : "quota";
-};
 
 export function useChatBox() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -94,16 +87,11 @@ export function useChatBox() {
     sentAtRef.current === null ? 0 : Date.now() - sentAtRef.current;
 
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ text }: SendMessageInput) => {
+    mutationFn: async ({ text, history }: SendMessageVariables) => {
       const [isRepsFixed, measure] = await Promise.all([
         getDefaultRepType(),
         getDefaultMeasurement(),
       ]);
-
-      const history: CoachHistoryMessage[] = messages.map(({ role, text }) => ({
-        role,
-        text,
-      }));
 
       return callCoach({
         message: text,
@@ -112,7 +100,7 @@ export function useChatBox() {
         prefs: { repType: isRepsFixed ? "fixed" : "range", measure },
       });
     },
-    onMutate: ({ text, source }: SendMessageInput) => {
+    onMutate: ({ text, source, history }: SendMessageVariables) => {
       setMessages((prev) => [...prev, { role: "user", text }]);
       setSendError(null);
 
@@ -122,7 +110,7 @@ export function useChatBox() {
       logEvent("ai_message_sent", {
         source,
         message_length: text.length,
-        history_length: messages.length,
+        history_length: history.length,
       });
     },
     onSuccess: ({ reply, program, ...nextUsage }) => {
@@ -180,6 +168,18 @@ export function useChatBox() {
     },
   });
 
+  const { mutate } = sendMessageMutation;
+
+  // History is captured HERE, from the conversation the user is looking at
+  // when they press send. Reading `messages` inside mutationFn instead picks
+  // up whichever render is current when TanStack calls it — and onMutate has
+  // usually appended the new message by then, so it went to the server twice:
+  // once as `message`, once as the last history item.
+  const sendMessage = useCallback(
+    (input: SendMessageInput) => mutate({ ...input, history: toHistory(messages) }),
+    [messages, mutate],
+  );
+
   const clearChat = useCallback(() => {
     logEvent("ai_chat_cleared", { message_count: messages.length });
 
@@ -203,7 +203,7 @@ export function useChatBox() {
 
   return {
     messages,
-    sendMessage: sendMessageMutation.mutate,
+    sendMessage,
     isSending: sendMessageMutation.isPending,
     clearChat,
     percentUsed,

@@ -2,11 +2,12 @@
 
 This file provides guidance to AI coding agents (Claude Code, Codex, Cursor, and others) when working with code in this repository. `CLAUDE.md` only imports this file, so edit this one.
 
-## Language — English only, no Turkish anywhere
+## Language — English in the project, Turkish allowed in conversation
 
-- Use English for all agent responses, plans, explanations, code comments, documentation, identifiers, UI copy, error messages, logs, prompts, test descriptions, fixtures, commit messages, and PR text.
-- Do not write Turkish anywhere in this project or in communications about it, even when the request or source material is in Turkish. Translate any Turkish prose encountered in files you edit into English.
-- Apply this rule across the whole repository, including Markdown guidance and task-specific skill output.
+- Agents may talk to the user in Turkish: chat replies, plans, and explanations given in the conversation can be in Turkish when the user writes in Turkish.
+- Everything that lands in the project stays English only: code comments, documentation, identifiers, UI copy, error messages, logs, prompts, test descriptions, fixtures, commit messages, PR text, and MemPalace drawers.
+- Translate any Turkish prose encountered in files you edit into English.
+- Apply the English-only rule across the whole repository, including Markdown guidance and task-specific skill output.
 
 ## Guidance and source of truth
 
@@ -63,9 +64,14 @@ npx expo prebuild --clean
 eas build --platform ios --profile production
 eas build --platform android --profile production
 
-# Tests (jest-expo)
+# App unit tests (jest-expo); test:tz re-runs the date suite in seven time zones
 npm test
 npm run test:watch
+npm run test:tz
+
+# App integration tests: lib/ against the Auth, Firestore and Functions emulators
+# (builds functions; needs `npm --prefix functions ci`; stop dev emulators first)
+npm run test:integration
 
 # Server checks (separate TypeScript project and Vitest runner)
 npm --prefix functions run typecheck
@@ -84,7 +90,11 @@ Use a native development build for React Native Firebase; Expo Go does not inclu
 
 `functions/.secret.local` supplies `GEMINI_API_KEY` to the local Functions emulator. Guard-only integration tests use a throwaway value (see `.github/workflows/functions.yml`); actual coach conversations need a real Gemini key. Keep this file and `.env*.local` out of Git.
 
-Run checks appropriate to the files changed. Root Jest excludes `functions/`; backend checks must run separately. Integration tests use `demo-hercule` and must run through `test:integration`, which sets emulator hosts. Stop the development emulators first if their ports conflict. Keep Vitest test files sequential because they share emulator state.
+Run checks appropriate to the files changed. Root Jest excludes `functions/` and `integration/`; backend checks and app integration tests must run separately.
+
+App test conventions: data-layer unit tests use the in-memory fake in `lib/firebase/__tests__/firestoreTestUtils.ts` (it mirrors RNFB v23: `exists()` is a method, undefined fields throw, batches are atomic) and the builders in `fixtures.ts`. Hook tests use `hooks/__tests__/queryWrapper.tsx`. App integration tests live in `integration/`, run with `jest.integration.config.js`, and map native modules to `integration/shims/`, which mirror React Native Firebase's device behaviour, including its error codes. Known bugs are pinned with `test.failing` plus a `FIXME:` comment, which Comment Anchors lists; remove both in the same change that fixes the bug. `constants/__tests__/contracts.test.ts` and `lib/firebase/__tests__/account.subcollections.test.ts` check app/server parity and account-deletion coverage, so keep them passing when adding collections or changing shared constants. Integration tests use `demo-hercule` and must run through `test:integration`, which sets emulator hosts. Stop the development emulators first if their ports conflict. Keep Vitest test files sequential because they share emulator state.
+
+The Firestore fake captures immutable read-time snapshots; keep its fidelity tests passing when changing it. Server success-path tests use actual Genkit flows/tools with generation replaced at the network boundary, and callable tests use `onCall.run`. Emulator tests still exercise real request authentication, security rules, triggers, queries, transactions, and atomic increments. See `TESTING.md` for the audit findings and remaining risks.
 
 ## Architecture
 
@@ -102,6 +112,8 @@ AuthProvider                 ← Firebase auth state + signOut/deleteAccount
         ThemeProvider         ← Navigation light/dark theme inside AppSetup
           Stack.Protected     ← Guards (tabs), (screens), offline behind isAuthenticated
 ```
+
+`AccountQueryProvider` waits for auth initialization and keys the query-provider subtree by Firebase UID. `lib/queryCache.ts` creates separate QueryClient instances and persisted keys for each UID (including signed-out state) and backend. Never restore an unscoped cache into a signed-in session; old in-flight requests must stay attached to their old client.
 
 Inside `(tabs)/_layout.tsx`, tab screens are additionally wrapped in `ChatProvider` → `ActiveProgramProvider` (AI chat state and the user's active program, both scoped to the authenticated tab bar).
 
@@ -137,13 +149,17 @@ Client data helpers live in `lib/firebase/`; auth state is managed in `context/A
 | `credentials.ts` | — | Google/Apple sign-in credential helpers, shared by sign-in and reauthentication |
 | `emulators.ts` | — | Development-only SDK connection setup, imported first by the root layout |
 
+Day assignments use the local calendar date as the document ID. Assignment and deletion helpers transactionally update the assignment and all affected label `dates` arrays. Reassignment folds existing random-ID records for that date into the canonical document and removes their former owners' date references. Keep all ownership writes in the transaction; old clients that still create random IDs do not participate in this concurrency contract.
+
+Body-weight documents store a `measure` field alongside `weight`. `lib/firebase/weight.ts` converts mixed-unit history to the user's selected unit when reading. Legacy entries without `measure` use the user setting until a unit change tags/converts them in chunk transactions. Keep each value and its unit in the same write; new entries capture the setting transactionally so interrupted conversions and retries remain safe.
+
 Validate domain documents with Zod schemas in `types/types.ts`. Document schemas have `WithId` variants where a Firestore document ID is needed (e.g. `ExerciseLogWithIdSchema`); scalar and settings schemas do not all have one. Server equivalents live in `functions/src/data/schemas.ts` and request/response schemas in `functions/src/types.ts`; keep shared shapes aligned when changing them.
 
 Reuse query keys from `constants/QueryKeys.ts` and invalidate affected queries after mutations. AI usage query options are shared in `lib/ai/aiUsageQuery.ts` so chat, badges, and the settings plan card observe the same cache entry.
 
 ### AI coach (`lib/ai/`, `components/ai/`)
 
-`lib/ai/coachServer.ts` calls a Cloud Function (`httpsCallable`, `europe-west2`) that runs the coach logic in Genkit server-side — no AI/model code runs on-device. It can return a chat `reply` and/or a proposed `program` (a draft `ProgramSchema`). `lib/programLabels.ts` reconciles an AI-proposed program's day labels against the user's existing labels (matching by `description`) before it's accepted. Chat state lives in `hooks/useChatBox.ts`, exposed app-wide via `ChatContext`. UI pieces (`ChatBubble`, `ChatComposer`, `ProgramProposalCard`, `SuggestionPills`, `UsageBar`, `TypingIndicator`, `CoachDisclaimer`) live in `components/ai/`.
+`lib/ai/coachServer.ts` calls a Cloud Function (`httpsCallable`, `europe-west2`) that runs the coach logic in Genkit server-side — no AI/model code runs on-device. It can return a chat `reply` and/or a proposed `program` (a draft `ProgramSchema`). `lib/programLabels.ts` reconciles an AI-proposed program's day labels against the user's existing labels (matching by `description`) before it's accepted. Chat state lives in `hooks/useChatBox.ts`, exposed app-wide via `ChatContext`. `lib/ai/coachErrors.ts` classifies refusals; match callable error codes in both spellings, because React Native Firebase sends them bare (`resource-exhausted`) on device while the Firebase JS SDK prefixes them (`functions/resource-exhausted`). UI pieces (`ChatBubble`, `ChatComposer`, `ProgramProposalCard`, `SuggestionPills`, `UsageBar`, `TypingIndicator`, `CoachDisclaimer`) live in `components/ai/`.
 
 ### Cloud Functions (`functions/src/`)
 
@@ -182,7 +198,7 @@ Collection starts off in `firebase.json` (Android) and `app.config.js` (iOS), th
 
 `lib/firebase/emulators.ts` must remain the first import in `app/_layout.tsx` so SDK connections happen before requests. It gates on `__DEV__` and the flag, discovers the host from Metro, and connects Auth `9099`, Firestore `8080`, and Functions `5001` in `europe-west2`. The old `EXPO_PUBLIC_USE_FUNCTIONS_EMULATOR` switch is superseded. Keep the current flag command-scoped rather than in `.env.local` so plain `npm start` stays live.
 
-The persisted query cache has separate live/emulator keys; the native Firestore cache does not. Reinstall the dev app when switching hosts. Analytics and Crashlytics have no emulator, and the coach still calls Gemini. `seed:plan` writes a fake customer document for an existing emulator Auth UID so the real sync trigger applies the plan.
+The persisted query cache has separate account and live/emulator keys; the native Firestore cache does not. Reinstall the dev app when switching hosts. Analytics and Crashlytics have no emulator, and the coach still calls Gemini. `seed:plan` writes a fake customer document for an existing emulator Auth UID so the real sync trigger applies the plan.
 
 ### Configuration and delivery
 

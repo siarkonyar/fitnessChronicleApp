@@ -34,7 +34,7 @@ export const Colors = {
     warning: "#FACC15", // Tailwind yellow-400
     danger: "#EF4444", // Tailwind red-500
     elevation: "#FFFDF9",
-    transparent: "FFFFFF00",
+    transparent: "#FFFFFF00",
   },
   dark: {
     text: "#ECEDEE",
@@ -63,6 +63,6 @@ export const Colors = {
     warning: "#FACC15",
     danger: "#EF4444",
     elevation: "#141419",
-    transparent: "FFFFFF00",
+    transparent: "#FFFFFF00",
   },
 };

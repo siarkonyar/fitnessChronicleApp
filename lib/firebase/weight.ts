@@ -1,5 +1,5 @@
 import auth from "@react-native-firebase/auth";
-import firestore from "@react-native-firebase/firestore";
+import firestore, { FirebaseFirestoreTypes } from "@react-native-firebase/firestore";
 import { z } from "zod";
 import { WeightMeasureSchema, WeightWithIdSchema } from "../../types/types";
 import { getTodayString } from "../dateUtils";
@@ -23,6 +23,25 @@ const convertWeightValue = (
   }
 
   return roundWeight(value / KG_TO_LBS);
+};
+
+const readMeasure = (value: unknown): WeightMeasure => value === "lbs" ? "lbs" : "kg";
+
+const readWeights = async (
+  userRef: FirebaseFirestoreTypes.DocumentReference,
+  query: FirebaseFirestoreTypes.Query,
+): Promise<WeightWithId[]> => {
+  const user = await userRef.get();
+  const measure = readMeasure(user.data()?.measure);
+  const snapshot = await query.get();
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    const parsed = WeightWithIdSchema.parse({ id: doc.id, ...data });
+    return {
+      ...parsed,
+      weight: convertWeightValue(parsed.weight, readMeasure(data.measure ?? measure), measure),
+    };
+  });
 };
 
 const GetCurrentUserId = () => {
@@ -55,10 +74,17 @@ export const addWeightLog = async (weight: number) => {
     .limit(1)
     .get();
 
-  await weighRef.add({
-    weight: normalizedWeight,
-    date: getTodayString(),
-    createdAt: firestore.FieldValue.serverTimestamp(),
+  const userRef = firestore().collection("users").doc(userId);
+  const logRef = weighRef.doc();
+  const date = getTodayString();
+  await firestore().runTransaction(async (transaction) => {
+    const user = await transaction.get(userRef);
+    transaction.set(logRef, {
+      weight: normalizedWeight,
+      measure: readMeasure(user.data()?.measure),
+      date,
+      createdAt: firestore.FieldValue.serverTimestamp(),
+    });
   });
 };
 
@@ -74,7 +100,7 @@ export const deleteWeightLogById = async (id: string) => {
 
   const weightDoc = await doc.get();
 
-  if (!weightDoc.exists) {
+  if (!weightDoc.exists()) {
     throw new Error("Weight log not found.");
   }
 
@@ -96,42 +122,29 @@ export const updateMeasure = async (measure: WeightMeasure) => {
   if (!userId) throw new Error("User not authenticated");
 
   const userRef = firestore().collection("users").doc(userId);
-  const userSnapshot = await userRef.get();
-  const currentMeasure =
-    (userSnapshot.data()?.measure as WeightMeasure | undefined) ?? "kg";
+  const logsSnapshot = await userRef.collection("weightLogs").get();
 
-  if (currentMeasure !== measure) {
-    const logsSnapshot = await userRef.collection("weightLogs").get();
-
-    if (!logsSnapshot.empty) {
-      let batch = firestore().batch();
-      let operationCount = 0;
-
-      for (const doc of logsSnapshot.docs) {
-        const currentWeight = doc.data()?.weight;
-
-        if (typeof currentWeight !== "number") continue;
-
-        const convertedWeight = convertWeightValue(
-          currentWeight,
-          currentMeasure,
+  // Each converted value carries its own unit in the same atomic write.
+  // Interrupted migrations remain readable in the selected unit, and retries
+  // convert from the entry's unit rather than converting it twice.
+  for (let offset = 0; offset < logsSnapshot.docs.length; offset += 450) {
+    const refs = logsSnapshot.docs.slice(offset, offset + 450).map((doc) => doc.ref);
+    await firestore().runTransaction(async (transaction) => {
+      const user = await transaction.get(userRef);
+      const currentMeasure = readMeasure(user.data()?.measure);
+      const logs = await Promise.all(refs.map((ref) => transaction.get(ref)));
+      for (const doc of logs) {
+        const data = doc.data();
+        if (!doc.exists() || typeof data?.weight !== "number") continue;
+        const from = readMeasure(data.measure ?? currentMeasure);
+        // Tag legacy values even when no conversion is necessary.
+        if (from === measure && data.measure !== undefined) continue;
+        transaction.update(doc.ref, {
+          weight: convertWeightValue(data.weight, from, measure),
           measure,
-        );
-
-        batch.update(doc.ref, { weight: convertedWeight });
-        operationCount += 1;
-
-        if (operationCount === 450) {
-          await batch.commit();
-          batch = firestore().batch();
-          operationCount = 0;
-        }
+        });
       }
-
-      if (operationCount > 0) {
-        await batch.commit();
-      }
-    }
+    });
   }
 
   await userRef.set(
@@ -178,18 +191,8 @@ export const getWeights = async (): Promise<WeightWithId[]> => {
 
   if (!userId) throw new Error("User not authenticated");
 
-  const weighRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("weightLogs");
-
-  const snapshot = await weighRef.get();
-  return snapshot.docs.map((doc) => {
-    return WeightWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
-    });
-  });
+  const userRef = firestore().collection("users").doc(userId);
+  return readWeights(userRef, userRef.collection("weightLogs"));
 };
 
 export const getWeightByDate = async (
@@ -199,19 +202,8 @@ export const getWeightByDate = async (
 
   if (!userId) throw new Error("User not authenticated");
 
-  const weighRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("weightLogs")
-    .where("date", "==", date);
-
-  const snapshot = await weighRef.get();
-  return snapshot.docs.map((doc) => {
-    return WeightWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
-    });
-  });
+  const userRef = firestore().collection("users").doc(userId);
+  return readWeights(userRef, userRef.collection("weightLogs").where("date", "==", date));
 };
 
 /* export const getWeightsByYear = async (year: string): Promise<Weight[]> => {

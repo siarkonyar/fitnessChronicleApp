@@ -34,8 +34,10 @@ export function useAnalyticsConsent(): void {
     }
 
     setUserId(uid);
+    setCollectionEnabled(false);
+    let current = true;
 
-    applyStoredConsent().catch((error: unknown) => {
+    applyStoredConsent(() => current).catch((error: unknown) => {
       // Left off, deliberately — see applyStoredConsent. Worth surfacing while
       // developing, since "no events at all" and "analytics not wired up yet"
       // look identical from the outside.
@@ -43,5 +45,8 @@ export function useAnalyticsConsent(): void {
         console.warn("[analytics] could not read consent, staying off:", error);
       }
     });
+    return () => {
+      current = false;
+    };
   }, [uid]);
 }

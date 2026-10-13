@@ -6,6 +6,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "firebase-admin/*": [
+        "./functions/node_modules/firebase-admin/lib/*"
       ]
     }
   },
