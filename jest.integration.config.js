@@ -24,6 +24,8 @@ module.exports = {
     "^@react-native-firebase/firestore$": "<rootDir>/integration/shims/firestore.ts",
     "^@react-native-firebase/functions$": "<rootDir>/integration/shims/functions.ts",
     "^@react-native-firebase/analytics$": "<rootDir>/integration/shims/nativeStubs.ts",
+    "^expo-constants$": "<rootDir>/integration/shims/expoConstants.ts",
+    "^posthog-react-native$": "<rootDir>/integration/shims/posthog.ts",
     "^@react-native-google-signin/google-signin$": "<rootDir>/integration/shims/nativeStubs.ts",
     "^@invertase/react-native-apple-authentication$": "<rootDir>/integration/shims/nativeStubs.ts",
     "^@react-native-async-storage/async-storage$":

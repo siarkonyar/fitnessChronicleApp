@@ -1,4 +1,9 @@
-import { ai, z } from "../genkit.js";
+import { ai, COACH_MODEL, z } from "../genkit.js";
+import {
+  captureAiGeneration,
+  createAiTraceId,
+  flushAiObservability,
+} from "../posthog.js";
 
 /**
  * A throwaway flow that exists only to prove three things work before any
@@ -27,11 +32,25 @@ export const tellJokeFlow = ai.defineFlow(
     }),
   },
   async ({ subject }) => {
-    const response = await ai.generate(
-      `Tell me one short joke about ${subject}.`,
-    );
-
+    const startedAt = Date.now();
+    const prompt = `Tell me one short joke about ${subject}.`;
+    const response = await ai.generate(prompt);
     const usage = response.usage;
+
+    captureAiGeneration(
+      {
+        sessionId: null,
+        traceId: createAiTraceId(),
+      },
+      {
+        model: COACH_MODEL,
+        latencyMs: Date.now() - startedAt,
+        inputTokens: usage?.inputTokens ?? 0,
+        outputTokens: usage?.outputTokens ?? 0,
+        totalTokens: usage?.totalTokens ?? 0,
+      },
+    );
+    await flushAiObservability();
 
     return {
       joke: response.text,

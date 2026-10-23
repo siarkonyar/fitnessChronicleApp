@@ -186,6 +186,10 @@ The repository has server sync and plan UI, but no RevenueCat purchase SDK or pa
 
 `client.ts` wraps Firebase Analytics (`logEvent`, `setCollectionEnabled`); `consent.ts` / `consentPrompt.ts` handle the opt-in consent flow during onboarding; `pendingSignUp.ts` flushes a queued sign-up event once consent is granted; `events.ts` centralizes event name/param constants.
 
+`client.ts` also sends the same events to PostHog. `posthog.ts` manages the shared client and blocks events, errors, and logs until the current account's consent is applied. The auth boundary disables capture and clears the old identity on account changes. Identify with the Firebase UID only. Disable provider autocapture with Expo Router; route events come from `useScreenTracking`. PostHog settings are `POSTHOG_PROJECT_TOKEN` and `POSTHOG_HOST`, embedded through `app.config.js`; missing settings disable PostHog without stopping the app.
+
+Server AI tracking in `functions/src/ai/posthog.ts` requires both the request's current consent flag and stored `users/{uid}.analyticsConsent === true`. Use the verified UID. Send usage, latency, tool names, and static failure details only. Do not send prompts, replies, tool inputs, or tool outputs. Flush each tracked turn and contain SDK failures. `functions/` needs its own PostHog environment settings. Code presence does not prove that events reach PostHog.
+
 Collection starts off in `firebase.json` (Android) and `app.config.js` (iOS), then follows the stored `users/{uid}.analyticsConsent` choice. Route tracking uses `hooks/useScreenTracking.ts`. Send app analytics through `lib/analytics/client.ts`, and keep event parameters free of message text and personal data. The current onboarding prompt is for analytics; do not infer a separate AI-consent gate from old comments or documentation.
 
 ### Offline support

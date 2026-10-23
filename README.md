@@ -85,6 +85,7 @@ The version that ships to the stores is `expo.version` in [`app.config.js`](app.
 | Validation | [Zod 4](https://zod.dev) — domain schemas and callable response validation |
 | Backend | [Firebase](https://firebase.google.com) — Auth (Google + Apple Sign-In), Firestore, Cloud Functions, App Check, Crashlytics, Analytics |
 | AI | [Genkit](https://genkit.dev) + Gemini on Cloud Functions (`europe-west2`), tool-calling over the user's own logs, per-user quota buckets |
+| Analytics | Firebase Analytics and PostHog app events; PostHog JavaScript error tracking, static logs, and AI usage metadata |
 | UI | [@gorhom/bottom-sheet](https://gorhom.dev/react-native-bottom-sheet/) 5, `react-native-reanimated` 4, `react-native-calendars`, `react-native-gifted-charts`, `expo-blur` |
 | Offline | `@react-native-community/netinfo` + AsyncStorage exercise queue; Firestore sync helper exists, automatic flushing pending |
 | Testing | `jest-expo` + Testing Library (app unit), Jest + Firebase Emulator Suite (app integration), `vitest` + Firebase Emulator Suite (functions: unit + integration) |
@@ -144,6 +145,16 @@ App integration tests (`integration/`) run the real `lib/` code, Zod schemas, `f
 Backend tests run separately from app Jest. Integration tests use the `demo-hercule` project via `npm --prefix functions run test:integration`; build the server first when running that command alone. Stop development emulators before starting integration tests to avoid port conflicts. Follow [the backend CI workflow](.github/workflows/functions.yml) for the throwaway `GEMINI_API_KEY` value in the gitignored `functions/.secret.local` used by guard-only tests. Real coach conversations require a real key.
 
 [The testing audit](TESTING.md) records coverage, known-failing regressions, and the remaining risks. [App CI](.github/workflows/app-tests.yml) runs typechecking, lint, unit tests, all seven date-test time zones, and app integration tests. Server unit tests cover successful coach orchestration with deterministic generation; emulator tests cover real Firebase behavior without calling Gemini. TanStack Query caches are scoped to each Firebase UID and backend in both memory and AsyncStorage, so account changes cannot restore another user's snapshot.
+
+### PostHog setup
+
+Set `POSTHOG_PROJECT_TOKEN` and `POSTHOG_HOST` in the app's gitignored `.env` file. See `.env.example`. Set the same variables in `functions/.env` for the server. EAS builds need these variables when Expo evaluates `app.config.js`. Missing settings disable PostHog without stopping the app or functions.
+
+App capture starts off and follows the stored analytics consent. Account changes disable capture and clear the previous identity. The client identifies users by Firebase UID only. Provider autocapture is off; existing app events and route events pass through `lib/analytics/client.ts`.
+
+AI tracking requires the app's current consent flag and the server's stored choice. It sends token usage, latency, tool names, and static failure details. It does not send chat text, workout data, or tool input/output. PostHog sends data to its configured host in emulator mode too.
+
+After installing the Expo dependencies, make a new native development build. For readable error stacks in release builds, configure [PostHog source map uploads](https://posthog.com/docs/error-tracking/upload-source-maps/react-native). Source map uploads are not configured in this repository.
 
 ### Running the dev build against fake Firebase (emulators)
 

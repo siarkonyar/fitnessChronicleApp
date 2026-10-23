@@ -51,6 +51,13 @@ const GENERIC_ERROR_MESSAGE = "Couldn't reach your coach. Please try again.";
 /** The usage bar reaches this at exactly the point the server starts refusing. */
 const QUOTA_EXHAUSTED_PERCENT = 100;
 
+/**
+ * A local conversation boundary for AI Observability, not an identifier used
+ * for authentication or storage. It rotates whenever the user clears chat.
+ */
+const createConversationId = (): string =>
+  `coach-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
 export function useChatBox() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sendError, setSendError] = useState<ChatError | null>(null);
@@ -81,6 +88,15 @@ export function useChatBox() {
   // must never trigger a render. Storing it in state would re-render the whole
   // chat twice per message purely to time it.
   const sentAtRef = useRef<number | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
+
+  const conversationId = (): string => {
+    if (conversationIdRef.current === null) {
+      conversationIdRef.current = createConversationId();
+    }
+
+    return conversationIdRef.current;
+  };
 
   /** Milliseconds since the send that is currently in flight, or 0. */
   const elapsedMs = () =>
@@ -98,6 +114,7 @@ export function useChatBox() {
         history,
         today: getTodayString(),
         prefs: { repType: isRepsFixed ? "fixed" : "range", measure },
+        conversationId: conversationId(),
       });
     },
     onMutate: ({ text, source, history }: SendMessageVariables) => {
@@ -185,6 +202,7 @@ export function useChatBox() {
 
     setMessages([]);
     setSendError(null);
+    conversationIdRef.current = null;
   }, [messages.length]);
 
   // Derived, not stored: a boolean kept in state would need to be re-synced every

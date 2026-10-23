@@ -15,6 +15,10 @@
  */
 import { z } from "genkit";
 import { ai } from "./genkit.js";
+import {
+  captureAiToolRun,
+  type AiObservabilityContext,
+} from "./posthog.js";
 import { isCalendarDate } from "../types.js";
 import { getExerciseLogsByDateRange } from "../data/exerciseLogs.js";
 import { getAllLabels } from "../data/labels.js";
@@ -52,6 +56,7 @@ const daysBetween = (fromDate: string, toDate: string): number => {
 export interface CoachContext {
   auth?: { uid?: string };
   prefs?: ProgramDraftPrefs;
+  aiObservability?: AiObservabilityContext;
 }
 
 /**
@@ -109,35 +114,40 @@ export const getWorkoutLogsTool = ai.defineTool(
       error: z.string().optional(),
     }),
   },
-  async ({ startDate, endDate }, { context }) => {
-    const uid = requireUid(context);
+  async ({ startDate, endDate }, { context }) =>
+    captureAiToolRun(
+      (context as CoachContext | undefined)?.aiObservability,
+      "getWorkoutLogs",
+      async () => {
+        const uid = requireUid(context);
 
-    // Genkit exposes regexes to the model, but a regex cannot validate month
-    // lengths. Return a correctable error before querying for impossible dates.
-    if (!isCalendarDate(startDate) || !isCalendarDate(endDate)) {
-      return { error: "Dates must be real calendar dates in YYYY-MM-DD format." };
-    }
+        // Genkit exposes regexes to the model, but a regex cannot validate month
+        // lengths. Return a correctable error before querying for impossible dates.
+        if (!isCalendarDate(startDate) || !isCalendarDate(endDate)) {
+          return { error: "Dates must be real calendar dates in YYYY-MM-DD format." };
+        }
 
-    // Returned as data, not thrown: a bad range is the model's mistake to fix,
-    // and it can only fix it if it gets told what was wrong.
-    if (startDate > endDate) {
-      return { error: "startDate must be on or before endDate." };
-    }
+        // Returned as data, not thrown: a bad range is the model's mistake to fix,
+        // and it can only fix it if it gets told what was wrong.
+        if (startDate > endDate) {
+          return { error: "startDate must be on or before endDate." };
+        }
 
-    if (daysBetween(startDate, endDate) > MAX_RANGE_DAYS) {
-      return {
-        error: `Range too wide. Ask for at most ${MAX_RANGE_DAYS} days.`,
-      };
-    }
+        if (daysBetween(startDate, endDate) > MAX_RANGE_DAYS) {
+          return {
+            error: `Range too wide. Ask for at most ${MAX_RANGE_DAYS} days.`,
+          };
+        }
 
-    const { logs, truncated } = await getExerciseLogsByDateRange(
-      uid,
-      startDate,
-      endDate
-    );
+        const { logs, truncated } = await getExerciseLogsByDateRange(
+          uid,
+          startDate,
+          endDate
+        );
 
-    return { logs: logs.map(formatLog), truncated };
-  }
+        return { logs: logs.map(formatLog), truncated };
+      },
+    )
 );
 
 export const getLabelsTool = ai.defineTool(
@@ -158,11 +168,16 @@ export const getLabelsTool = ai.defineTool(
       ),
     }),
   },
-  async (_input, { context }) => {
-    const uid = requireUid(context);
-    const labels = await getAllLabels(uid);
-    return { labels: labels.map(formatLabel) };
-  }
+  async (_input, { context }) =>
+    captureAiToolRun(
+      (context as CoachContext | undefined)?.aiObservability,
+      "getLabels",
+      async () => {
+        const uid = requireUid(context);
+        const labels = await getAllLabels(uid);
+        return { labels: labels.map(formatLabel) };
+      },
+    )
 );
 
 export const getProgramsTool = ai.defineTool(
@@ -196,11 +211,16 @@ export const getProgramsTool = ai.defineTool(
       ),
     }),
   },
-  async (_input, { context }) => {
-    const uid = requireUid(context);
-    const programs = await getPrograms(uid);
-    return { programs: programs.map(formatProgram) };
-  }
+  async (_input, { context }) =>
+    captureAiToolRun(
+      (context as CoachContext | undefined)?.aiObservability,
+      "getPrograms",
+      async () => {
+        const uid = requireUid(context);
+        const programs = await getPrograms(uid);
+        return { programs: programs.map(formatProgram) };
+      },
+    )
 );
 
 export const proposeProgramTool = ai.defineTool(
@@ -220,28 +240,33 @@ export const proposeProgramTool = ai.defineTool(
       error: z.string().optional(),
     }),
   },
-  async (args, { context }) => {
-    const prefs = requirePrefs(context);
+  async (args, { context }) =>
+    captureAiToolRun(
+      (context as CoachContext | undefined)?.aiObservability,
+      "proposeProgram",
+      async () => {
+        const prefs = requirePrefs(context);
 
-    // Note this does NOT save anything. The program goes back to the app for
-    // the user to accept; saving is a separate, user-initiated action.
-    const program = toProgram(args, prefs);
+        // Note this does NOT save anything. The program goes back to the app for
+        // the user to accept; saving is a separate, user-initiated action.
+        const program = toProgram(args, prefs);
 
-    if (!program) {
-      return {
-        error:
-          "Those arguments could not be read as a program. Check that every day " +
-          "has isRestDay, that training days have at least one exercise, that " +
-          "labelEmoji and labelDescription are sent together, that labelEmoji is " +
-          'one emoji or one letter, and that reps is a plain number like "8".',
-      };
-    }
+        if (!program) {
+          return {
+            error:
+              "Those arguments could not be read as a program. Check that every day " +
+              "has isRestDay, that training days have at least one exercise, that " +
+              "labelEmoji and labelDescription are sent together, that labelEmoji is " +
+              'one emoji or one letter, and that reps is a plain number like "8".',
+          };
+        }
 
-    // Only a summary goes back to the model. The program itself is rebuilt by
-    // the flow from these same arguments — sending the whole thing here would
-    // spend tokens describing something the user can already see.
-    return { ok: true, summary: describeProgram(program) };
-  }
+        // Only a summary goes back to the model. The program itself is rebuilt by
+        // the flow from these same arguments — sending the whole thing here would
+        // spend tokens describing something the user can already see.
+        return { ok: true, summary: describeProgram(program) };
+      },
+    )
 );
 
 export const coachTools = [

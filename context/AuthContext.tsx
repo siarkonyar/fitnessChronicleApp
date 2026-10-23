@@ -5,9 +5,15 @@ import {
   onAuthStateChanged,
 } from "@react-native-firebase/auth";
 import { logEvent } from "@/lib/analytics/client";
+import { setPostHogUser } from "@/lib/analytics/posthog";
 import { deleteAccount } from "@/lib/firebase/account";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 interface AuthContextType {
   user: FirebaseAuthTypes.User | null;
@@ -26,17 +32,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    // Subscribe to authentication state changes
+    // Disable PostHog before an account change. Consent enables identification.
     const subscriber = onAuthStateChanged(getAuth(), (firebaseUser) => {
+      setPostHogUser(firebaseUser?.uid ?? null);
+
       setUser(firebaseUser);
-      if (authLoading) {
-        setAuthLoading(false);
-      }
+      setAuthLoading(false);
     });
 
     // Unsubscribe on unmount
     return subscriber;
-  }, [authLoading]);
+  }, []);
 
   const signOut = async () => {
     try {

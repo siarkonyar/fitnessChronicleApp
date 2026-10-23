@@ -27,6 +27,7 @@ import {
 const EXHAUSTED = 1_000_000_000_000;
 
 const request = (overrides: Partial<CoachRequest> = {}): CoachRequest => ({
+  conversationId: "integration-coach-conversation",
   message: "Plan my week",
   history: [],
   today: getTodayString(),

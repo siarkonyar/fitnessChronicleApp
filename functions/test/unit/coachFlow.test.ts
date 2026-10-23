@@ -1,22 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { logger } from "firebase-functions";
+import { ai } from "../../src/ai/genkit.js";
+import { coachFlow } from "../../src/ai/flows/coach.js";
+import { MAX_HISTORY_MESSAGES } from "../../src/types.js";
+import { captureAiGeneration } from "../../src/ai/posthog.js";
+
 // Keep real Genkit flow/tool registration and schema validation. Only the
 // external generation boundary is replaced; no model or network is used.
 vi.mock("../../src/ai/genkit.js", async () => {
   const { genkit } = await import("genkit");
   const ai = genkit({ plugins: [] });
   ai.generate = vi.fn();
-  return { ai, COACH_THINKING_LEVEL: "minimal" };
+  return { ai, COACH_MODEL: "test-model", COACH_THINKING_LEVEL: "minimal" };
 });
 vi.mock("../../src/data/exerciseLogs.js", () => ({ getExerciseLogsByDateRange: vi.fn() }));
 vi.mock("../../src/data/labels.js", () => ({ getAllLabels: vi.fn() }));
 vi.mock("../../src/data/programs.js", () => ({ getPrograms: vi.fn() }));
 vi.mock("firebase-functions", () => ({ logger: { warn: vi.fn() } }));
-
-import { logger } from "firebase-functions";
-import { ai } from "../../src/ai/genkit.js";
-import { coachFlow } from "../../src/ai/flows/coach.js";
-import { MAX_HISTORY_MESSAGES } from "../../src/types.js";
+vi.mock("../../src/ai/posthog.js", async (importOriginal) => ({ ...await importOriginal<object>(), captureAiGeneration: vi.fn() }));
 
 const request = () => ({ message: "Build a plan", today: "2026-10-05", history: [], prefs: { repType: "range", measure: "lbs" } as const });
 const proposal = (name: string) => ({ name, days: [{ isRestDay: false, exercises: [{ activity: "Bench press", sets: [{ setType: "normal", reps: "8" }] }] }] });
@@ -28,6 +30,17 @@ const respond = (overrides: Record<string, unknown> = {}) => {
 beforeEach(() => { vi.clearAllMocks(); respond(); });
 
 describe("coach flow", () => {
+  it("records failed generation metadata and preserves the provider error", async () => {
+    const error = new Error("Private provider error");
+    vi.mocked(ai.generate).mockRejectedValue(error);
+    const aiObservability = { distinctId: "user", traceId: "trace", sessionId: "session" };
+    await expect(coachFlow(request(), { context: { aiObservability } })).rejects.toThrow(error.message);
+    expect(captureAiGeneration).toHaveBeenCalledWith(aiObservability, {
+      model: "test-model", latencyMs: expect.any(Number), inputTokens: 0,
+      outputTokens: 0, totalTokens: 0, failed: true,
+    });
+    expect(JSON.stringify(vi.mocked(captureAiGeneration).mock.calls)).not.toContain(error.message);
+  });
   it("trims history before generation and sends the new message exactly once", async () => {
     const history = Array.from({ length: MAX_HISTORY_MESSAGES + 5 }, (_, i) => ({ role: "user" as const, text: `history-${i}` }));
     await coachFlow({ ...request(), history });
