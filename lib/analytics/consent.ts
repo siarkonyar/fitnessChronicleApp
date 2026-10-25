@@ -19,6 +19,7 @@
 
 import { getUserSettings, updateUserSettings } from "@/lib/firebase/user";
 import { setCollectionEnabled } from "./client";
+import { logStoredConsentApplied, logUserConsentEnabled } from "./posthogLogs";
 
 /**
  * What a user with nothing stored gets.
@@ -58,7 +59,11 @@ export const applyStoredConsent = async (
 
   // A delayed read must not undo a newer toggle or a change of account.
   if (shouldApply() && revision === consentRevision) {
-    setCollectionEnabled(settings.analyticsConsent ?? DEFAULT_CONSENT);
+    const consentGranted = settings.analyticsConsent ?? DEFAULT_CONSENT;
+    setCollectionEnabled(consentGranted);
+    if (consentGranted) {
+      logStoredConsentApplied();
+    }
   }
 };
 
@@ -78,6 +83,9 @@ export const applyStoredConsent = async (
 export const setAnalyticsConsent = (granted: boolean): void => {
   consentRevision += 1;
   setCollectionEnabled(granted);
+  if (granted) {
+    logUserConsentEnabled();
+  }
 
   updateUserSettings({ analyticsConsent: granted }).catch((error: unknown) => {
     console.error("Failed to persist analytics consent:", error);

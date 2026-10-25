@@ -5,10 +5,11 @@ import {
   CoachResultSchema,
   MAX_HISTORY_MESSAGES,
 } from "../../types.js";
-import { ai, COACH_THINKING_LEVEL } from "../genkit.js";
+import { ai, COACH_MODEL, COACH_THINKING_LEVEL } from "../genkit.js";
+import { captureAiGeneration } from "../posthog.js";
 import { toProgram } from "../programDraft.js";
 import { buildSystemInstruction } from "../prompt.js";
-import { coachTools } from "../tools.js";
+import { coachTools, type CoachContext } from "../tools.js";
 
 /** Ported from useChatBox.ts:21. Used when the model returns no text at all. */
 const FALLBACK_REPLY =
@@ -100,15 +101,17 @@ export const coachFlow = ai.defineFlow(
     inputSchema: CoachRequestSchema,
     outputSchema: CoachResultSchema,
   },
-  async ({ message, history, today, prefs }) => {
+  async ({ message, history, today, prefs }, { context }) => {
     // Trimmed here rather than in the callable so the cap cannot be bypassed
     // by any other caller of this flow, including the Genkit dev UI.
     const recent = history.slice(-MAX_HISTORY_MESSAGES);
+    const observability = (context as CoachContext | undefined)?.aiObservability;
+    const system = buildSystemInstruction(today);
 
     const startedAt = Date.now();
 
     const response = await ai.generate({
-      system: buildSystemInstruction(today),
+      system,
       // content is Part[], not a string. The docs show a bare string, but the
       // types require the array form and that is what the SDK actually takes.
       messages: recent.map((entry) => ({
@@ -119,6 +122,18 @@ export const coachFlow = ai.defineFlow(
       tools: coachTools,
       maxTurns: MAX_TOOL_ROUNDS,
       config: { thinkingConfig: { thinkingLevel: COACH_THINKING_LEVEL } },
+    }).catch((error: unknown) => {
+      if (observability) {
+        captureAiGeneration(observability, {
+          model: COACH_MODEL,
+          latencyMs: Date.now() - startedAt,
+          inputTokens: 0,
+          outputTokens: 0,
+          totalTokens: 0,
+          failed: true,
+        });
+      }
+      throw error;
     });
 
     const latencyMs = Date.now() - startedAt;
@@ -146,6 +161,16 @@ export const coachFlow = ai.defineFlow(
       logger.warn("Coach returned no text, substituted fallback reply", {
         hasProgram: Boolean(program),
         toolCalls,
+      });
+    }
+
+    if (observability) {
+      captureAiGeneration(observability, {
+        model: COACH_MODEL,
+        latencyMs,
+        inputTokens: response.usage?.inputTokens ?? 0,
+        outputTokens: response.usage?.outputTokens ?? 0,
+        totalTokens: response.usage?.totalTokens ?? 0,
       });
     }
 

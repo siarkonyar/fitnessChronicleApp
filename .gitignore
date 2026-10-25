@@ -37,6 +37,8 @@ yarn-error.*
 # local env files
 .env*.local
 .env
+# EAS Simulator session connection details, including an access token
+.env.eas-simulator
 
 # typescript
 *.tsbuildinfo

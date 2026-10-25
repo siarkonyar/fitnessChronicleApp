@@ -1,6 +1,7 @@
 import { FUNCTIONS_REGION } from "@/constants/firebase";
 import { ProgramSchema, SubscriptionTierSchema } from "@/types/types";
 import { z } from "zod";
+import { isPostHogCollectionEnabled } from "@/lib/analytics/posthog";
 
 import { getApp } from "@react-native-firebase/app";
 import { getFunctions, httpsCallable } from "@react-native-firebase/functions";
@@ -55,17 +56,22 @@ export interface CoachRequest {
   history: CoachHistoryMessage[];
   today: string;
   prefs: CoachPrefs;
+  /** Groups turns from the open coach chat in AI Observability. */
+  conversationId: string;
 }
 
 export const callCoach = async (
   request: CoachRequest,
 ): Promise<CoachResponse> => {
-  const coach = httpsCallable<CoachRequest, unknown>(
+  const coach = httpsCallable<CoachRequest & { analyticsConsent: boolean }, unknown>(
     getFunctions(getApp(), FUNCTIONS_REGION),
     "chatWithCoach",
   );
 
-  const result = await coach(request);
+  const result = await coach({
+    ...request,
+    analyticsConsent: isPostHogCollectionEnabled(),
+  });
 
   return CoachResponseSchema.parse(result.data);
 };

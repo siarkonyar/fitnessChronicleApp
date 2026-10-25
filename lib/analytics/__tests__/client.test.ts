@@ -12,6 +12,17 @@ const mockLogEvent = jest.fn();
 const mockSetCollectionEnabled = jest.fn();
 const mockSetUserId = jest.fn();
 const mockSetUserProperty = jest.fn();
+const mockPostHogCapture = jest.fn();
+const mockPostHogScreen = jest.fn();
+
+jest.mock("../posthog", () => ({
+  runWithPostHogConsent: (run: (client: unknown) => void) => run({
+    capture: mockPostHogCapture,
+    screen: mockPostHogScreen,
+    logger: { info: jest.fn() },
+  }),
+  setPostHogCollectionEnabled: jest.fn(),
+}));
 
 jest.mock("@react-native-firebase/analytics", () => ({
   getAnalytics: () => mockGetAnalytics(),
@@ -35,6 +46,7 @@ let warn: jest.SpyInstance;
 beforeEach(() => {
   jest.clearAllMocks();
   mockGetAnalytics.mockReturnValue(mockInstance);
+  mockPostHogScreen.mockResolvedValue(undefined);
   for (const fn of [mockLogEvent, mockSetCollectionEnabled, mockSetUserId, mockSetUserProperty]) {
     fn.mockResolvedValue(undefined);
   }
@@ -132,6 +144,23 @@ describe("logEvent", () => {
 });
 
 describe("logScreenView", () => {
+  test("sends the route to PostHog even when Firebase Analytics is unavailable", () => {
+    mockGetAnalytics.mockImplementation(() => { throw new Error("native module missing"); });
+    logScreenView("/(tabs)/ai");
+    expect(mockPostHogScreen).toHaveBeenCalledWith("/(tabs)/ai");
+    expect(mockLogEvent).not.toHaveBeenCalled();
+  });
+
+  test("a PostHog screen failure does not stop Firebase tracking or leak a rejection", async () => {
+    mockPostHogScreen.mockRejectedValue(new Error("PostHog unavailable"));
+    logScreenView("/(tabs)/ai");
+    await flushPromises();
+    expect(mockLogEvent).toHaveBeenCalledWith(mockInstance, "screen_view", {
+      screen_name: "/(tabs)/ai", screen_class: "/(tabs)/ai",
+    });
+    expect(warn).toHaveBeenCalledWith("[analytics] posthog.screen failed:", expect.any(Error));
+  });
+
   test("sends screen_view with the route as both name and class", () => {
     logScreenView("/(tabs)/ai");
 

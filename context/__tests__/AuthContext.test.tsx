@@ -10,6 +10,7 @@ const mockFirebaseSignOut = jest.fn();
 const mockRevokeAccess = jest.fn();
 const mockGoogleSignOut = jest.fn();
 const mockLogEvent = jest.fn();
+const mockSetPostHogUser = jest.fn();
 const mockDeleteAccount = jest.fn();
 let mockCurrentUser: unknown = null;
 
@@ -31,6 +32,10 @@ jest.mock("@react-native-google-signin/google-signin", () => ({
 
 jest.mock("@/lib/analytics/client", () => ({
   logEvent: (...args: unknown[]) => mockLogEvent(...args),
+}));
+
+jest.mock("@/lib/analytics/posthog", () => ({
+  setPostHogUser: (...args: unknown[]) => mockSetPostHogUser(...args),
 }));
 
 jest.mock("@/lib/firebase/account", () => ({
@@ -85,11 +90,12 @@ describe("auth state", () => {
   test("becomes signed in when Firebase reports a user", () => {
     const { result } = renderAuth();
 
-    emit(fakeUser());
+    emit(fakeUser({ email: "member@example.com", displayName: "Member" }));
 
     expect(result.current.authLoading).toBe(false);
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.user?.uid).toBe("uid-1");
+    expect(mockSetPostHogUser).toHaveBeenCalledWith("uid-1");
   });
 
   test("stops loading when Firebase reports nobody", () => {
@@ -101,13 +107,14 @@ describe("auth state", () => {
     expect(result.current.isAuthenticated).toBe(false);
   });
 
-  test("follows a later sign-out", () => {
+  test("follows a later sign-out and clears the PostHog user", () => {
     const { result } = renderAuth();
     emit(fakeUser());
 
     emit(null);
 
     expect(result.current.user).toBeNull();
+    expect(mockSetPostHogUser).toHaveBeenLastCalledWith(null);
   });
 
   test("unsubscribes from Firebase on unmount", () => {

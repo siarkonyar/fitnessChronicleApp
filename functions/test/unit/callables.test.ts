@@ -1,22 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CallableRequest } from "firebase-functions/https";
 
-vi.mock("../../src/ai/flows/coach.js", () => ({ coachFlow: vi.fn() }));
-vi.mock("../../src/ai/genkit.js", () => ({ COACH_MODEL: "test-model", COACH_THINKING_LEVEL: "minimal" }));
-vi.mock("../../src/quota/check.js", async (importOriginal) => ({ ...await importOriginal<object>(), checkQuota: vi.fn() }));
-vi.mock("../../src/quota/record.js", () => ({ recordUsage: vi.fn() }));
-vi.mock("../../src/telemetry/aiTurn.js", () => ({ recordTurn: vi.fn() }));
-vi.mock("../../src/data/firestore.js", () => ({}));
-vi.mock("../../src/account/createAiUsage.js", () => ({ onUserCreated: {} }));
-vi.mock("../../src/account/deleteAiUsage.js", () => ({ onUserDeleted: {} }));
-vi.mock("../../src/consent/recordConsentChange.js", () => ({ onConsentChanged: {} }));
-vi.mock("../../src/revenuecat/syncCustomer.js", () => ({ onRevenueCatCustomerWritten: {} }));
-
 import { chatWithCoach, getUsagePercentage, ping } from "../../src/index.js";
 import { coachFlow } from "../../src/ai/flows/coach.js";
 import { checkQuota, toPercentUsed, type QuotaDecision } from "../../src/quota/check.js";
 import { recordUsage } from "../../src/quota/record.js";
 import { recordTurn } from "../../src/telemetry/aiTurn.js";
+import { getAiObservabilityContext, flushAiObservability } from "../../src/ai/posthog.js";
+
+vi.mock("../../src/ai/flows/coach.js", () => ({ coachFlow: vi.fn() }));
+vi.mock("../../src/ai/genkit.js", () => ({ COACH_MODEL: "test-model", COACH_THINKING_LEVEL: "minimal" }));
+vi.mock("../../src/quota/check.js", async (importOriginal) => ({ ...await importOriginal<object>(), checkQuota: vi.fn() }));
+vi.mock("../../src/quota/record.js", () => ({ recordUsage: vi.fn() }));
+vi.mock("../../src/telemetry/aiTurn.js", () => ({ recordTurn: vi.fn() }));
+vi.mock("../../src/ai/posthog.js", () => ({ getAiObservabilityContext: vi.fn(), flushAiObservability: vi.fn() }));
+vi.mock("../../src/data/firestore.js", () => ({}));
+vi.mock("../../src/account/createAiUsage.js", () => ({ onUserCreated: {} }));
+vi.mock("../../src/account/deleteAiUsage.js", () => ({ onUserDeleted: {} }));
+vi.mock("../../src/consent/recordConsentChange.js", () => ({ onConsentChanged: {} }));
+vi.mock("../../src/revenuecat/syncCustomer.js", () => ({ onRevenueCatCustomerWritten: {} }));
 
 const input = () => ({ message: "Private message", history: [], today: new Date().toISOString().slice(0, 10), prefs: { repType: "fixed", measure: "kg" } });
 const request = (data: unknown = input(), uid: string | undefined = "verified-user") => ({ data, ...(uid && { auth: { uid, token: {} } }) }) as CallableRequest;
@@ -28,9 +30,35 @@ beforeEach(() => {
   vi.mocked(checkQuota).mockResolvedValue(quota());
   vi.mocked(coachFlow).mockResolvedValue(result());
   vi.mocked(recordUsage).mockResolvedValue();
+  vi.mocked(getAiObservabilityContext).mockResolvedValue(undefined);
+  vi.mocked(flushAiObservability).mockResolvedValue();
 });
 
 describe("callable orchestration with a deterministic coach", () => {
+  it.each([undefined, false])("skips PostHog when the current app consent is %s", async (analyticsConsent) => {
+    await chatWithCoach.run(request({ ...input(), analyticsConsent }));
+    expect(getAiObservabilityContext).not.toHaveBeenCalled();
+    expect(flushAiObservability).not.toHaveBeenCalled();
+  });
+
+  it("uses the verified UID for server consent and flushes a failed turn", async () => {
+    const aiObservability = { distinctId: "verified-user", traceId: "trace", sessionId: "session" };
+    vi.mocked(getAiObservabilityContext).mockResolvedValue(aiObservability);
+    const error = new Error("provider unavailable");
+    vi.mocked(coachFlow).mockRejectedValue(error);
+    await expect(chatWithCoach.run(request({ ...input(), uid: "victim", analyticsConsent: true, conversationId: "chat" }))).rejects.toBe(error);
+    expect(getAiObservabilityContext).toHaveBeenCalledWith("verified-user", "chat");
+    expect(coachFlow).toHaveBeenCalledWith(expect.any(Object), { context: { auth: { uid: "verified-user" }, prefs: input().prefs, aiObservability } });
+    expect(flushAiObservability).toHaveBeenCalledOnce();
+    expect(recordUsage).not.toHaveBeenCalled();
+  });
+
+  it("omits tracking context if stored consent is not granted", async () => {
+    await chatWithCoach.run(request({ ...input(), analyticsConsent: true }));
+    expect(getAiObservabilityContext).toHaveBeenCalledWith("verified-user", undefined);
+    expect(coachFlow).toHaveBeenCalledWith(expect.any(Object), { context: { auth: { uid: "verified-user" }, prefs: input().prefs } });
+    expect(flushAiObservability).not.toHaveBeenCalled();
+  });
   it.each([chatWithCoach, getUsagePercentage, ping])("authenticates before other work", async (callable) => {
     await expect(Promise.resolve().then(async (): Promise<unknown> => callable.run(request(null, "")))).rejects.toMatchObject({ code: "unauthenticated" });
     expect(checkQuota).not.toHaveBeenCalled();

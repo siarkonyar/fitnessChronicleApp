@@ -64,11 +64,25 @@ export const HistoryMessageSchema = z.object({
   text: z.string(),
 });
 
+/**
+ * A client-created ID for one in-memory coach conversation. Restricted to the
+ * characters AI Observability accepts for `$ai_session_id`.
+ */
+export const ConversationIdSchema = z
+  .string()
+  .min(1)
+  .max(128)
+  .regex(/^[A-Za-z0-9_~.@()!':|.-]+$/, "invalid conversation id");
+
 export const CoachRequestSchema = z.object({
   message: z.string().min(1).max(MAX_MESSAGE_CHARS),
   history: z.array(HistoryMessageSchema).default([]),
   today: TodaySchema,
   prefs: PrefsSchema,
+  // Optional while older installed app builds are still calling this endpoint.
+  conversationId: ConversationIdSchema.optional(),
+  // The server also checks the stored choice before it sends analytics.
+  analyticsConsent: z.boolean().optional(),
 });
 
 export const CoachResultSchema = z.object({

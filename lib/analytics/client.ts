@@ -1,5 +1,5 @@
 /**
- * The only file in the app that talks to the Firebase Analytics SDK.
+ * Sends app events to Firebase Analytics and PostHog.
  *
  * Two rules shape everything here:
  *
@@ -8,12 +8,8 @@
  *    worth nothing next to actually logging it, so a telemetry fault must not
  *    surface as a rejected promise inside a mutation callback.
  *
- * 2. Consent has exactly one switch: setAnalyticsCollectionEnabled on the SDK.
- *    There is deliberately no parallel `isEnabled` boolean in JS. A second copy
- *    of that state would have to be re-synced on every change and would drift
- *    the moment one update was missed — and the SDK switch is strictly
- *    stronger anyway, since it also stops the automatic events (session_start,
- *    app_open) that never pass through this file.
+ * 2. setCollectionEnabled applies the stored choice to both SDKs. PostHog also
+ *    blocks capture while it loads the current account's consent.
  */
 
 import {
@@ -24,6 +20,8 @@ import {
   setUserProperty as firebaseSetUserProperty,
 } from "@react-native-firebase/analytics";
 import type { AnalyticsEventMap, AnalyticsEventName } from "./events";
+import { logAnalyticsCollectionEnabled } from "./posthogLogs";
+import { runWithPostHogConsent, setPostHogCollectionEnabled } from "./posthog";
 
 /** GA4 hard limits. Exceeding any of these makes the SDK drop the event. */
 const MAX_PARAMS = 25;
@@ -138,6 +136,15 @@ export const logEvent = <K extends AnalyticsEventName>(
     console.log(`[analytics] ${name}`, safeParams);
   }
 
+  // The consent gateway establishes the Firebase UID on the shared client, so
+  // this plain capture inherits the correct identity without exposing it in
+  // event properties. The event schema permits only aggregate, non-PII data.
+  try {
+    runWithPostHogConsent((client) => client.capture(name, safeParams));
+  } catch (error) {
+    reportFailure(`posthog.capture(${name})`, error);
+  }
+
   const instance = getAnalyticsSafely();
   if (!instance) return;
 
@@ -160,6 +167,12 @@ export const logScreenView = (screenName: string): void => {
   if (__DEV__) {
     console.log("[analytics] screen_view", name);
   }
+
+  runWithPostHogConsent((client) => {
+    void client.screen(name).catch((error: unknown) =>
+      reportFailure("posthog.screen", error),
+    );
+  });
 
   const instance = getAnalyticsSafely();
   if (!instance) return;
@@ -206,6 +219,11 @@ export const setUserProperty = (key: string, value: string | null): void => {
  * this file sends.
  */
 export const setCollectionEnabled = (enabled: boolean): void => {
+  setPostHogCollectionEnabled(enabled);
+  if (enabled) {
+    logAnalyticsCollectionEnabled();
+  }
+
   const instance = getAnalyticsSafely();
   if (!instance) return;
 

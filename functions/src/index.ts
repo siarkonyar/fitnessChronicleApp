@@ -5,6 +5,10 @@ import { CallableRequest, HttpsError, onCall } from "firebase-functions/https";
 import { defineSecret } from "firebase-functions/params";
 import { coachFlow } from "./ai/flows/coach.js";
 import { COACH_MODEL, COACH_THINKING_LEVEL } from "./ai/genkit.js";
+import {
+  getAiObservabilityContext,
+  flushAiObservability,
+} from "./ai/posthog.js";
 import { onUserCreated } from "./account/createAiUsage.js";
 import { onUserDeleted } from "./account/deleteAiUsage.js";
 import { onConsentChanged } from "./consent/recordConsentChange.js";
@@ -225,12 +229,17 @@ export const chatWithCoach = onCall(
     // uid and prefs go in context, not in the flow input, so the model cannot
     // see or influence them. The Admin SDK ignores security rules, so a uid the
     // model chose would read a stranger's data.
+    const aiObservability = parsed.data.analyticsConsent === true
+      ? await getAiObservabilityContext(uid, parsed.data.conversationId)
+      : undefined;
+
     let result;
     try {
       result = await coachFlow(parsed.data, {
         context: {
           auth: { uid },
           prefs: parsed.data.prefs,
+          ...(aiObservability && { aiObservability }),
         },
       });
     } catch (error) {
@@ -240,6 +249,8 @@ export const chatWithCoach = onCall(
       // anywhere at all.
       recordTurn({ ...turnContext, outcome: "error" });
       throw error;
+    } finally {
+      if (aiObservability) await flushAiObservability();
     }
 
     // Recorded only after the flow succeeds — a failed turn must not be billed

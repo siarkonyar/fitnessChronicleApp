@@ -20,8 +20,10 @@ import * as Application from "expo-application";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import { PostHogProvider } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
 import { CACHE_MAX_AGE_MS, createAccountQueryCache } from "@/lib/queryCache";
+import { posthog } from "@/lib/analytics/posthog";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { AuthProvider, useAuth } from "../context/AuthContext";
@@ -76,7 +78,13 @@ export default function RootLayout() {
         <ConnectivityProvider>
           <AccountQueryProvider>
             <BottomSheetModalProvider>
-              <AppSetup />
+              {posthog ? (
+                <PostHogProvider client={posthog} autocapture={false}>
+                  <AppSetup />
+                </PostHogProvider>
+              ) : (
+                <AppSetup />
+              )}
             </BottomSheetModalProvider>
           </AccountQueryProvider>
         </ConnectivityProvider>

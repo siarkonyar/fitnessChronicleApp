@@ -92,6 +92,7 @@ describe("CoachResponseSchema", () => {
 
 describe("callable wrappers", () => {
   const request: CoachRequest = {
+    conversationId: "test-coach-conversation",
     message: "Plan my week",
     history: [{ role: "user", text: "hi" }, { role: "model", text: "hello" }],
     today: "2026-06-10",
@@ -109,14 +110,14 @@ describe("callable wrappers", () => {
     (getFunctions as jest.Mock).mockReturnValue("functions-instance");
   });
 
-  test("callCoach calls chatWithCoach in europe-west2 with the request untouched", async () => {
+  test("callCoach calls chatWithCoach in europe-west2 with the request and current analytics consent", async () => {
     const callable = respondWith({ ...PAID, reply: "Here you go" });
 
     const response = await callCoach(request);
 
     expect(getFunctions).toHaveBeenCalledWith(undefined, "europe-west2");
     expect(httpsCallable).toHaveBeenCalledWith("functions-instance", "chatWithCoach");
-    expect(callable).toHaveBeenCalledWith(request);
+    expect(callable).toHaveBeenCalledWith({ ...request, analyticsConsent: false });
     expect(response.reply).toBe("Here you go");
   });
 

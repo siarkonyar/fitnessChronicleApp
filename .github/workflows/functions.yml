@@ -118,6 +118,18 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
+      # firebase deploy attaches functions/.env to the deployed functions, but
+      # that file is git-ignored, so this checkout has none. Without it the
+      # server's PostHog client stays off. The values are the production
+      # environment's variables, not secrets: the project token is a public
+      # key. Missing variables write empty values, which also leave it off.
+      - name: Write PostHog settings for the deployed functions
+        working-directory: functions
+        env:
+          POSTHOG_PROJECT_TOKEN: ${{ vars.POSTHOG_PROJECT_TOKEN }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+        run: printf 'POSTHOG_PROJECT_TOKEN=%s\nPOSTHOG_HOST=%s\n' "$POSTHOG_PROJECT_TOKEN" "$POSTHOG_HOST" > .env
+
       # Runs from the repo root because that is where firebase.json lives. The
       # binary is addressed by path so the deploy uses the version pinned in
       # functions/package-lock.json rather than whatever npx would fetch.

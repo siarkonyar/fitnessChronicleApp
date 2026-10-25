@@ -88,6 +88,8 @@ export default {
     },
     extra: {
       router: {},
+      posthogProjectToken: process.env.POSTHOG_PROJECT_TOKEN,
+      posthogHost: process.env.POSTHOG_HOST,
       eas: {
         projectId: "19563d98-f43e-43ca-b916-7575e85af71a"
       }
