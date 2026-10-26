@@ -98,7 +98,7 @@ The Firestore fake captures immutable read-time snapshots; keep its fidelity tes
 
 ## Architecture
 
-**Hercule** is a React Native fitness tracker built with Expo SDK 54, React Native 0.81, React 19, Expo Router (file-based routing), React Native Firebase (auth + Firestore + Cloud Functions), TanStack Query (server state, persisted to AsyncStorage), NativeWind (Tailwind CSS for RN), and an AI coach backed by Genkit running on Cloud Functions.
+**Hercule** is a React Native fitness tracker built with Expo SDK 57, React Native 0.86, React 19, Expo Router (file-based routing), React Native Firebase 26 (auth + Firestore + Cloud Functions), TanStack Query (server state, persisted to AsyncStorage), NativeWind (Tailwind CSS for RN), and an AI coach backed by Genkit running on Cloud Functions.
 
 The mobile app and `functions/` have separate package manifests, lockfiles, TypeScript configurations, and test runners. App imports use `@/`; server imports use relative paths with `.js` extensions for NodeNext resolution.
 
@@ -148,9 +148,11 @@ Client data helpers live in `lib/firebase/`; auth state is managed in `context/A
 | `account.ts` | — | Account deletion; walks and deletes every subcollection (Firestore doesn't cascade) |
 | `credentials.ts` | — | Google/Apple sign-in credential helpers, shared by sign-in and reauthentication |
 | `emulators.ts` | — | Development-only SDK connection setup, imported first by the root layout |
-| `firestoreTypes.ts`, `authTypes.ts` | — | Firestore and Auth types read off the modular functions, because RNFB 23 names them only through the `Firebase*Types` namespaces that v26 removes |
+| `firestoreTypes.ts`, `authTypes.ts` | — | The Firestore reference and snapshot types the data layer and its fake share, and Auth types read off the modular functions |
 
-Use React Native Firebase's modular API only (`getFirestore()`, `doc()`, `getDoc()`, `getAuth()`, and so on). The namespaced API (`firestore()`, `auth()`, `appCheck()`, `Firebase*Types`) is removed in v26. Build document references from the root (`doc(getFirestore(), "users", uid, ...)`), because RNFB 23's typings for `doc(collectionRef, id)` lose the data type.
+Use React Native Firebase's modular API only (`getFirestore()`, `doc()`, `getDoc()`, `getAuth()`, and so on). The namespaced API (`firestore()`, `auth()`, `appCheck()`, `Firebase*Types`) is removed in v26. Build document references from the root (`doc(getFirestore(), "users", uid, ...)`), as the data layer does throughout.
+
+Stay on React Native Firebase 26 with `ios.disableSPM: true` in `app.config.js`, which keeps Firebase on CocoaPods next to our static frameworks. Version 27 needs Firebase Apple 13 and App Check 12, while the free `@react-native-google-signin/google-signin` 16 pins GoogleSignIn 9 (App Check 11); Expo SDK 58 needs version 27. Move up only when the free Google Sign-In package supports Firebase 13 (PR react-native-google-signin/google-signin#1529 or later). Since v26, `logEvent` is fire-and-forget and returns nothing, so `lib/analytics/client.ts` catches only its synchronous throws.
 
 Day assignments use the local calendar date as the document ID. Assignment and deletion helpers transactionally update the assignment and all affected label `dates` arrays. Reassignment folds existing random-ID records for that date into the canonical document and removes their former owners' date references. Keep all ownership writes in the transaction; old clients that still create random IDs do not participate in this concurrency contract.
 

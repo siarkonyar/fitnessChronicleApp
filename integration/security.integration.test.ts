@@ -6,7 +6,7 @@
  * is what a client that bypasses them can reach — anything it can read or
  * write here, a modified build can too.
  */
-import firestore from "@react-native-firebase/firestore";
+import firestore from "./shims/firestore";
 import { addExerciseLog, getAllExerciseNames, getExerciseLogByDate } from "@/lib/firebase/exercise";
 import { addLabel, getAllLabels } from "@/lib/firebase/label";
 import { getPrograms, addProgram } from "@/lib/firebase/program";

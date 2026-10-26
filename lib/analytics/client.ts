@@ -43,12 +43,15 @@ type ParamValue = string | number | boolean;
  * none of the names in events.ts appear in the SDK's ReservedEventNames list
  * (the only names it rejects at runtime). Type safety for callers is unaffected
  * — it comes from AnalyticsEventMap, one layer up.
+ *
+ * It returns nothing: since React Native Firebase 26 the SDK sends the event
+ * fire-and-forget, so callers can only catch what it throws synchronously.
  */
 const sendEvent = firebaseLogEvent as (
   analytics: ReturnType<typeof getAnalytics>,
   name: string,
   params?: Record<string, ParamValue>,
-) => Promise<void>;
+) => void;
 
 /**
  * Fails loudly in development, silently in production.
@@ -148,9 +151,11 @@ export const logEvent = <K extends AnalyticsEventName>(
   const instance = getAnalyticsSafely();
   if (!instance) return;
 
-  sendEvent(instance, name, safeParams).catch((error: unknown) =>
-    reportFailure(`logEvent(${name})`, error),
-  );
+  try {
+    sendEvent(instance, name, safeParams);
+  } catch (error) {
+    reportFailure(`logEvent(${name})`, error);
+  }
 };
 
 /**
@@ -177,10 +182,14 @@ export const logScreenView = (screenName: string): void => {
   const instance = getAnalyticsSafely();
   if (!instance) return;
 
-  sendEvent(instance, "screen_view", {
-    screen_name: name,
-    screen_class: name,
-  }).catch((error: unknown) => reportFailure("logScreenView", error));
+  try {
+    sendEvent(instance, "screen_view", {
+      screen_name: name,
+      screen_class: name,
+    });
+  } catch (error) {
+    reportFailure("logScreenView", error);
+  }
 };
 
 /**

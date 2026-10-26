@@ -1,21 +1,19 @@
-import type { doc, query } from "@react-native-firebase/firestore";
+import type { DocumentReference, Query } from "@react-native-firebase/firestore";
 
 /**
- * The few Firestore shapes the data layer reads, named without a type
- * namespace.
+ * The few Firestore shapes the data layer reads.
  *
- * React Native Firebase 23 names its modular types only through the
- * FirebaseFirestoreTypes namespace, which v26 removes, and its getDocs()
- * typings resolve to `any` because their generic parameters do not line up.
- * These compile against 23 and also match the firebase-js-sdk-style types
- * that later versions export.
+ * The references are React Native Firebase's own types with the default
+ * DocumentData model, so getDoc() and getDocs() keep that data type. The
+ * snapshot interfaces below are the narrower views the data layer and the
+ * in-memory fake share.
  */
 
 /** A document reference. */
-export type DocRef = ReturnType<typeof doc>;
+export type DocRef = DocumentReference;
 
 /** A collection, or a filtered and ordered view of one. */
-export type QueryRef = ReturnType<typeof query>;
+export type QueryRef = Query;
 
 /** A document read on its own, which may not exist. */
 export interface DocSnapshot {

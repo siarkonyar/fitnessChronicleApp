@@ -47,9 +47,11 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockGetAnalytics.mockReturnValue(mockInstance);
   mockPostHogScreen.mockResolvedValue(undefined);
-  for (const fn of [mockLogEvent, mockSetCollectionEnabled, mockSetUserId, mockSetUserProperty]) {
+  for (const fn of [mockSetCollectionEnabled, mockSetUserId, mockSetUserProperty]) {
     fn.mockResolvedValue(undefined);
   }
+  // React Native Firebase 26's logEvent is fire-and-forget: it returns nothing.
+  mockLogEvent.mockReturnValue(undefined);
   jest.spyOn(console, "log").mockImplementation(() => undefined);
   warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
 });
@@ -133,12 +135,12 @@ describe("logEvent", () => {
     expect(mockLogEvent).not.toHaveBeenCalled();
   });
 
-  test("swallows a rejected send, warning only in development", async () => {
-    mockLogEvent.mockRejectedValue(new Error("network"));
+  test("swallows a send that throws, warning only in development", () => {
+    mockLogEvent.mockImplementation(() => {
+      throw new Error("invalid event");
+    });
 
-    logEvent("logout", {});
-    await flushPromises();
-
+    expect(() => logEvent("logout", {})).not.toThrow();
     expect(warn).toHaveBeenCalledWith("[analytics] logEvent(logout) failed:", expect.any(Error));
   });
 });
@@ -226,7 +228,9 @@ describe("user identity and collection switch", () => {
     mockSetUserId.mockRejectedValue(new Error("x"));
     mockSetUserProperty.mockRejectedValue(new Error("x"));
     mockSetCollectionEnabled.mockRejectedValue(new Error("x"));
-    mockLogEvent.mockRejectedValue(new Error("x"));
+    mockLogEvent.mockImplementation(() => {
+      throw new Error("x");
+    });
 
     setUserId("u");
     setUserProperty("k", "v");

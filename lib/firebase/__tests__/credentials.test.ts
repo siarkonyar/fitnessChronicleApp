@@ -6,7 +6,7 @@ import {
   getGoogleCredential,
 } from "../credentials";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import type { FirebaseAuthTypes } from "@react-native-firebase/auth";
+import type { User } from "../authTypes";
 
 const mockGoogleSignIn = jest.fn();
 const mockHasPlayServices = jest.fn();
@@ -44,7 +44,7 @@ jest.mock("@react-native-firebase/auth", () => ({
 const userFrom = (providerId?: string) =>
   ({
     providerData: providerId ? [{ providerId }] : [],
-  }) as unknown as FirebaseAuthTypes.User;
+  }) as unknown as User;
 
 // Captured once: configure() runs at import time, before any beforeEach.
 const configureCalls = (GoogleSignin.configure as jest.Mock).mock.calls;
@@ -150,7 +150,7 @@ describe("getCredentialForUser", () => {
     mockAppleRequest.mockResolvedValue({ identityToken: "apple-token", nonce: "n" });
     const user = {
       providerData: [{ providerId: APPLE_PROVIDER_ID }, { providerId: GOOGLE_PROVIDER_ID }],
-    } as unknown as FirebaseAuthTypes.User;
+    } as unknown as User;
 
     await getCredentialForUser(user);
 

@@ -44,9 +44,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     const initAppCheck = async () => {
-      // @ts-expect-error React Native Firebase 23's typings export this class
-      // only as a type, although lib/modular exports it at runtime. Later
-      // versions type it as a value, which turns this directive into an error.
       const provider = new ReactNativeFirebaseAppCheckProvider();
       provider.configure({
         apple: {

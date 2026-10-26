@@ -3,7 +3,7 @@
  * arrayRemove applied by the server, assignment cascades, month queries, and
  * the orphan cases the exists() bug leaves behind.
  */
-import firestore from "@react-native-firebase/firestore";
+import firestore from "./shims/firestore";
 import {
   addLabel,
   asignLabelToDay,

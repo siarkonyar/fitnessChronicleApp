@@ -205,9 +205,10 @@ const firestore = Object.assign(() => instance, {
 
 export const Timestamp = fs.Timestamp;
 
-// The namespaced default export above serves the integration tests' own setup.
-// App code calls the modular API below; the unit-test fake has no default
-// export, which keeps app code off the namespaced API that RNFB 26 removed.
+// The namespaced default export above serves the integration tests' own setup,
+// which imports it from this file: React Native Firebase 26's own types have
+// no default export. App code calls the modular API below; the unit-test fake
+// has no default export, which keeps app code off the removed namespaced API.
 export default firestore;
 
 // ---------------------------------------------------------------------------

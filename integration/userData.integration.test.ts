@@ -3,7 +3,7 @@
  * including the Auth emulator for the display name and the server-side
  * consent trigger that fires on the settings write.
  */
-import firestore from "@react-native-firebase/firestore";
+import firestore from "./shims/firestore";
 import { addProgram, deleteProgram, getProgram, getPrograms, updateProgram } from "@/lib/firebase/program";
 import { getStreak, updateStreak } from "@/lib/firebase/streaks";
 import { getUserProfile, getUserSettings, updateUserProfile, updateUserSettings } from "@/lib/firebase/user";

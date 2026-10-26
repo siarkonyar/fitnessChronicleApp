@@ -55,7 +55,10 @@ export default {
     },
     plugins: [
       "expo-router",
-      "@react-native-firebase/app",
+      // Firebase stays on CocoaPods: SPM needs dynamic frameworks (we use
+      // static), and Google Sign-In's CocoaPods GoogleSignIn 9 must share the
+      // same Google libraries as Firebase.
+      ["@react-native-firebase/app", { ios: { disableSPM: true } }],
       "@react-native-firebase/auth",
       "@react-native-firebase/app-check",
       "@react-native-firebase/crashlytics",

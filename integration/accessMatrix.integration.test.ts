@@ -1,4 +1,4 @@
-import firestore from "@react-native-firebase/firestore";
+import firestore from "./shims/firestore";
 import { adminDb, caught, readAsAdmin, signInAs, signOutUser, signUpNewUser, type TestUser } from "./support/emulator";
 
 const collections = ["fitnessLogs", "exerciseNames", "labels", "dayAssignments", "programs", "weightLogs"] as const;
