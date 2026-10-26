@@ -5,13 +5,16 @@
  * where/orderBy/limit queries. That lets a test do "write -> read it back" and
  * assert on the real resulting data.
  *
- * It is deliberately app-agnostic: any code that uses the Firestore chain
- * (collection/doc/where/orderBy/limit/get/set/update/delete/add/batch) can be
- * tested with it. Storage is a flat Map keyed by full path, e.g.
+ * It is deliberately app-agnostic: any code that uses the modular API
+ * (getFirestore/collection/doc/getDoc/getDocs/setDoc/updateDoc/addDoc/deleteDoc,
+ * query/where/orderBy/limit, writeBatch/runTransaction) can be tested with it.
+ * Those functions sit on a small namespaced-style core that tests may also
+ * drive directly through firestoreMock(). Storage is a flat Map keyed by full
+ * path, e.g.
  *   "users/test-user/labels/abc"
  * Sub-collections are just longer paths.
  *
- * It mirrors @react-native-firebase/firestore v23 where the difference matters:
+ * It mirrors @react-native-firebase/firestore where the difference matters:
  *  - DocumentSnapshot.exists() is a METHOD (it was a property before v22). Code
  *    that still reads `snap.exists` gets a function, which is always truthy.
  *  - Writing an `undefined` field throws "Unsupported field value: undefined",
@@ -210,7 +213,7 @@ interface Order {
 class Query {
   constructor(
     protected store: Store,
-    protected path: string,
+    readonly path: string,
     protected filters: Filter[] = [],
     protected orders: Order[] = [],
     protected limitN?: number,
@@ -425,7 +428,9 @@ class Transaction {
   }
 }
 
-const runTransaction = async <T>(callback: (transaction: Transaction) => Promise<T>): Promise<T> => {
+const runStoreTransaction = async <T>(
+  callback: (transaction: Transaction) => Promise<T>,
+): Promise<T> => {
   for (let attempt = 0; attempt < 5; attempt++) {
     const transaction = new Transaction(store);
     const result = await callback(transaction);
@@ -443,7 +448,7 @@ const store = new Store();
 const instance = {
   collection: (name: string) => new CollectionRef(store, name),
   batch: () => new Batch(store),
-  runTransaction,
+  runTransaction: runStoreTransaction,
 };
 
 const firestoreMock = Object.assign(
@@ -453,6 +458,79 @@ const firestoreMock = Object.assign(
     Timestamp: FakeTimestamp,
   },
 );
+
+// ---------------------------------------------------------------------------
+// The modular API: the only one React Native Firebase keeps from v26 on.
+// Each function hands off to the classes above, so every test shares the
+// same store and the same fidelity rules.
+// ---------------------------------------------------------------------------
+type Firestore = typeof instance;
+type Parent = Firestore | CollectionRef | DocRef;
+
+// Like the SDK, a collection path has an odd number of segments and a
+// document path an even one; anything else is a programming error.
+const childPath = (parent: Parent, segments: string[]): string =>
+  [parent === instance ? "" : (parent as CollectionRef | DocRef).path, ...segments]
+    .filter(Boolean)
+    .join("/");
+
+const segmentCount = (path: string): number => path.split("/").length;
+
+export const getFirestore = (): Firestore => instance;
+
+export const collection = (parent: Parent, ...segments: string[]): CollectionRef => {
+  const path = childPath(parent, segments);
+  if (segmentCount(path) % 2 === 0) {
+    throw new Error(`Invalid collection reference: ${path}`);
+  }
+  return new CollectionRef(store, path);
+};
+
+export const doc = (parent: Parent, ...segments: string[]): DocRef => {
+  if (segments.length === 0) {
+    if (!(parent instanceof CollectionRef)) {
+      throw new Error("doc() without a path needs a collection reference");
+    }
+    return parent.doc();
+  }
+  const path = childPath(parent, segments);
+  if (segmentCount(path) % 2 !== 0) {
+    throw new Error(`Invalid document reference: ${path}`);
+  }
+  return new DocRef(store, path);
+};
+
+export const getDoc = (ref: DocRef): Promise<DocSnapshot> => ref.get();
+export const getDocs = (target: Query): ReturnType<Query["get"]> => target.get();
+export const setDoc = (
+  ref: DocRef,
+  data: DocData,
+  options?: { merge?: boolean },
+): Promise<void> => ref.set(data, options);
+export const updateDoc = (ref: DocRef, data: DocData): Promise<void> => ref.update(data);
+export const deleteDoc = (ref: DocRef): Promise<void> => ref.delete();
+export const addDoc = (ref: CollectionRef, data: DocData): Promise<DocRef> => ref.add(data);
+
+type QueryConstraint = (target: Query) => Query;
+
+export const where = (field: string, op: string, value: unknown): QueryConstraint =>
+  (target) => target.where(field, op, value);
+export const orderBy = (field: string, dir: "asc" | "desc" = "asc"): QueryConstraint =>
+  (target) => target.orderBy(field, dir);
+export const limit = (n: number): QueryConstraint => (target) => target.limit(n);
+export const query = (target: Query, ...constraints: QueryConstraint[]): Query =>
+  constraints.reduce((current, constraint) => constraint(current), target);
+
+// Through the instance, as React Native Firebase does, so a test can still
+// intercept a batch or transaction by spying on firestoreMock().
+export const writeBatch = (db: Firestore): Batch => db.batch();
+export const runTransaction = <T>(
+  db: Firestore,
+  callback: (transaction: Transaction) => Promise<T>,
+): Promise<T> => db.runTransaction(callback);
+
+export const { serverTimestamp, arrayUnion, arrayRemove } = FieldValue;
+export { FakeTimestamp as Timestamp };
 
 /** Wipe all data between tests (call in beforeEach). */
 export const resetFirestore = (): void => store.reset();
@@ -477,5 +555,7 @@ export const listPaths = (segments: string[] = []): string[] => {
 /** Sizes of the batches committed since the last reset, in order. */
 export const committedBatchSizes = (): number[] => [...store.batchSizes];
 
+// No default export: React Native Firebase 26+ has none, so app code that still
+// calls the namespaced firestore() fails here instead of on a device.
+// firestoreMock stays available to tests that drive the fake directly.
 export { FakeTimestamp, firestoreMock };
-export default firestoreMock;

@@ -1,9 +1,9 @@
 import {
-  FirebaseAuthTypes,
   signOut as firebaseSignOut,
   getAuth,
   onAuthStateChanged,
 } from "@react-native-firebase/auth";
+import type { User } from "@/lib/firebase/authTypes";
 import { logEvent } from "@/lib/analytics/client";
 import { setPostHogUser } from "@/lib/analytics/posthog";
 import { deleteAccount } from "@/lib/firebase/account";
@@ -16,7 +16,7 @@ import React, {
 } from "react";
 
 interface AuthContextType {
-  user: FirebaseAuthTypes.User | null;
+  user: User | null;
   isAuthenticated: boolean;
   authLoading: boolean;
   signOut: () => Promise<void>;
@@ -28,7 +28,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {

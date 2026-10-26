@@ -2,8 +2,8 @@ import { appleAuth } from "@invertase/react-native-apple-authentication";
 import {
   AppleAuthProvider,
   GoogleAuthProvider,
-  type FirebaseAuthTypes,
 } from "@react-native-firebase/auth";
+import type { AuthCredential, User } from "./authTypes";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 export const GOOGLE_PROVIDER_ID = "google.com";
@@ -18,7 +18,7 @@ GoogleSignin.configure({
 });
 
 export const getGoogleCredential =
-  async (): Promise<FirebaseAuthTypes.AuthCredential> => {
+  async (): Promise<AuthCredential> => {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
     const signInResult = await GoogleSignin.signIn();
@@ -31,7 +31,7 @@ export const getGoogleCredential =
   };
 
 export const getAppleCredential =
-  async (): Promise<FirebaseAuthTypes.AuthCredential> => {
+  async (): Promise<AuthCredential> => {
     const response = await appleAuth.performRequest({
       requestedOperation: appleAuth.Operation.LOGIN,
       // Per react-native-apple-authentication's FAQ, the name must come first.
@@ -51,8 +51,8 @@ export const getAppleCredential =
  * Firebase considers sensitive.
  */
 export const getCredentialForUser = async (
-  user: FirebaseAuthTypes.User,
-): Promise<FirebaseAuthTypes.AuthCredential> => {
+  user: User,
+): Promise<AuthCredential> => {
   const providerId = user.providerData[0]?.providerId;
 
   if (providerId === APPLE_PROVIDER_ID) return getAppleCredential();

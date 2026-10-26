@@ -8,7 +8,11 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { SheetModalProvider } from "@/context/SheetBlurTargetContext";
 import NetInfo from "@react-native-community/netinfo";
-import appCheck from "@react-native-firebase/app-check";
+import { getApp } from "@react-native-firebase/app";
+import {
+  ReactNativeFirebaseAppCheckProvider,
+  initializeAppCheck,
+} from "@react-native-firebase/app-check";
 import { onlineManager } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import * as Application from "expo-application";
@@ -40,7 +44,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     const initAppCheck = async () => {
-      const provider = appCheck().newReactNativeFirebaseAppCheckProvider();
+      // @ts-expect-error React Native Firebase 23's typings export this class
+      // only as a type, although lib/modular exports it at runtime. Later
+      // versions type it as a value, which turns this directive into an error.
+      const provider = new ReactNativeFirebaseAppCheckProvider();
       provider.configure({
         apple: {
           // real devices attest; falls back to DeviceCheck on older hardware
@@ -54,7 +61,7 @@ export default function RootLayout() {
         },
       });
 
-      await appCheck().initializeAppCheck({
+      await initializeAppCheck(getApp(), {
         provider,
         isTokenAutoRefreshEnabled: true,
       });

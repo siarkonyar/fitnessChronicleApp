@@ -8,8 +8,8 @@ import {
 import {
   getAuth,
   signInWithCredential,
-  type FirebaseAuthTypes,
 } from "@react-native-firebase/auth";
+import type { UserCredential } from "@/lib/firebase/authTypes";
 import { BlurView } from "expo-blur";
 import { useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
@@ -57,7 +57,7 @@ export default function AuthButtons() {
    * built-in acquisition reports instead of sitting as custom events.
    */
   function reportSignIn(
-    credential: FirebaseAuthTypes.UserCredential,
+    credential: UserCredential,
     method: "google" | "apple",
   ) {
     if (credential.additionalUserInfo?.isNewUser) {

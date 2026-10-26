@@ -26,7 +26,7 @@ jest.mock("@react-native-firebase/firestore", () =>
 
 jest.mock("@react-native-firebase/auth", () => ({
   __esModule: true,
-  default: () => ({ currentUser: { uid: "test-user" } }),
+  getAuth: () => ({ currentUser: { uid: "test-user" } }),
 }));
 
 beforeEach(() => {

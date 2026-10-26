@@ -3,10 +3,10 @@ import { Text, View } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 import {
-  FirebaseAuthTypes,
   getAuth,
   onAuthStateChanged,
 } from "@react-native-firebase/auth";
+import type { User } from "@/lib/firebase/authTypes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Link, router } from "expo-router";
 import { Colors } from "../../constants/Colors";
@@ -22,10 +22,10 @@ export default function AuthPage() {
   const theme = useColorScheme() ?? "light";
   const palette = Colors[theme];
   const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const handleAuthStateChanged = useCallback(
-    (user: FirebaseAuthTypes.User | null) => {
+    (user: User | null) => {
       setUser(user);
       if (initializing) setInitializing(false);
     },

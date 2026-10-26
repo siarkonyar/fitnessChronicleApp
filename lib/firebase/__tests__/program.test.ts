@@ -21,7 +21,7 @@ jest.mock("@react-native-firebase/firestore", () =>
 let mockCurrentUser: { uid: string } | null = { uid: "test-user" };
 jest.mock("@react-native-firebase/auth", () => ({
   __esModule: true,
-  default: () => ({ currentUser: mockCurrentUser }),
+  getAuth: () => ({ currentUser: mockCurrentUser }),
 }));
 
 const programPath = (id: string) => ["users", TEST_UID, "programs", id];

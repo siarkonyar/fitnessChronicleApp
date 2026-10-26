@@ -1,14 +1,12 @@
-import firestore, {
-  FirebaseFirestoreTypes,
-} from "@react-native-firebase/firestore";
+import { Timestamp } from "@react-native-firebase/firestore";
 import { z } from "zod";
 
 // TODO: Update to use RN Firebase Timestamp
 const FirestoreTimestampSchema = z.union([
   z.date(),
   z
-    .custom<FirebaseFirestoreTypes.Timestamp>(
-      (val) => val instanceof firestore.Timestamp,
+    .custom<Timestamp>(
+      (val) => val instanceof Timestamp,
       {
         message: "Expected a Firebase Firestore Timestamp object",
       },

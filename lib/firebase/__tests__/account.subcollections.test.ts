@@ -31,7 +31,17 @@ const collectionsUsedByTheApp = (): Map<string, string[]> => {
   const usedIn = new Map<string, string[]>();
 
   for (const file of SOURCE_DIRS.flatMap((dir) => sourceFiles(join(ROOT, dir)))) {
-    for (const [, name] of readFileSync(file, "utf8").matchAll(/\.collection\(\s*["'`]([^"'`]+)["'`]/g)) {
+    const source = readFileSync(file, "utf8");
+    const names = [
+      // Namespaced chain: .collection("name")
+      ...[...source.matchAll(/\.collection\(\s*["'`]([^"'`]+)["'`]/g)].map(([, name]) => name),
+      // Modular paths: collection(db, "users", uid, "name") and doc(db, "users", uid, ...).
+      // Every quoted segment in such a path is a collection name; ids are variables.
+      ...[...source.matchAll(/\b(?:collection|doc)\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g)].flatMap(
+        ([, args]) => [...args.matchAll(/["'`]([^"'`]+)["'`]/g)].map(([, name]) => name),
+      ),
+    ];
+    for (const name of names) {
       usedIn.set(name, [...(usedIn.get(name) ?? []), relative(ROOT, file)]);
     }
   }

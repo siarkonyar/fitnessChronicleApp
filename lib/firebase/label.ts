@@ -4,13 +4,31 @@ import {
   LabelSchema,
   LabelWithIdSchema,
 } from "@/types/types";
-import auth from "@react-native-firebase/auth";
-import firestore, { FirebaseFirestoreTypes } from "@react-native-firebase/firestore";
+import { getAuth } from "@react-native-firebase/auth";
+import {
+  addDoc,
+  arrayRemove,
+  arrayUnion,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  getFirestore,
+  limit,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  updateDoc,
+  where,
+  writeBatch,
+} from "@react-native-firebase/firestore";
 import { z } from "zod";
 import { findMostRecentSessionDate, getTodayString } from "../dateUtils";
+import type { DocSnapshot, QueryDoc, QueryResult } from "./firestoreTypes";
 
 const GetCurrentUserId = () => {
-  const user = auth().currentUser;
+  const user = getAuth().currentUser;
   if (!user) throw new Error("User not authenticated");
   return user.uid;
 };
@@ -21,18 +39,22 @@ const MonthDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}$/, "Date must be in YYYY-MM format");
 
+const labelsCollection = (userId: string) =>
+  collection(getFirestore(), "users", userId, "labels");
+
+const labelDoc = (userId: string, id: string) =>
+  doc(getFirestore(), "users", userId, "labels", id);
+
+const assignmentsCollection = (userId: string) =>
+  collection(getFirestore(), "users", userId, "dayAssignments");
+
 export const addLabel = async (label: Label) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const newLogRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("labels")
-    .doc();
-  await newLogRef.set({
+  await addDoc(labelsCollection(userId), {
     ...label,
-    createdAt: firestore.FieldValue.serverTimestamp(),
+    createdAt: serverTimestamp(),
   });
 };
 
@@ -40,20 +62,15 @@ export const getLabelById = async (id: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const doc = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("labels")
-    .doc(id)
-    .get();
+  const snapshot = await getDoc(labelDoc(userId, id));
 
-  if (!doc.exists()) {
+  if (!snapshot.exists()) {
     throw new Error("Label not found.");
   }
 
   return LabelWithIdSchema.parse({
-    id: doc.id,
-    ...doc.data(),
+    id: snapshot.id,
+    ...snapshot.data(),
   });
 };
 
@@ -61,17 +78,14 @@ export const getAllLabels = async () => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const snapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("labels")
-    .orderBy("createdAt", "desc")
-    .get();
+  const snapshot: QueryResult = await getDocs(
+    query(labelsCollection(userId), orderBy("createdAt", "desc")),
+  );
 
-  const labels = snapshot.docs.map((doc) => {
+  const labels = snapshot.docs.map((entry) => {
     return LabelWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
+      id: entry.id,
+      ...entry.data(),
     });
   });
 
@@ -90,17 +104,17 @@ export const getAllLabelsFromMonth = async (date: string) => {
   const endDateStr = `${year}-${month.toString().padStart(2, "0")}-${lastDay.toString().padStart(2, "0")}`;
 
   // Fetch day assignments
-  const assignmentsSnapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("dayAssignments")
-    .where("date", ">=", startDateStr)
-    .where("date", "<=", endDateStr)
-    .get();
+  const assignmentsSnapshot: QueryResult = await getDocs(
+    query(
+      assignmentsCollection(userId),
+      where("date", ">=", startDateStr),
+      where("date", "<=", endDateStr),
+    ),
+  );
 
-  const assignments = assignmentsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as { date: string; labelId: string }),
+  const assignments = assignmentsSnapshot.docs.map((entry) => ({
+    id: entry.id,
+    ...(entry.data() as { date: string; labelId: string }),
   }));
 
   if (assignments.length === 0) {
@@ -118,12 +132,8 @@ export const deleteLabel = async (id: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const logRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("labels")
-    .doc(id);
-  const logDoc = await logRef.get();
+  const logRef = labelDoc(userId, id);
+  const logDoc = await getDoc(logRef);
 
   if (!logDoc.exists()) {
     throw new Error("Label not found.");
@@ -131,14 +141,11 @@ export const deleteLabel = async (id: string) => {
 
   // Assignments are the references to erase; the label's denormalized dates
   // array may be incomplete after an interrupted assignment write.
-  const assignments = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("dayAssignments")
-    .where("labelId", "==", id)
-    .get();
-  const batch = firestore().batch();
-  assignments.docs.forEach((doc) => batch.delete(doc.ref));
+  const assignments: QueryResult = await getDocs(
+    query(assignmentsCollection(userId), where("labelId", "==", id)),
+  );
+  const batch = writeBatch(getFirestore());
+  assignments.docs.forEach((entry) => batch.delete(entry.ref));
   batch.delete(logRef);
   await batch.commit();
 
@@ -152,19 +159,15 @@ export const editLabel = async (labelId: string, label: Label) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const labelRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("labels")
-    .doc(labelId);
-  const labelDoc = await labelRef.get();
+  const labelRef = labelDoc(userId, labelId);
+  const existing = await getDoc(labelRef);
 
-  if (!labelDoc.exists()) {
+  if (!existing.exists()) {
     throw new Error("Label not found.");
   }
 
   const updateData: Record<string, unknown> = {
-    updatedAt: firestore.FieldValue.serverTimestamp(),
+    updatedAt: serverTimestamp(),
   };
 
   if (label !== undefined) {
@@ -176,9 +179,9 @@ export const editLabel = async (labelId: string, label: Label) => {
     updateData.description = label.description;
   }
 
-  await labelRef.update(updateData);
+  await updateDoc(labelRef, updateData);
 
-  const updatedDoc = await labelRef.get();
+  const updatedDoc = await getDoc(labelRef);
 
   return LabelWithIdSchema.parse({
     id: updatedDoc.id,
@@ -190,52 +193,49 @@ export const editLabel = async (labelId: string, label: Label) => {
 // are discovered outside the transaction, then re-read and removed inside it.
 // Every current writer also reads the canonical ref, including when absent,
 // so Firestore retries competing ownership changes instead of creating twins.
-const dateAssignmentRefs = async (
-  userRef: FirebaseFirestoreTypes.DocumentReference,
-  date: string,
-) => {
-  const collection = userRef.collection("dayAssignments");
-  const legacy = await collection.where("date", "==", date).get();
+const dateAssignmentRefs = async (userId: string, date: string) => {
+  const legacy: QueryResult = await getDocs(
+    query(assignmentsCollection(userId), where("date", "==", date)),
+  );
   return [
-    collection.doc(date),
-    ...legacy.docs.filter((doc) => doc.id !== date).map((doc) => doc.ref),
+    doc(getFirestore(), "users", userId, "dayAssignments", date),
+    ...legacy.docs.filter((entry) => entry.id !== date).map((entry) => entry.ref),
   ];
 };
 
-const assignmentLabelIds = (docs: FirebaseFirestoreTypes.DocumentSnapshot[]) =>
-  [...new Set(docs.flatMap((doc) => {
-    const id = doc.data()?.labelId;
+const assignmentLabelIds = (docs: DocSnapshot[]) =>
+  [...new Set(docs.flatMap((entry) => {
+    const id = entry.data()?.labelId;
     return typeof id === "string" && id.length > 0 ? [id] : [];
   }))];
 
 export const asignLabelToDay = async (day: Day) => {
   const userId = GetCurrentUserId();
   const { date, labelId } = DaySchema.parse(day);
-  const userRef = firestore().collection("users").doc(userId);
-  const refs = await dateAssignmentRefs(userRef, date);
+  const refs = await dateAssignmentRefs(userId, date);
 
-  return firestore().runTransaction(async (transaction) => {
+  return runTransaction(getFirestore(), async (transaction) => {
     const snapshots = await Promise.all(refs.map((ref) => transaction.get(ref)));
-    const existing = snapshots.filter((doc) => doc.exists());
+    const existing = snapshots.filter((entry) => entry.exists());
     const labelIds = [...new Set([labelId, ...assignmentLabelIds(existing)])];
     const labels = await Promise.all(
-      labelIds.map((id) => transaction.get(userRef.collection("labels").doc(id))),
+      labelIds.map((id) => transaction.get(labelDoc(userId, id))),
     );
     const target = labels[0];
     if (!target.exists()) throw new Error("Label not found.");
 
     const isUpdate = existing.length > 0;
-    const timestamp = firestore.FieldValue.serverTimestamp();
+    const timestamp = serverTimestamp();
     transaction.set(refs[0], {
       date,
       labelId,
       createdAt: existing[0]?.data()?.createdAt ?? timestamp,
       ...(isUpdate ? { updatedAt: timestamp } : {}),
     });
-    existing.filter((doc) => doc.id !== date).forEach((doc) => transaction.delete(doc.ref));
-    transaction.update(target.ref, { dates: firestore.FieldValue.arrayUnion(date) });
+    existing.filter((entry) => entry.id !== date).forEach((entry) => transaction.delete(entry.ref));
+    transaction.update(target.ref, { dates: arrayUnion(date) });
     for (const previous of labels.slice(1)) {
-      if (previous.exists()) transaction.update(previous.ref, { dates: firestore.FieldValue.arrayRemove(date) });
+      if (previous.exists()) transaction.update(previous.ref, { dates: arrayRemove(date) });
     }
 
     return {
@@ -252,22 +252,28 @@ export const asignLabelToDay = async (day: Day) => {
 export const getLabelAsignmentByDate = async (date: string) => {
   const userId = GetCurrentUserId();
   const validatedDate = DaySchema.shape.date.parse(date);
-  const userRef = firestore().collection("users").doc(userId);
-  const collection = userRef.collection("dayAssignments");
-  const canonical = await collection.doc(validatedDate).get();
-  const assignment = canonical.exists()
+  const canonical = await getDoc(
+    doc(getFirestore(), "users", userId, "dayAssignments", validatedDate),
+  );
+  const fallback = async (): Promise<QueryDoc | undefined> => {
+    const snapshot: QueryResult = await getDocs(
+      query(assignmentsCollection(userId), where("date", "==", validatedDate), limit(1)),
+    );
+    return snapshot.docs[0];
+  };
+  const assignment: DocSnapshot | QueryDoc | undefined = canonical.exists()
     ? canonical
-    : (await collection.where("date", "==", validatedDate).limit(1).get()).docs[0];
+    : await fallback();
   if (!assignment) return null;
   const labelId = assignment.data()?.labelId;
   if (typeof labelId === "string" && labelId) {
-    const label = await userRef.collection("labels").doc(labelId).get();
+    const label = await getDoc(labelDoc(userId, labelId));
     if (label.exists()) return LabelWithIdSchema.parse({ id: label.id, ...label.data() });
   }
 
   // Recheck the orphan inside a transaction so cleanup cannot erase a date
   // that another writer reassigned after our initial read.
-  return firestore().runTransaction(async (transaction) => {
+  return runTransaction(getFirestore(), async (transaction) => {
     const current = await transaction.get(assignment.ref);
     if (!current.exists()) return null;
     const currentLabelId = current.data()?.labelId;
@@ -275,7 +281,7 @@ export const getLabelAsignmentByDate = async (date: string) => {
       transaction.delete(current.ref);
       return null;
     }
-    const label = await transaction.get(userRef.collection("labels").doc(currentLabelId));
+    const label = await transaction.get(labelDoc(userId, currentLabelId));
     if (!label.exists()) {
       transaction.delete(current.ref);
       return null;
@@ -287,21 +293,18 @@ export const getLabelAsignmentByDate = async (date: string) => {
 export const deleteAssignment = async (date: string) => {
   const userId = GetCurrentUserId();
   const validatedDate = DaySchema.shape.date.parse(date);
-  const userRef = firestore().collection("users").doc(userId);
-  const refs = await dateAssignmentRefs(userRef, validatedDate);
+  const refs = await dateAssignmentRefs(userId, validatedDate);
 
-  return firestore().runTransaction(async (transaction) => {
+  return runTransaction(getFirestore(), async (transaction) => {
     const snapshots = await Promise.all(refs.map((ref) => transaction.get(ref)));
-    const existing = snapshots.filter((doc) => doc.exists());
+    const existing = snapshots.filter((entry) => entry.exists());
     if (!existing.length) throw new Error("No label assignment found for this date.");
     const labels = await Promise.all(
-      assignmentLabelIds(existing).map((id) =>
-        transaction.get(userRef.collection("labels").doc(id)),
-      ),
+      assignmentLabelIds(existing).map((id) => transaction.get(labelDoc(userId, id))),
     );
-    existing.forEach((doc) => transaction.delete(doc.ref));
+    existing.forEach((entry) => transaction.delete(entry.ref));
     for (const label of labels) {
-      if (label.exists()) transaction.update(label.ref, { dates: firestore.FieldValue.arrayRemove(validatedDate) });
+      if (label.exists()) transaction.update(label.ref, { dates: arrayRemove(validatedDate) });
     }
     return {
       id: existing[0].id,
@@ -328,16 +331,16 @@ export const getPrevExercisesFromLabel = async (label: Label) => {
   }
 
   while (mostRecentDate) {
-    const snapshot = await firestore()
-      .collection("users")
-      .doc(userId)
-      .collection("fitnessLogs")
-      .where("date", "==", mostRecentDate)
-      .get();
+    const snapshot: QueryResult = await getDocs(
+      query(
+        collection(getFirestore(), "users", userId, "fitnessLogs"),
+        where("date", "==", mostRecentDate),
+      ),
+    );
 
     if (!snapshot.empty) {
-      return snapshot.docs.map((doc) =>
-        ExerciseLogWithIdSchema.parse({ id: doc.id, ...doc.data() }),
+      return snapshot.docs.map((entry) =>
+        ExerciseLogWithIdSchema.parse({ id: entry.id, ...entry.data() }),
       );
     }
 

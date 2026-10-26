@@ -19,7 +19,11 @@ const mockUpdateProfile = jest.fn().mockResolvedValue(undefined);
 let mockCurrentUser: { uid: string; updateProfile: typeof mockUpdateProfile } | null = null;
 jest.mock("@react-native-firebase/auth", () => ({
   __esModule: true,
-  default: () => ({ currentUser: mockCurrentUser }),
+  getAuth: () => ({ currentUser: mockCurrentUser }),
+  // The modular call takes the user; hand it to that user's own method so the
+  // assertions below can keep checking mockUpdateProfile.
+  updateProfile: (user: { updateProfile: (profile: unknown) => unknown }, profile: unknown) =>
+    user.updateProfile(profile),
 }));
 
 const USER = ["users", TEST_UID];

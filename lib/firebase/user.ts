@@ -1,5 +1,5 @@
-import auth from "@react-native-firebase/auth";
-import firestore from "@react-native-firebase/firestore";
+import { getAuth, updateProfile } from "@react-native-firebase/auth";
+import { doc, getDoc, getFirestore, setDoc } from "@react-native-firebase/firestore";
 import { z } from "zod";
 import { UserProfileSchema, UserSettingsSchema } from "../../types/types";
 
@@ -7,10 +7,12 @@ type UserSettings = z.infer<typeof UserSettingsSchema>;
 type UserProfile = z.infer<typeof UserProfileSchema>;
 
 const getCurrentUserId = () => {
-  const user = auth().currentUser;
+  const user = getAuth().currentUser;
   if (!user) throw new Error("User not authenticated");
   return user.uid;
 };
+
+const userDoc = (userId: string) => doc(getFirestore(), "users", userId);
 
 const DEFAULT_MEASURE: UserSettings["measure"] = "kg";
 
@@ -33,16 +35,16 @@ const readValidSettings = (data: Record<string, unknown>): Partial<UserSettings>
 export const getUserSettings = async (): Promise<UserSettings> => {
   const userId = getCurrentUserId();
 
-  const userRef = firestore().collection("users").doc(userId);
-  const doc = await userRef.get();
-  const { measure, ...rest } = readValidSettings(doc.data() ?? {});
+  const userRef = userDoc(userId);
+  const snapshot = await getDoc(userRef);
+  const { measure, ...rest } = readValidSettings(snapshot.data() ?? {});
 
   if (measure) {
     return { measure, ...rest };
   }
 
   // Only the unit is required. Write just that, so nothing else is touched.
-  await userRef.set({ measure: DEFAULT_MEASURE }, { merge: true });
+  await setDoc(userRef, { measure: DEFAULT_MEASURE }, { merge: true });
   return { measure: DEFAULT_MEASURE, ...rest };
 };
 
@@ -65,14 +67,14 @@ export const updateUserSettings = async (
   if (updates.analyticsConsent !== undefined)
     sanitized.analyticsConsent = updates.analyticsConsent;
 
-  await firestore().collection("users").doc(userId).set(sanitized, { merge: true });
+  await setDoc(userDoc(userId), sanitized, { merge: true });
 };
 
 export const getUserProfile = async (): Promise<UserProfile> => {
   const userId = getCurrentUserId();
 
-  const doc = await firestore().collection("users").doc(userId).get();
-  const parsed = UserProfileSchema.safeParse(doc.data());
+  const snapshot = await getDoc(userDoc(userId));
+  const parsed = UserProfileSchema.safeParse(snapshot.data());
 
   if (parsed.success) {
     return parsed.data;
@@ -92,12 +94,14 @@ export const updateUserProfile = async (
   if (updates.gender !== undefined) sanitized.gender = updates.gender;
 
   const promises: Promise<unknown>[] = [
-    firestore().collection("users").doc(userId).set(sanitized, { merge: true }),
+    setDoc(userDoc(userId), sanitized, { merge: true }),
   ];
 
   if (updates.name !== undefined) {
     promises.push(
-      auth().currentUser!.updateProfile({ displayName: updates.name || null }),
+      updateProfile(getAuth().currentUser!, {
+        displayName: updates.name || null,
+      }),
     );
   }
 

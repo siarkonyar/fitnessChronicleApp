@@ -71,6 +71,12 @@ export const onAuthStateChanged = (
 
 export const signOut = () => jsAuth.signOut(jsAuthInstance);
 
+/** The modular form of RnfbUser.updateProfile, with the same null handling. */
+export const updateProfile = (
+  user: RnfbUser,
+  profile: { displayName?: string | null; photoURL?: string | null },
+) => user.updateProfile(profile);
+
 export const GoogleAuthProvider = jsAuth.GoogleAuthProvider;
 
 export const AppleAuthProvider = {

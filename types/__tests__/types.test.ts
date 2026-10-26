@@ -22,10 +22,8 @@ class MockTimestamp {
 
 jest.mock("@react-native-firebase/firestore", () => ({
   __esModule: true,
-  default: {
-    get Timestamp() {
-      return MockTimestamp;
-    },
+  get Timestamp() {
+    return MockTimestamp;
   },
 }));
 

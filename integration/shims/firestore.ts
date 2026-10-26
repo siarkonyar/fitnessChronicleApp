@@ -1,6 +1,7 @@
 /**
- * Stand-in for @react-native-firebase/firestore: RNFB v23's namespaced API,
- * implemented over the Firebase JS SDK and the Firestore emulator.
+ * Stand-in for @react-native-firebase/firestore over the Firebase JS SDK and
+ * the Firestore emulator: the modular API the app calls, plus RNFB v23's
+ * namespaced API for the integration tests' own setup and fault injection.
  *
  * Mirrors the device where it matters, because the point is to catch what the
  * device would do:
@@ -135,19 +136,25 @@ class DocumentReference {
   }
 }
 
+// Batches and transactions take references from either API: the wrappers above
+// or the SDK references the modular functions below hand out.
+type AnyRef = DocumentReference | fs.DocumentReference;
+const toJs = (ref: AnyRef): fs.DocumentReference =>
+  ref instanceof DocumentReference ? ref.js : ref;
+
 class WriteBatch {
   private readonly batch = fs.writeBatch(jsDb);
-  set(ref: DocumentReference, data: Data, options?: fs.SetOptions): WriteBatch {
-    if (options) this.batch.set(ref.js, data, options);
-    else this.batch.set(ref.js, data);
+  set(ref: AnyRef, data: Data, options?: fs.SetOptions): WriteBatch {
+    if (options) this.batch.set(toJs(ref), data, options);
+    else this.batch.set(toJs(ref), data);
     return this;
   }
-  update(ref: DocumentReference, data: Data): WriteBatch {
-    this.batch.update(ref.js, data);
+  update(ref: AnyRef, data: Data): WriteBatch {
+    this.batch.update(toJs(ref), data);
     return this;
   }
-  delete(ref: DocumentReference): WriteBatch {
-    this.batch.delete(ref.js);
+  delete(ref: AnyRef): WriteBatch {
+    this.batch.delete(toJs(ref));
     return this;
   }
   commit(): Promise<void> {
@@ -157,20 +164,20 @@ class WriteBatch {
 
 class Transaction {
   constructor(private readonly transaction: fs.Transaction) {}
-  async get(ref: DocumentReference): Promise<DocumentSnapshot> {
-    return new DocumentSnapshot(await this.transaction.get(ref.js));
+  async get(ref: AnyRef): Promise<DocumentSnapshot> {
+    return new DocumentSnapshot(await this.transaction.get(toJs(ref)));
   }
-  set(ref: DocumentReference, data: Data, options?: fs.SetOptions): Transaction {
-    if (options) this.transaction.set(ref.js, data, options);
-    else this.transaction.set(ref.js, data);
+  set(ref: AnyRef, data: Data, options?: fs.SetOptions): Transaction {
+    if (options) this.transaction.set(toJs(ref), data, options);
+    else this.transaction.set(toJs(ref), data);
     return this;
   }
-  update(ref: DocumentReference, data: Data): Transaction {
-    this.transaction.update(ref.js, data);
+  update(ref: AnyRef, data: Data): Transaction {
+    this.transaction.update(toJs(ref), data);
     return this;
   }
-  delete(ref: DocumentReference): Transaction {
-    this.transaction.delete(ref.js);
+  delete(ref: AnyRef): Transaction {
+    this.transaction.delete(toJs(ref));
     return this;
   }
 }
@@ -197,4 +204,51 @@ const firestore = Object.assign(() => instance, {
 });
 
 export const Timestamp = fs.Timestamp;
+
+// The namespaced default export above serves the integration tests' own setup.
+// App code calls the modular API below; the unit-test fake has no default
+// export, which keeps app code off the namespaced API that RNFB 26 removed.
 export default firestore;
+
+// ---------------------------------------------------------------------------
+// The modular API. React Native Firebase's modular functions match the JS
+// SDK's, so references and queries pass straight through; the calls that talk
+// to the server translate errors to RNFB's codes. Batches, transactions and
+// setDoc run through the namespaced core above, so a test can still intercept
+// them by spying on firestore() or DocumentReference.prototype.
+// ---------------------------------------------------------------------------
+export const getFirestore = (): fs.Firestore => jsDb;
+
+export const {
+  collection,
+  doc,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp,
+  arrayUnion,
+  arrayRemove,
+} = fs;
+
+export const getDoc = (ref: AnyRef): Promise<fs.DocumentSnapshot> => rnfb(fs.getDoc(toJs(ref)));
+
+export const getDocs = (target: fs.Query): Promise<fs.QuerySnapshot> => rnfb(fs.getDocs(target));
+
+export const setDoc = (ref: AnyRef, data: Data, options?: fs.SetOptions): Promise<void> =>
+  new DocumentReference(toJs(ref)).set(data, options);
+
+export const updateDoc = (ref: AnyRef, data: Data): Promise<void> =>
+  rnfb(fs.updateDoc(toJs(ref), data));
+
+export const addDoc = (ref: fs.CollectionReference, data: Data): Promise<fs.DocumentReference> =>
+  rnfb(fs.addDoc(ref, data));
+
+export const deleteDoc = (ref: AnyRef): Promise<void> => rnfb(fs.deleteDoc(toJs(ref)));
+
+export const writeBatch = (_db: fs.Firestore): WriteBatch => instance.batch();
+
+export const runTransaction = <T>(
+  _db: fs.Firestore,
+  updateFunction: (transaction: Transaction) => Promise<T>,
+): Promise<T> => instance.runTransaction(updateFunction);

@@ -3,34 +3,60 @@ import {
   ExerciseLogWithIdSchema,
   ExerciseNameListWithIdSchema,
 } from "@/types/types";
-import auth from "@react-native-firebase/auth";
-import firestore from "@react-native-firebase/firestore";
+import { getAuth } from "@react-native-firebase/auth";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  getFirestore,
+  limit,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch,
+} from "@react-native-firebase/firestore";
 import { z } from "zod";
 import { getISOWeek, getPreviousWeek } from "../dateUtils";
+import type { QueryResult } from "./firestoreTypes";
 
 const GetCurrentUserId = () => {
-  const user = auth().currentUser;
+  const user = getAuth().currentUser;
   if (!user) throw new Error("User not authenticated");
   return user.uid;
 };
 
 type ExerciseLog = z.infer<typeof ExerciseLogSchema>;
 
+const userDocument = (userId: string) => doc(getFirestore(), "users", userId);
+
+const fitnessLogs = (userId: string) =>
+  collection(getFirestore(), "users", userId, "fitnessLogs");
+
+const fitnessLog = (userId: string, logId: string) =>
+  doc(getFirestore(), "users", userId, "fitnessLogs", logId);
+
+const exerciseNames = (userId: string) =>
+  collection(getFirestore(), "users", userId, "exerciseNames");
+
 export const addExerciseLog = async (exerciseLog: ExerciseLog) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
   const exerciseName = exerciseLog.activity;
 
-  const userRef = firestore().collection("users").doc(userId);
-  const userDoc = await userRef.get();
-
-  const exerciseLogRef = userRef.collection("fitnessLogs");
+  const userRef = userDocument(userId);
+  const userDoc = await getDoc(userRef);
 
   const { streakWeeks = 0, lastLoggedWeek = "" } = userDoc.data() ?? {};
 
-  const newLogRef = await exerciseLogRef.add({
+  const newLogRef = await addDoc(fitnessLogs(userId), {
     ...exerciseLog,
-    createdAt: firestore.FieldValue.serverTimestamp(),
+    createdAt: serverTimestamp(),
   });
 
   const currentWeek = getISOWeek(new Date());
@@ -39,31 +65,27 @@ export const addExerciseLog = async (exerciseLog: ExerciseLog) => {
     const prevWeek = getPreviousWeek(currentWeek);
     const newStreak = lastLoggedWeek === prevWeek ? streakWeeks + 1 : 1;
 
-    await userRef.set(
+    await setDoc(
+      userRef,
       { streakWeeks: newStreak, lastLoggedWeek: currentWeek },
       { merge: true },
     );
   }
 
-  const namesRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("exerciseNames");
+  const namesRef = exerciseNames(userId);
 
-  const snapshot = await namesRef
-    .where("name", "==", exerciseName)
-    .limit(1)
-    .get();
+  const snapshot: QueryResult = await getDocs(
+    query(namesRef, where("name", "==", exerciseName), limit(1)),
+  );
 
   if (!snapshot.empty) {
     // Already exists
     console.log("Exercise name already exists");
   } else {
     // Add new exercise name
-    const newNameRef = namesRef.doc();
-    await newNameRef.set({
+    await addDoc(namesRef, {
       name: exerciseName,
-      createdAt: firestore.FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
     });
     console.log("Exercise name added successfully");
   }
@@ -75,17 +97,13 @@ export const getExerciseLogByDate = async (date: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const exerciseLogRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .where("date", "==", date);
-
-  const snapshot = await exerciseLogRef.get();
-  return snapshot.docs.map((doc) => {
+  const snapshot: QueryResult = await getDocs(
+    query(fitnessLogs(userId), where("date", "==", date)),
+  );
+  return snapshot.docs.map((entry) => {
     return ExerciseLogWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
+      id: entry.id,
+      ...entry.data(),
     });
   });
 };
@@ -97,19 +115,19 @@ export const getExerciseLogsByDateRange = async (
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const snapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .where("date", ">=", startDate)
-    .where("date", "<=", endDate)
-    .limit(200)
-    .get();
+  const snapshot: QueryResult = await getDocs(
+    query(
+      fitnessLogs(userId),
+      where("date", ">=", startDate),
+      where("date", "<=", endDate),
+      limit(200),
+    ),
+  );
 
-  const logs = snapshot.docs.map((doc) => {
+  const logs = snapshot.docs.map((entry) => {
     return ExerciseLogWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
+      id: entry.id,
+      ...entry.data(),
     });
   });
 
@@ -138,18 +156,18 @@ export const getExerciseLogsByMonth = async (month: string) => {
 
   const endDate = `${month}-${lastDay.toString().padStart(2, "0")}`; // e.g. "2025-08-31"
 
-  const snapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .where("date", ">=", startDate)
-    .where("date", "<=", endDate)
-    .get();
+  const snapshot: QueryResult = await getDocs(
+    query(
+      fitnessLogs(userId),
+      where("date", ">=", startDate),
+      where("date", "<=", endDate),
+    ),
+  );
 
-  const logs = snapshot.docs.map((doc) => {
+  const logs = snapshot.docs.map((entry) => {
     return ExerciseLogWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
+      id: entry.id,
+      ...entry.data(),
     });
   });
 
@@ -171,20 +189,15 @@ export const getExerciseLogById = async (logId: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const doc = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .doc(logId)
-    .get();
+  const snapshot = await getDoc(fitnessLog(userId, logId));
 
-  if (!doc.exists()) {
+  if (!snapshot.exists()) {
     throw new Error("Fitness log not found.");
   }
 
   return ExerciseLogWithIdSchema.parse({
-    id: doc.id,
-    ...doc.data(),
+    id: snapshot.id,
+    ...snapshot.data(),
   });
 };
 
@@ -192,37 +205,29 @@ export const deleteExerciseLog = async (logId: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const doc = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .doc(logId);
+  const logRef = fitnessLog(userId, logId);
 
-  const logDoc = await doc.get();
+  const logDoc = await getDoc(logRef);
 
   if (!logDoc.exists()) {
     throw new Error("Fitness log not found.");
   }
 
-  return doc.delete();
+  return deleteDoc(logRef);
 };
 
 export const editExerciseLog = async (logId: string, data: ExerciseLog) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const log = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .doc(logId);
+  const log = fitnessLog(userId, logId);
 
-  const logDoc = await log.get();
+  const logDoc = await getDoc(log);
 
   if (!logDoc.exists()) {
     throw new Error("Fitness log not found.");
   }
-  await log.update(data);
+  await updateDoc(log, data);
   return {
     id: logId,
     message: "Fitness log updated successfully!",
@@ -233,16 +238,12 @@ export const getAllExerciseNames = async () => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const snapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("exerciseNames")
-    .get();
+  const snapshot: QueryResult = await getDocs(exerciseNames(userId));
 
-  const names = snapshot.docs.map((doc) => {
+  const names = snapshot.docs.map((entry) => {
     return ExerciseNameListWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
+      id: entry.id,
+      ...entry.data(),
     });
   });
 
@@ -253,23 +254,23 @@ export const getLatestExercisesByName = async (name: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const orderedSnapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .where("activity", "==", name)
-    .orderBy("createdAt", "desc")
-    .limit(4)
-    .get();
+  const orderedSnapshot: QueryResult = await getDocs(
+    query(
+      fitnessLogs(userId),
+      where("activity", "==", name),
+      orderBy("createdAt", "desc"),
+      limit(4),
+    ),
+  );
 
   if (orderedSnapshot.empty) {
     return [];
   }
 
-  const logs = orderedSnapshot.docs.map((doc) =>
+  const logs = orderedSnapshot.docs.map((entry) =>
     ExerciseLogWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
+      id: entry.id,
+      ...entry.data(),
     }),
   );
 
@@ -287,24 +288,21 @@ export const deleteExerciseName = async (name: string) => {
   const userId = GetCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
 
-  const snapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("exerciseNames")
-    .where("name", "==", name)
-    .get();
+  const snapshot: QueryResult = await getDocs(
+    query(exerciseNames(userId), where("name", "==", name)),
+  );
 
   if (snapshot.empty) {
     throw new Error("Exercise name not found.");
   }
 
-  const batch = firestore().batch();
+  const batch = writeBatch(getFirestore());
 
   const deletedNames: string[] = [];
 
-  snapshot.docs.forEach((doc) => {
-    batch.delete(doc.ref);
-    deletedNames.push(doc.data().name);
+  snapshot.docs.forEach((entry) => {
+    batch.delete(entry.ref);
+    deletedNames.push(entry.data().name as string);
   });
 
   await batch.commit();
@@ -320,18 +318,14 @@ export const syncOfflineExercises = async (exerciseLogs: ExerciseLog[]) => {
   if (!userId) throw new Error("User not authenticated");
   if (exerciseLogs.length === 0) return;
 
-  const orderedSnapshot = await firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("fitnessLogs")
-    .orderBy("createdAt", "desc")
-    .limit(1)
-    .get();
+  const orderedSnapshot: QueryResult = await getDocs(
+    query(fitnessLogs(userId), orderBy("createdAt", "desc"), limit(1)),
+  );
 
-  const lastExercise = orderedSnapshot.docs.map((doc) =>
+  const lastExercise = orderedSnapshot.docs.map((entry) =>
     ExerciseLogWithIdSchema.parse({
-      id: doc.id,
-      ...doc.data(),
+      id: entry.id,
+      ...entry.data(),
     }),
   );
 
@@ -343,19 +337,13 @@ export const syncOfflineExercises = async (exerciseLogs: ExerciseLog[]) => {
     throw new Error("Last offline log made less then 10 seconds ago.");
   }
 
-  const batch = firestore().batch();
+  const batch = writeBatch(getFirestore());
   const exerciseNamesToAdd = new Set<string>();
 
   for (const exerciseLog of exerciseLogs) {
-    const newLogRef = firestore()
-      .collection("users")
-      .doc(userId)
-      .collection("fitnessLogs")
-      .doc();
-
-    batch.set(newLogRef, {
+    batch.set(doc(fitnessLogs(userId)), {
       ...exerciseLog,
-      createdAt: firestore.FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
     });
 
     exerciseNamesToAdd.add(exerciseLog.activity);
@@ -363,8 +351,8 @@ export const syncOfflineExercises = async (exerciseLogs: ExerciseLog[]) => {
 
   await batch.commit();
 
-  const userRef = firestore().collection("users").doc(userId);
-  const userDoc = await userRef.get();
+  const userRef = userDocument(userId);
+  const userDoc = await getDoc(userRef);
 
   const { streakWeeks = 0, lastLoggedWeek = "" } = userDoc.data() ?? {};
 
@@ -374,31 +362,27 @@ export const syncOfflineExercises = async (exerciseLogs: ExerciseLog[]) => {
     const prevWeek = getPreviousWeek(currentWeek);
     const newStreak = lastLoggedWeek === prevWeek ? streakWeeks + 1 : 1;
 
-    await userRef.set(
+    await setDoc(
+      userRef,
       { streakWeeks: newStreak, lastLoggedWeek: currentWeek },
       { merge: true },
     );
   }
 
   // Handle exercise names
-  const namesRef = firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("exerciseNames");
+  const namesRef = exerciseNames(userId);
 
-  const namesBatch = firestore().batch();
+  const namesBatch = writeBatch(getFirestore());
 
   for (const exerciseName of exerciseNamesToAdd) {
-    const snapshot = await namesRef
-      .where("name", "==", exerciseName)
-      .limit(1)
-      .get();
+    const snapshot: QueryResult = await getDocs(
+      query(namesRef, where("name", "==", exerciseName), limit(1)),
+    );
 
     if (snapshot.empty) {
-      const newNameRef = namesRef.doc();
-      namesBatch.set(newNameRef, {
+      namesBatch.set(doc(namesRef), {
         name: exerciseName,
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
       });
     }
   }

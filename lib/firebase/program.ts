@@ -3,12 +3,25 @@ import {
   ProgramSchema,
   ProgramWithIdSchema,
 } from "@/types/types";
-import auth from "@react-native-firebase/auth";
-import firestore from "@react-native-firebase/firestore";
+import { getAuth } from "@react-native-firebase/auth";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  getFirestore,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc,
+} from "@react-native-firebase/firestore";
 import { z } from "zod";
+import type { QueryResult } from "./firestoreTypes";
 
 const getCurrentUserId = () => {
-  const user = auth().currentUser;
+  const user = getAuth().currentUser;
   if (!user) throw new Error("User not authenticated");
   return user.uid;
 };
@@ -18,7 +31,10 @@ type ProgramDay = z.infer<typeof ProgramDaySchema>;
 type ProgramWithId = z.infer<typeof ProgramWithIdSchema>;
 
 const programsCollection = (userId: string) =>
-  firestore().collection("users").doc(userId).collection("programs");
+  collection(getFirestore(), "users", userId, "programs");
+
+const programDoc = (userId: string, id: string) =>
+  doc(getFirestore(), "users", userId, "programs", id);
 
 export const addProgram = async (
   name: string,
@@ -26,10 +42,10 @@ export const addProgram = async (
 ): Promise<string> => {
   const userId = getCurrentUserId();
 
-  const ref = await programsCollection(userId).add({
+  const ref = await addDoc(programsCollection(userId), {
     name,
     days,
-    createdAt: firestore.FieldValue.serverTimestamp(),
+    createdAt: serverTimestamp(),
   });
 
   return ref.id;
@@ -38,23 +54,23 @@ export const addProgram = async (
 export const getPrograms = async (): Promise<ProgramWithId[]> => {
   const userId = getCurrentUserId();
 
-  const snapshot = await programsCollection(userId)
-    .orderBy("createdAt", "desc")
-    .get();
+  const snapshot: QueryResult = await getDocs(
+    query(programsCollection(userId), orderBy("createdAt", "desc")),
+  );
 
-  return snapshot.docs.map((doc) =>
-    ProgramWithIdSchema.parse({ id: doc.id, ...doc.data() }),
+  return snapshot.docs.map((entry) =>
+    ProgramWithIdSchema.parse({ id: entry.id, ...entry.data() }),
   );
 };
 
 export const getProgram = async (id: string): Promise<ProgramWithId> => {
   const userId = getCurrentUserId();
 
-  const doc = await programsCollection(userId).doc(id).get();
+  const snapshot = await getDoc(programDoc(userId, id));
 
-  if (!doc.exists()) throw new Error("Program not found.");
+  if (!snapshot.exists()) throw new Error("Program not found.");
 
-  return ProgramWithIdSchema.parse({ id: doc.id, ...doc.data() });
+  return ProgramWithIdSchema.parse({ id: snapshot.id, ...snapshot.data() });
 };
 
 export const updateProgram = async (
@@ -63,16 +79,16 @@ export const updateProgram = async (
 ): Promise<void> => {
   const userId = getCurrentUserId();
 
-  await programsCollection(userId).doc(id).update(updates);
+  await updateDoc(programDoc(userId, id), updates);
 };
 
 export const deleteProgram = async (id: string): Promise<void> => {
   const userId = getCurrentUserId();
 
-  const ref = programsCollection(userId).doc(id);
-  const doc = await ref.get();
+  const ref = programDoc(userId, id);
+  const snapshot = await getDoc(ref);
 
-  if (!doc.exists()) throw new Error("Program not found.");
+  if (!snapshot.exists()) throw new Error("Program not found.");
 
-  await ref.delete();
+  await deleteDoc(ref);
 };

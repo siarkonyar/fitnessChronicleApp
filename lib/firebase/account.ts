@@ -3,12 +3,17 @@ import {
   getAuth,
   reauthenticateWithCredential,
 } from "@react-native-firebase/auth";
-import firestore, {
-  type FirebaseFirestoreTypes,
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  getFirestore,
 } from "@react-native-firebase/firestore";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { logEvent } from "../analytics/client";
 import { GOOGLE_PROVIDER_ID, getCredentialForUser } from "./credentials";
+import type { DocRef, QueryResult } from "./firestoreTypes";
 
 /**
  * Every subcollection under users/{uid}. All of them have to be deleted by hand.
@@ -35,11 +40,11 @@ const SUBCOLLECTIONS = [
 ] as const;
 
 const deleteSubcollection = async (
-  userDocRef: FirebaseFirestoreTypes.DocumentReference,
+  userDocRef: DocRef,
   name: string,
 ): Promise<void> => {
-  const snapshot = await userDocRef.collection(name).get();
-  await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
+  const snapshot: QueryResult = await getDocs(collection(userDocRef, name));
+  await Promise.all(snapshot.docs.map((entry) => deleteDoc(entry.ref)));
 };
 
 /**
@@ -65,14 +70,14 @@ export const deleteAccount = async (): Promise<void> => {
   const credential = await getCredentialForUser(currentUser);
   await reauthenticateWithCredential(currentUser, credential);
 
-  const userDocRef = firestore().collection("users").doc(currentUser.uid);
+  const userDocRef = doc(getFirestore(), "users", currentUser.uid);
 
   // Has to run while still signed in: firestore.rules only lets a user touch
   // documents under their own uid, so nothing could be cleaned up afterwards.
   for (const name of SUBCOLLECTIONS) {
     await deleteSubcollection(userDocRef, name);
   }
-  await userDocRef.delete();
+  await deleteDoc(userDocRef);
 
   // MUST STAY LAST of the deletion steps. This call fires the onUserDeleted
   // auth trigger (functions/src/account/deleteAiUsage.ts), which removes the

@@ -1,4 +1,18 @@
-import { firestoreMock, resetFirestore, seedDoc } from "./firestoreTestUtils";
+import {
+  collection,
+  doc,
+  firestoreMock,
+  getDoc,
+  getDocs,
+  getFirestore,
+  limit,
+  orderBy,
+  query,
+  resetFirestore,
+  seedDoc,
+  setDoc,
+  where,
+} from "./firestoreTestUtils";
 
 beforeEach(resetFirestore);
 
@@ -92,5 +106,50 @@ describe("optimistic transactions", () => {
       await transaction.get(ref);
     })).rejects.toThrow("all reads before writes");
     expect((await ref.get()).exists()).toBe(false);
+  });
+});
+
+describe("Firestore fake modular API", () => {
+  test("builds the same paths as the namespaced chain", async () => {
+    await setDoc(doc(getFirestore(), "users", "u1", "labels", "a"), { label: "A" });
+
+    expect((await firestoreMock().collection("users").doc("u1").collection("labels").doc("a").get()).data())
+      .toEqual({ label: "A" });
+    expect((await getDoc(doc(getFirestore(), "users", "u1", "labels", "a"))).exists()).toBe(true);
+  });
+
+  test("rejects paths with the wrong number of segments, as the SDK does", async () => {
+
+    expect(() => doc(getFirestore(), "users")).toThrow("Invalid document reference: users");
+    expect(() => collection(getFirestore(), "users", "u1")).toThrow(
+      "Invalid collection reference: users/u1",
+    );
+  });
+
+  test("doc() on a collection gives a new id under it", async () => {
+    const labels = collection(getFirestore(), "users", "u1", "labels");
+
+    const first = doc(labels);
+    const second = doc(labels);
+
+    expect(first.path).toMatch(/^users\/u1\/labels\/auto-id-\d+$/);
+    expect(first.id).not.toBe(second.id);
+  });
+
+  test("query constraints filter, order and limit like the chain", async () => {
+    for (const [id, value] of [["a", 3], ["b", 1], ["c", 2], ["d", 9]] as const) {
+      seedDoc(["items", id], { value, kind: id === "d" ? "other" : "kept" });
+    }
+
+    const snapshot = await getDocs(
+      query(
+        collection(getFirestore(), "items"),
+        where("kind", "==", "kept"),
+        orderBy("value", "desc"),
+        limit(2),
+      ),
+    );
+
+    expect(snapshot.docs.map((entry) => entry.id)).toEqual(["a", "c"]);
   });
 });
