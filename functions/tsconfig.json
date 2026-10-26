@@ -4,6 +4,9 @@
     "moduleResolution": "nodenext",
     "target": "es2023",
     "lib": ["es2023"],
+    // TypeScript 6 no longer loads every installed @types package, so the
+    // Node 22 runtime's globals (process, Buffer) are listed explicitly.
+    "types": ["node"],
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
