@@ -1,9 +1,10 @@
 import React from "react";
+import type { ColorValue } from "react-native";
 import Svg, { G, Path } from "react-native-svg";
 
 type LogoIconProps = {
   size?: number;
-  color?: string;
+  color?: ColorValue;
 };
 
 export default function LogoIcon({

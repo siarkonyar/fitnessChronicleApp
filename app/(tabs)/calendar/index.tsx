@@ -26,10 +26,16 @@ export default function CalendarScreen() {
   const theme = useColorScheme() ?? "light";
   const { handleQueryError } = useServerErrorHandler();
 
-  // TODO: make this useeffect work
-  useEffect(() => {
+  // When the date rolls over while this screen stays mounted, select the new
+  // today. Done while rendering, as React recommends for state that follows a
+  // changing value, rather than in an effect.
+  // TODO: make this work: it only runs when the screen happens to re-render
+  // after midnight.
+  const [selectionDay, setSelectionDay] = useState(today);
+  if (today !== selectionDay) {
+    setSelectionDay(today);
     setSelectedDate(today);
-  }, [today]);
+  }
 
   const {
     data: exerciseData,

@@ -56,22 +56,27 @@ export default function AddProgramExerciseModal({
     getDefaultMeasurement().then(setMeasurement);
   }, []);
 
-  useEffect(() => {
-    if (!visible || !initialExercise) return;
-
-    setTitle(initialExercise.activity);
-    setSets(
-      initialExercise.sets.map((set, index) => ({
-        id: Date.now() + index,
-        reps: ("reps" in set ? set.reps : undefined) ?? "1",
-        setType: set.setType as SetType,
-      })),
-    );
-    const firstMeasure = initialExercise.sets[0]?.measure;
-    if (firstMeasure === "kg" || firstMeasure === "lbs") {
-      setMeasurement(firstMeasure);
+  // Each time the modal opens on an existing exercise, fill the form from it.
+  // Done while rendering, as React recommends for state that follows a
+  // changing prop, so the form never shows empty for a frame first.
+  const [wasVisible, setWasVisible] = useState(false);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible && initialExercise) {
+      setTitle(initialExercise.activity);
+      setSets(
+        initialExercise.sets.map((set, index) => ({
+          id: index,
+          reps: ("reps" in set ? set.reps : undefined) ?? "1",
+          setType: set.setType as SetType,
+        })),
+      );
+      const firstMeasure = initialExercise.sets[0]?.measure;
+      if (firstMeasure === "kg" || firstMeasure === "lbs") {
+        setMeasurement(firstMeasure);
+      }
     }
-  }, [visible, initialExercise]);
+  }
 
   const addSet = () => {
     const newSet = {

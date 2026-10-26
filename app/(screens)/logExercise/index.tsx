@@ -95,13 +95,6 @@ export default function Index() {
   });
   const [isRepsFixed, setIsRepsFixed] = useState(false);
 
-  useEffect(() => {
-    getDefaultRepType().then(setIsRepsFixed);
-    if (!copySets) {
-      getDefaultMeasurement().then(setMeasurement);
-    }
-  }, [copySets]);
-
   const [isLogging, setIsLogging] = useState(false);
   const [measurement, setMeasurement] = useState<
     "kg" | "lbs" | "time" | "distance" | "steps"
@@ -123,6 +116,13 @@ export default function Index() {
     }
     return "kg";
   });
+
+  useEffect(() => {
+    getDefaultRepType().then(setIsRepsFixed);
+    if (!copySets) {
+      getDefaultMeasurement().then(setMeasurement);
+    }
+  }, [copySets]);
 
   // Track previous length
   const prevLengthRef = useRef(sets.length);

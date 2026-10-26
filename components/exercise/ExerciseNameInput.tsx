@@ -9,7 +9,7 @@ import {
 } from "@/lib/firebase/exercise";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -30,12 +30,10 @@ export default function ExerciseNameInput({
   setTitle: (title: string) => void;
 }) {
   const theme = useColorScheme() ?? "light";
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [suggestionsFromPrevios, setSuggestionsFromPrevios] = useState<
-    string[]
-  >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
+  // Names deleted from the suggestions, hidden at once rather than after the
+  // exercise-name query refetches.
+  const [deletedNames, setDeletedNames] = useState<string[]>([]);
 
   const queryClient = useQueryClient();
   const { handleMutationError } = useServerErrorHandler();
@@ -57,36 +55,43 @@ export default function ExerciseNameInput({
     },
   });
 
-  useEffect(() => {
-    if (title.trim().length > 0) {
-      const previousExerciseNames = Array.isArray(data)
-        ? data.map((item) => item.name)
-        : [];
+  // Both lists follow from what has been typed, so they are computed here
+  // rather than copied into state by an effect.
+  const search = title.trim().length > 0 ? title.toLowerCase() : null;
 
-      const filtered = exerciseNames
-        .filter((name) => name.toLowerCase().includes(title.toLowerCase()))
-        .sort((a, b) => a.length - b.length || a.localeCompare(b))
-        .slice(0, 8);
+  const suggestions = useMemo(
+    () =>
+      search === null
+        ? []
+        : exerciseNames
+            .filter((name) => name.toLowerCase().includes(search))
+            .sort((a, b) => a.length - b.length || a.localeCompare(b))
+            .slice(0, 8),
+    [search],
+  );
 
-      const previousExercisesNamesFiltered = previousExerciseNames
-        .filter((name: string) =>
-          name.toLowerCase().includes(title.toLowerCase()),
-        )
-        .sort((a, b) => a.length - b.length || a.localeCompare(b))
-        .slice(0, 8);
+  const suggestionsFromPrevios = useMemo(
+    () =>
+      search === null || !Array.isArray(data)
+        ? []
+        : data
+            .map((item) => item.name)
+            .filter(
+              (name: string) =>
+                !deletedNames.includes(name) &&
+                name.toLowerCase().includes(search),
+            )
+            .sort((a, b) => a.length - b.length || a.localeCompare(b))
+            .slice(0, 8),
+    [search, data, deletedNames],
+  );
 
-      setSuggestions(filtered);
-      setSuggestionsFromPrevios(previousExercisesNamesFiltered);
-      setShowSuggestions(
-        isInputFocused &&
-          (filtered.length > 0 || previousExercisesNamesFiltered.length > 0),
-      );
-    } else {
-      setSuggestions([]);
-      setSuggestionsFromPrevios([]);
-      setShowSuggestions(false);
-    }
-  }, [title, data, isInputFocused]);
+  // Typing happens only while the field is focused, so it opens the list;
+  // the list itself stays hidden while it has nothing to show.
+  const handleTitleChange = (text: string) => {
+    setTitle(text);
+    setShowSuggestions(true);
+  };
 
   const handleSuggestionPress = (suggestion: string) => {
     setTitle(suggestion.toUpperCase());
@@ -95,17 +100,10 @@ export default function ExerciseNameInput({
   };
 
   const handleInputFocus = () => {
-    setIsInputFocused(true);
-    if (
-      title.trim().length > 0 &&
-      (suggestions.length > 0 || suggestionsFromPrevios.length > 0)
-    ) {
-      setShowSuggestions(true);
-    }
+    setShowSuggestions(true);
   };
 
   const handleInputBlur = () => {
-    setIsInputFocused(false);
     setTimeout(() => setShowSuggestions(false), 150);
   };
 
@@ -114,7 +112,7 @@ export default function ExerciseNameInput({
   };
 
   const handleSuggestionDeletion = (suggestion: string) => {
-    setSuggestionsFromPrevios((prev) => prev.filter((n) => n !== suggestion));
+    setDeletedNames((prev) => [...prev, suggestion]);
     deleteExerciseNameMutation.mutate(suggestion);
   };
 
@@ -128,7 +126,7 @@ export default function ExerciseNameInput({
     >
       <AppTextInput
         value={title}
-        onChangeText={setTitle}
+        onChangeText={handleTitleChange}
         onFocus={handleInputFocus}
         autoFocus={false}
         onBlur={handleInputBlur}

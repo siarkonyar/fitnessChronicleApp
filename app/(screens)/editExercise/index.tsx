@@ -104,33 +104,36 @@ export default function Index() {
     "kg" | "lbs" | "time" | "distance" | "steps"
   >("kg");
 
-  useEffect(() => {
-    if (exercise) {
-      setTitle(exercise.activity.toUpperCase());
-      setSets(
-        exercise.sets?.map((s) => ({
-          id: Date.now() + Math.random(),
-          reps: "reps" in s ? (s.reps ?? "1") : "1",
-          value: s.value ?? "0",
-          setType: s.setType as
-            | "warmup"
-            | "normal"
-            | "failure"
-            | "drop"
-            | "pr"
-            | "failedpr",
-        })) ?? [],
-      );
-      setMeasurement(
-        (exercise.sets[0]?.measure ?? "kg") as
-          | "kg"
-          | "lbs"
-          | "time"
-          | "distance"
-          | "steps",
-      );
-    }
-  }, [exercise]);
+  // Load the form from each new version of the exercise. Done while rendering,
+  // as React recommends for state that follows changing data, rather than in
+  // an effect that first renders the form empty.
+  const [loadedExercise, setLoadedExercise] = useState<typeof exercise>();
+  if (exercise && exercise !== loadedExercise) {
+    setLoadedExercise(exercise);
+    setTitle(exercise.activity.toUpperCase());
+    setSets(
+      exercise.sets?.map((s, index) => ({
+        id: index,
+        reps: "reps" in s ? (s.reps ?? "1") : "1",
+        value: s.value ?? "0",
+        setType: s.setType as
+          | "warmup"
+          | "normal"
+          | "failure"
+          | "drop"
+          | "pr"
+          | "failedpr",
+      })) ?? [],
+    );
+    setMeasurement(
+      (exercise.sets[0]?.measure ?? "kg") as
+        | "kg"
+        | "lbs"
+        | "time"
+        | "distance"
+        | "steps",
+    );
+  }
 
   // Track previous length
   const prevLengthRef = useRef(sets.length);

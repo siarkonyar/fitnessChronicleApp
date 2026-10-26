@@ -146,21 +146,13 @@ export default function Settings() {
     );
   };
 
-  useEffect(() => {
-    if (profile?.name) setName(profile.name);
-    if (profile?.birthday) {
-      const [y, m, d] = profile.birthday.split("-");
-      setBirthDay(d);
-      setBirthMonth(m);
-      setBirthYear(y);
-    }
-  }, [profile]);
-
   const nameMutation = useMutation({
     mutationFn: updateUserProfile,
     onSuccess: async () => {
       await refreshUser();
-      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      // The row shows the stored name outside edit mode, so leave edit mode
+      // only once the profile has the new one.
+      await queryClient.invalidateQueries({ queryKey: ["userProfile"] });
       setIsEditingName(false);
     },
     onError: () => Alert.alert("Error", "Failed to save. Please try again."),
@@ -189,8 +181,14 @@ export default function Settings() {
     nameMutation.mutate({ name: name.trim() || undefined });
   };
 
+  // Each edit starts from the stored profile, so cancelling only has to leave
+  // edit mode.
+  const handleEditName = () => {
+    setName(profile?.name ?? "");
+    setIsEditingName(true);
+  };
+
   const handleCancelName = () => {
-    if (profile?.name) setName(profile.name);
     setIsEditingName(false);
   };
 
@@ -205,13 +203,17 @@ export default function Settings() {
     });
   };
 
-  const handleCancelBirthday = () => {
+  const handleEditBirthday = () => {
     if (profile?.birthday) {
       const [y, m, d] = profile.birthday.split("-");
       setBirthDay(d);
       setBirthMonth(m);
       setBirthYear(y);
     }
+    setIsEditingBirthday(true);
+  };
+
+  const handleCancelBirthday = () => {
     setBirthdayError(null);
     setIsEditingBirthday(false);
   };
@@ -312,12 +314,12 @@ export default function Settings() {
                     darkColor={Colors.dark.mutedText}
                     numberOfLines={1}
                   >
-                    {name || "Not set"}
+                    {profile?.name || "Not set"}
                   </ThemedText>
                   <RoundedButton
                     icon="edit"
                     type="blue"
-                    onPress={() => setIsEditingName(true)}
+                    onPress={handleEditName}
                   />
                 </>
               )}
@@ -430,7 +432,7 @@ export default function Settings() {
                   <RoundedButton
                     icon="edit"
                     type="blue"
-                    onPress={() => setIsEditingBirthday(true)}
+                    onPress={handleEditBirthday}
                   />
                 </>
               )}

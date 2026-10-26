@@ -4,7 +4,7 @@ import { useInsideBottomSheet } from "@/context/InsideBottomSheetContext";
 import { useServerErrorHandler } from "@/hooks/useServerErrorHandler";
 import { deleteLabel, editLabel } from "@/lib/firebase/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Alert } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { z } from "zod";
@@ -42,18 +42,17 @@ export default function LabelCard({
   const [editedLabel, setEditedLabel] = useState(label.label);
   const [editedDescription, setEditedDescription] = useState(label.description);
 
-  useEffect(() => {
-    setEditedLabel(label.label);
-    setEditedDescription(label.description);
-  }, [label.label, label.description]);
-
   function handlePress() {
     if (!isEditing && onPress) {
       onPress(label.id);
     }
   }
 
+  // Each edit starts from the saved label; outside edit mode the card shows
+  // the label itself, so the draft only matters while editing.
   function handleEditPress() {
+    setEditedLabel(label.label);
+    setEditedDescription(label.description);
     setIsEditing(true);
   }
 

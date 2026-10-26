@@ -9,17 +9,12 @@ import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { SheetModalProvider } from "@/context/SheetBlurTargetContext";
 import NetInfo from "@react-native-community/netinfo";
 import appCheck from "@react-native-firebase/app-check";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
 import { onlineManager } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import * as Application from "expo-application";
 import "expo-dev-client";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { PostHogProvider } from "posthog-react-native";
 import React, { useEffect, useState } from "react";
 import { CACHE_MAX_AGE_MS, createAccountQueryCache } from "@/lib/queryCache";

@@ -9,7 +9,7 @@ import { getOfflineExercises, OfflineExercise } from "@/lib/offlineStorage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { router, useFocusEffect } from "expo-router";
 import * as Updates from "expo-updates";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -108,10 +108,6 @@ export default function OfflineScreen() {
     setRotation(0);
   };
 
-  useEffect(() => {
-    loadOfflineExercises();
-  }, []);
-
   const loadOfflineExercises = async () => {
     try {
       const exercises = await getOfflineExercises();
@@ -123,6 +119,7 @@ export default function OfflineScreen() {
     }
   };
 
+  // Also covers the first load: the screen is focused when it mounts.
   useFocusEffect(
     useCallback(() => {
       loadOfflineExercises();

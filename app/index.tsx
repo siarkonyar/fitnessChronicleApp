@@ -60,14 +60,18 @@ export default function App() {
   });
 
   useEffect(() => {
-    opacity.value = withTiming(1, {
-      duration: 600,
-      easing: Easing.out(Easing.quad),
-    });
-    scale.value = withTiming(1, {
-      duration: 600,
-      easing: Easing.out(Easing.quad),
-    });
+    opacity.set(
+      withTiming(1, {
+        duration: 600,
+        easing: Easing.out(Easing.quad),
+      }),
+    );
+    scale.set(
+      withTiming(1, {
+        duration: 600,
+        easing: Easing.out(Easing.quad),
+      }),
+    );
   }, [opacity, scale]);
 
   // Warm critical queries during splash
