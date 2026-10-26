@@ -33,7 +33,7 @@ const lastAlert = () => {
 const press = (text: string) =>
   lastAlert().buttons.find((button) => button.text === text)?.onPress?.();
 
-const handler = () => renderHook(() => useServerErrorHandler()).result.current;
+const handler = async () => (await renderHook(() => useServerErrorHandler())).result.current;
 
 beforeEach(() => {
   mockIsOnline = false;
@@ -53,15 +53,15 @@ afterEach(() => {
 });
 
 describe("offline network errors", () => {
-  test("offer the offline page and report the error as handled", () => {
-    expect(handler().handleQueryError(NETWORK_ERROR)).toBe(true);
+  test("offer the offline page and report the error as handled", async () => {
+    expect((await handler()).handleQueryError(NETWORK_ERROR)).toBe(true);
 
     expect(lastAlert().title).toBe("You're Offline");
     expect(lastAlert().buttons.map((b) => b.text)).toEqual(["Go to Offline Page", "Retry"]);
   });
 
-  test("open the offline page from the alert", () => {
-    handler().handleMutationError(NETWORK_ERROR);
+  test("open the offline page from the alert", async () => {
+    (await handler()).handleMutationError(NETWORK_ERROR);
 
     press("Go to Offline Page");
 
@@ -70,7 +70,7 @@ describe("offline network errors", () => {
 
   test("Retry reloads the app, and a failed reload does not throw", async () => {
     mockReload.mockRejectedValue(new Error("no updates in dev"));
-    handler().handleQueryError(NETWORK_ERROR);
+    (await handler()).handleQueryError(NETWORK_ERROR);
 
     press("Retry");
     await new Promise((resolve) => setImmediate(resolve));
@@ -78,8 +78,8 @@ describe("offline network errors", () => {
     expect(mockReload).toHaveBeenCalledTimes(1);
   });
 
-  test("show only one alert while several requests fail at once", () => {
-    const { handleQueryError, handleMutationError } = handler();
+  test("show only one alert while several requests fail at once", async () => {
+    const { handleQueryError, handleMutationError } = await handler();
 
     expect(handleQueryError(NETWORK_ERROR)).toBe(true);
     expect(handleQueryError(NETWORK_ERROR)).toBe(true);
@@ -88,8 +88,8 @@ describe("offline network errors", () => {
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
-  test("can alert again once the first alert was answered", () => {
-    const { handleQueryError } = handler();
+  test("can alert again once the first alert was answered", async () => {
+    const { handleQueryError } = await handler();
     handleQueryError(NETWORK_ERROR);
 
     press("Go to Offline Page");
@@ -100,25 +100,25 @@ describe("offline network errors", () => {
 
   test.each(["/offline", "/offline/logExercise"])(
     "stay silent on %s, where the user already is offline",
-    (path) => {
+    async (path) => {
       mockPathname = path;
 
-      expect(handler().handleQueryError(NETWORK_ERROR)).toBe(true);
+      expect((await handler()).handleQueryError(NETWORK_ERROR)).toBe(true);
       expect(alertSpy).not.toHaveBeenCalled();
     },
   );
 
-  test("let a custom offline handler replace the alert", () => {
+  test("let a custom offline handler replace the alert", async () => {
     const onOfflineError = jest.fn().mockReturnValue(true);
 
-    expect(handler().handleQueryError(NETWORK_ERROR, { onOfflineError })).toBe(true);
+    expect((await handler()).handleQueryError(NETWORK_ERROR, { onOfflineError })).toBe(true);
 
     expect(onOfflineError).toHaveBeenCalledWith(NETWORK_ERROR);
     expect(alertSpy).not.toHaveBeenCalled();
   });
 
-  test("fall back to the alert when the custom handler declines", () => {
-    handler().handleQueryError(NETWORK_ERROR, { onOfflineError: () => false });
+  test("fall back to the alert when the custom handler declines", async () => {
+    (await handler()).handleQueryError(NETWORK_ERROR, { onOfflineError: () => false });
 
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
@@ -133,22 +133,22 @@ describe("classifying errors", () => {
     ["a NETWORK_ERROR code", { code: "NETWORK_ERROR" }],
     ["a callable 'unavailable' code", { code: "unavailable" }],
     ["a callable 'failed-precondition' code", { code: "failed-precondition" }],
-  ])("treat %s as a network error", (_name, error) => {
-    expect(handler().handleQueryError(error)).toBe(true);
+  ])("treat %s as a network error", async (_name, error) => {
+    expect((await handler()).handleQueryError(error)).toBe(true);
     expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
   // FIXME: React Native Firebase prefixes Firestore error codes with the
   // module name ("firestore/unavailable"), so this comparison never matches
   // a Firestore outage on device.
-  test.failing("treats a Firestore 'firestore/unavailable' error as a network error", () => {
-    expect(handler().handleQueryError({ code: "firestore/unavailable", message: "x" })).toBe(true);
+  test.failing("treats a Firestore 'firestore/unavailable' error as a network error", async () => {
+    expect((await handler()).handleQueryError({ code: "firestore/unavailable", message: "x" })).toBe(true);
   });
 
-  test("log a network error silently while the device believes it is online", () => {
+  test("log a network error silently while the device believes it is online", async () => {
     mockIsOnline = true;
 
-    expect(handler().handleQueryError(NETWORK_ERROR)).toBe(true);
+    expect((await handler()).handleQueryError(NETWORK_ERROR)).toBe(true);
     expect(alertSpy).not.toHaveBeenCalled();
   });
 
@@ -158,41 +158,41 @@ describe("classifying errors", () => {
     ["null", null],
     ["undefined", undefined],
     ["a string", "boom"],
-  ])("leave %s for the caller to handle", (_name, error) => {
-    expect(handler().handleQueryError(error)).toBe(false);
+  ])("leave %s for the caller to handle", async (_name, error) => {
+    expect((await handler()).handleQueryError(error)).toBe(false);
     expect(alertSpy).not.toHaveBeenCalled();
   });
 
-  test("route a validation error to a custom validation handler", () => {
+  test("route a validation error to a custom validation handler", async () => {
     const onValidationError = jest.fn().mockReturnValue(true);
 
     expect(
-      handler().handleMutationError({ code: "VALIDATION_ERROR" }, { onValidationError }),
+      (await handler()).handleMutationError({ code: "VALIDATION_ERROR" }, { onValidationError }),
     ).toBe(true);
   });
 
-  test("route a 5xx response to a custom server handler", () => {
+  test("route a 5xx response to a custom server handler", async () => {
     const onServerError = jest.fn().mockReturnValue(true);
 
-    expect(handler().handleQueryError({ status: 503 }, { onServerError })).toBe(true);
-    expect(handler().handleQueryError({ status: 499 }, { onServerError })).toBe(false);
+    expect((await handler()).handleQueryError({ status: 503 }, { onServerError })).toBe(true);
+    expect((await handler()).handleQueryError({ status: 499 }, { onServerError })).toBe(false);
   });
 
-  test("treat any message containing 'invalid' as a validation error", () => {
+  test("treat any message containing 'invalid' as a validation error", async () => {
     // Pinned: substring matching is broad — "Invalid date." from a Zod parse
     // reaches the validation handler too.
     const onValidationError = jest.fn().mockReturnValue(true);
 
-    handler().handleQueryError(new Error("invalid input"), { onValidationError });
+    (await handler()).handleQueryError(new Error("invalid input"), { onValidationError });
 
     expect(onValidationError).toHaveBeenCalled();
   });
 
-  test("check validation before the offline path", () => {
+  test("check validation before the offline path", async () => {
     // An error that is both: the validation handler wins and no alert shows.
     const error = new Error("invalid response: Network request failed");
 
-    handler().handleQueryError(error, { onValidationError: () => true });
+    (await handler()).handleQueryError(error, { onValidationError: () => true });
 
     expect(alertSpy).not.toHaveBeenCalled();
   });

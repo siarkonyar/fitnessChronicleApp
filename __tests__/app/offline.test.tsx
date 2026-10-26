@@ -49,7 +49,7 @@ test("loads the saved exercises once when the screen opens", async () => {
     },
   ]);
 
-  render(<OfflineHome />);
+  await render(<OfflineHome />);
 
   expect(await screen.findByText("exercise:squat")).toBeTruthy();
   expect(mockGetOfflineExercises).toHaveBeenCalledTimes(1);
@@ -58,7 +58,7 @@ test("loads the saved exercises once when the screen opens", async () => {
 test("shows the empty state when nothing is saved", async () => {
   mockGetOfflineExercises.mockResolvedValue([]);
 
-  render(<OfflineHome />);
+  await render(<OfflineHome />);
 
   expect(await screen.findByText("No offline exercise logs found.")).toBeTruthy();
 });

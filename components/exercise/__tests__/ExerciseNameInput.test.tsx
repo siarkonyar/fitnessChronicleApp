@@ -31,10 +31,10 @@ function NameField() {
   return <ExerciseNameInput title={title} setTitle={setTitle} />;
 }
 
-function renderField() {
-  render(<NameField />, { wrapper: queryWrapper(createTestQueryClient()) });
+async function renderField() {
+  await render(<NameField />, { wrapper: queryWrapper(createTestQueryClient()) });
   const input = screen.getByPlaceholderText("Exercise name...");
-  fireEvent(input, "focus");
+  await fireEvent(input, "focus");
   return input;
 }
 
@@ -48,16 +48,16 @@ afterEach(() => {
 });
 
 test("suggests saved and built-in names that match what was typed", async () => {
-  const input = renderField();
+  const input = await renderField();
 
-  fireEvent.changeText(input, "arnold");
+  await fireEvent.changeText(input, "arnold");
 
   expect(await screen.findByText("ARNOLD RAISE")).toBeTruthy();
   expect(screen.getByText("ARNOLD PRESS")).toBeTruthy();
 });
 
 test("shows no suggestions while the field is empty", async () => {
-  renderField();
+  await renderField();
 
   await screen.findByPlaceholderText("Exercise name...");
 
@@ -65,11 +65,11 @@ test("shows no suggestions while the field is empty", async () => {
 });
 
 test("keeps the list closed after a suggestion is picked", async () => {
-  const input = renderField();
-  fireEvent.changeText(input, "arnold");
+  const input = await renderField();
+  await fireEvent.changeText(input, "arnold");
   await screen.findByText("ARNOLD RAISE");
 
-  fireEvent.press(screen.getByText("ARNOLD PRESS"));
+  await fireEvent.press(screen.getByText("ARNOLD PRESS"));
 
   expect(screen.getByDisplayValue("ARNOLD PRESS")).toBeTruthy();
   expect(screen.queryByText("ARNOLD PRESS")).toBeNull();
@@ -77,11 +77,11 @@ test("keeps the list closed after a suggestion is picked", async () => {
 });
 
 test("hides a deleted saved name straight away", async () => {
-  const input = renderField();
-  fireEvent.changeText(input, "arnold");
+  const input = await renderField();
+  await fireEvent.changeText(input, "arnold");
   await screen.findByText("ARNOLD RAISE");
 
-  fireEvent.press(screen.getByText("icon:close"));
+  await fireEvent.press(screen.getByText("icon:close"));
 
   expect(screen.queryByText("ARNOLD RAISE")).toBeNull();
   expect(screen.getByText("ARNOLD PRESS")).toBeTruthy();

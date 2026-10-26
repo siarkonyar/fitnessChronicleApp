@@ -23,9 +23,9 @@ beforeEach(() => { jest.clearAllMocks(); mockUser = { uid: "alice" }; });
 test("a consent read resolving after sign-out cannot turn collection back on", async () => {
   const old = deferredSettings();
   mockReadSettings.mockReturnValue(old.promise);
-  const { rerender } = renderHook(() => useAnalyticsConsent());
+  const { rerender } = await renderHook(() => useAnalyticsConsent());
   mockUser = null;
-  rerender({});
+  await rerender({});
   await act(async () => { old.resolve({ measure: "kg", analyticsConsent: true }); await old.promise; });
   expect(mockSetCollectionEnabled).not.toHaveBeenCalledWith(true);
   expect(mockSetUserId).toHaveBeenLastCalledWith(null);
@@ -34,9 +34,9 @@ test("a consent read resolving after sign-out cannot turn collection back on", a
 test("an old account's delayed opt-in cannot override the new account's opt-out", async () => {
   const old = deferredSettings();
   mockReadSettings.mockReturnValueOnce(old.promise).mockResolvedValueOnce({ measure: "kg", analyticsConsent: false });
-  const { rerender } = renderHook(() => useAnalyticsConsent());
+  const { rerender } = await renderHook(() => useAnalyticsConsent());
   mockUser = { uid: "bob" };
-  await act(async () => { rerender({}); });
+  await act(async () => { await rerender({}); });
   await act(async () => { old.resolve({ measure: "kg", analyticsConsent: true }); await old.promise; });
   expect(mockSetCollectionEnabled).not.toHaveBeenCalledWith(true);
   expect(mockSetUserId).toHaveBeenLastCalledWith("bob");
@@ -45,8 +45,8 @@ test("an old account's delayed opt-in cannot override the new account's opt-out"
 test("an unmounted consent reader cannot change collection", async () => {
   const old = deferredSettings();
   mockReadSettings.mockReturnValue(old.promise);
-  const { unmount } = renderHook(() => useAnalyticsConsent());
-  unmount();
+  const { unmount } = await renderHook(() => useAnalyticsConsent());
+  await unmount();
   await act(async () => { old.resolve({ measure: "kg", analyticsConsent: true }); await old.promise; });
   expect(mockSetCollectionEnabled).not.toHaveBeenCalledWith(true);
 });

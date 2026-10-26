@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import React from "react";
+import { renderHookError } from "@/hooks/__tests__/renderHookError";
 import { AuthProvider, useAuth } from "../AuthContext";
 
 type Listener = (user: unknown) => void;
@@ -73,24 +74,24 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-test("useAuth refuses to run outside the provider", () => {
+test("useAuth refuses to run outside the provider", async () => {
   jest.spyOn(console, "error").mockImplementation(() => undefined);
 
-  expect(() => renderHook(() => useAuth())).toThrow("useAuth must be used within an AuthProvider");
+  expect((await renderHookError(() => useAuth()))?.message).toContain("useAuth must be used within an AuthProvider");
 });
 
 describe("auth state", () => {
-  test("is loading and signed out until Firebase reports", () => {
-    const { result } = renderAuth();
+  test("is loading and signed out until Firebase reports", async () => {
+    const { result } = await renderAuth();
 
     expect(result.current.authLoading).toBe(true);
     expect(result.current.isAuthenticated).toBe(false);
   });
 
-  test("becomes signed in when Firebase reports a user", () => {
-    const { result } = renderAuth();
+  test("becomes signed in when Firebase reports a user", async () => {
+    const { result } = await renderAuth();
 
-    emit(fakeUser({ email: "member@example.com", displayName: "Member" }));
+    await emit(fakeUser({ email: "member@example.com", displayName: "Member" }));
 
     expect(result.current.authLoading).toBe(false);
     expect(result.current.isAuthenticated).toBe(true);
@@ -98,30 +99,30 @@ describe("auth state", () => {
     expect(mockSetPostHogUser).toHaveBeenCalledWith("uid-1");
   });
 
-  test("stops loading when Firebase reports nobody", () => {
-    const { result } = renderAuth();
+  test("stops loading when Firebase reports nobody", async () => {
+    const { result } = await renderAuth();
 
-    emit(null);
+    await emit(null);
 
     expect(result.current.authLoading).toBe(false);
     expect(result.current.isAuthenticated).toBe(false);
   });
 
-  test("follows a later sign-out and clears the PostHog user", () => {
-    const { result } = renderAuth();
-    emit(fakeUser());
+  test("follows a later sign-out and clears the PostHog user", async () => {
+    const { result } = await renderAuth();
+    await emit(fakeUser());
 
-    emit(null);
+    await emit(null);
 
     expect(result.current.user).toBeNull();
     expect(mockSetPostHogUser).toHaveBeenLastCalledWith(null);
   });
 
-  test("unsubscribes from Firebase on unmount", () => {
-    const { unmount } = renderAuth();
+  test("unsubscribes from Firebase on unmount", async () => {
+    const { unmount } = await renderAuth();
     const before = mockUnsubscribe.mock.calls.length;
 
-    unmount();
+    await unmount();
 
     expect(mockUnsubscribe.mock.calls.length).toBe(before + 1);
   });
@@ -134,7 +135,7 @@ describe("signOut", () => {
     mockGoogleSignOut.mockImplementation(async () => order.push("google"));
     mockFirebaseSignOut.mockImplementation(async () => order.push("firebase"));
     mockLogEvent.mockImplementation(() => order.push("logout"));
-    const { result } = renderAuth();
+    const { result } = await renderAuth();
 
     await act(() => result.current.signOut());
 
@@ -143,7 +144,7 @@ describe("signOut", () => {
 
   test("still signs out of Firebase when Google sign-out fails (Apple users)", async () => {
     mockRevokeAccess.mockRejectedValue(new Error("SIGN_IN_REQUIRED"));
-    const { result } = renderAuth();
+    const { result } = await renderAuth();
 
     await act(() => result.current.signOut());
 
@@ -153,7 +154,7 @@ describe("signOut", () => {
 
   test("rethrows a Firebase sign-out failure and reports no logout", async () => {
     mockFirebaseSignOut.mockRejectedValue(new Error("auth/internal-error"));
-    const { result } = renderAuth();
+    const { result } = await renderAuth();
 
     await expect(act(() => result.current.signOut())).rejects.toThrow("auth/internal-error");
     expect(mockLogEvent).not.toHaveBeenCalled();
@@ -162,15 +163,15 @@ describe("signOut", () => {
 
 describe("tokens and refresh", () => {
   test("getIdToken is null while signed out", async () => {
-    const { result } = renderAuth();
+    const { result } = await renderAuth();
 
     expect(await result.current.getIdToken()).toBeNull();
   });
 
   test("getIdToken forwards the force-refresh flag", async () => {
     const user = fakeUser();
-    const { result } = renderAuth();
-    emit(user);
+    const { result } = await renderAuth();
+    await emit(user);
 
     expect(await result.current.getIdToken(true)).toBe("token");
     expect(user.getIdToken).toHaveBeenCalledWith(true);
@@ -178,8 +179,8 @@ describe("tokens and refresh", () => {
 
   test("getIdToken turns a token failure into null", async () => {
     const user = fakeUser({ getIdToken: jest.fn().mockRejectedValue(new Error("expired")) });
-    const { result } = renderAuth();
-    emit(user);
+    const { result } = await renderAuth();
+    await emit(user);
 
     expect(await result.current.getIdToken()).toBeNull();
   });
@@ -191,7 +192,7 @@ describe("tokens and refresh", () => {
         mockCurrentUser = reloaded;
       }),
     });
-    const { result } = renderAuth();
+    const { result } = await renderAuth();
 
     await act(() => result.current.refreshUser());
 
@@ -199,7 +200,7 @@ describe("tokens and refresh", () => {
   });
 
   test("refreshUser does nothing while signed out", async () => {
-    const { result } = renderAuth();
+    const { result } = await renderAuth();
 
     await act(() => result.current.refreshUser());
 
@@ -207,7 +208,7 @@ describe("tokens and refresh", () => {
   });
 
   test("exposes the account deletion flow", async () => {
-    const { result } = renderAuth();
+    const { result } = await renderAuth();
 
     await act(() => result.current.deleteAccount());
 

@@ -60,7 +60,7 @@ const send = async (
   text: string,
   source: "composer" | "pill" | "regenerate" = "composer",
 ) => {
-  act(() => result.current.sendMessage({ text, source }));
+  await act(() => result.current.sendMessage({ text, source }));
   await waitFor(() => expect(result.current.isSending).toBe(false));
 };
 
@@ -82,9 +82,9 @@ describe("sending a message", () => {
   test("shows the message at once, then the coach's reply", async () => {
     let resolveCoach: (value: unknown) => void = () => undefined;
     mockCallCoach.mockReturnValue(new Promise((resolve) => (resolveCoach = resolve)));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
-    act(() => result.current.sendMessage({ text: "Plan my week", source: "composer" }));
+    await act(() => result.current.sendMessage({ text: "Plan my week", source: "composer" }));
 
     await waitFor(() => expect(result.current.isSending).toBe(true));
     expect(result.current.messages).toEqual([{ role: "user", text: "Plan my week" }]);
@@ -103,7 +103,7 @@ describe("sending a message", () => {
     mockRepTypeFixed = true;
     mockMeasure = "lbs";
     mockCallCoach.mockResolvedValue(reply("ok"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -118,7 +118,7 @@ describe("sending a message", () => {
 
   test("defaults to rep ranges in kg", async () => {
     mockCallCoach.mockResolvedValue(reply("ok"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -127,7 +127,7 @@ describe("sending a message", () => {
 
   test("includes the earlier exchange in the history of the next message", async () => {
     mockCallCoach.mockResolvedValueOnce(reply("first answer")).mockResolvedValueOnce(reply("second"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "first question");
     await send(result, "second question");
@@ -140,7 +140,7 @@ describe("sending a message", () => {
 
   test("sends the very first message with an empty history", async () => {
     mockCallCoach.mockResolvedValue(reply("ok"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hello");
 
@@ -149,7 +149,7 @@ describe("sending a message", () => {
 
   test("never sends the new message as part of its own history", async () => {
     mockCallCoach.mockResolvedValueOnce(reply("first answer")).mockResolvedValueOnce(reply("second"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "first question");
     await send(result, "second question");
@@ -163,7 +163,7 @@ describe("sending a message", () => {
   test("attaches a proposed program to the coach's message", async () => {
     const program = { name: "PPL", days: [{ isRestDay: true }] };
     mockCallCoach.mockResolvedValue(reply("Try this", { program }));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "make me a program");
 
@@ -172,7 +172,7 @@ describe("sending a message", () => {
 
   test("does not add a program key to a plain answer", async () => {
     mockCallCoach.mockResolvedValue(reply("Just text"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -181,7 +181,7 @@ describe("sending a message", () => {
 
   test("replaces the cached usage with the figures from the reply", async () => {
     mockCallCoach.mockResolvedValue(reply("ok", { percentUsed: 37 }));
-    const { result } = renderChat();
+    const { result } = await renderChat();
     await waitFor(() => expect(result.current.percentUsed).toBe(10));
 
     await send(result, "hi");
@@ -193,7 +193,7 @@ describe("sending a message", () => {
   test("never reports what the user typed to analytics", async () => {
     const secret = "my knee hurts after the accident";
     mockCallCoach.mockResolvedValue(reply("Sorry to hear that"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, secret, "pill");
 
@@ -213,7 +213,7 @@ describe("sending a message", () => {
 describe("refusals and failures", () => {
   test("a quota refusal removes the unsent message and locks the composer", async () => {
     mockCallCoach.mockRejectedValue(refusal("functions/resource-exhausted", "quota"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -225,7 +225,7 @@ describe("refusals and failures", () => {
 
   test("a refusal with no reason is treated as quota, the safe reading", async () => {
     mockCallCoach.mockRejectedValue(refusal("functions/resource-exhausted"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -234,7 +234,7 @@ describe("refusals and failures", () => {
 
   test("a rate limit explains itself without locking the composer", async () => {
     mockCallCoach.mockRejectedValue(refusal("functions/resource-exhausted", "rate_limit"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -244,7 +244,7 @@ describe("refusals and failures", () => {
 
   test("locks the composer for the unprefixed quota code React Native Firebase sends", async () => {
     mockCallCoach.mockRejectedValue(refusal("resource-exhausted", "quota"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -254,7 +254,7 @@ describe("refusals and failures", () => {
 
   test("explains the unprefixed rate-limit code React Native Firebase sends", async () => {
     mockCallCoach.mockRejectedValue(refusal("resource-exhausted", "rate_limit"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -266,7 +266,7 @@ describe("refusals and failures", () => {
   test("an offline failure leaves the banner to the offline alert", async () => {
     mockHandleMutationError.mockReturnValue(true);
     mockCallCoach.mockRejectedValue(new Error("Network request failed"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -276,7 +276,7 @@ describe("refusals and failures", () => {
 
   test("any other failure shows the generic retry banner", async () => {
     mockCallCoach.mockRejectedValue(new Error("internal"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "hi");
 
@@ -286,7 +286,7 @@ describe("refusals and failures", () => {
 
   test("a failed reply keeps the earlier conversation intact", async () => {
     mockCallCoach.mockResolvedValueOnce(reply("first answer")).mockRejectedValueOnce(new Error("x"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "first");
     await send(result, "second");
@@ -298,10 +298,10 @@ describe("refusals and failures", () => {
     mockCallCoach.mockRejectedValueOnce(new Error("x"));
     let resolveCoach: (value: unknown) => void = () => undefined;
     mockCallCoach.mockReturnValueOnce(new Promise((resolve) => (resolveCoach = resolve)));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await send(result, "first");
-    act(() => result.current.sendMessage({ text: "retry", source: "regenerate" }));
+    await act(() => result.current.sendMessage({ text: "retry", source: "regenerate" }));
 
     await waitFor(() => expect(result.current.sendError).toBeNull());
     await act(async () => resolveCoach(reply("ok")));
@@ -311,7 +311,7 @@ describe("refusals and failures", () => {
 describe("the allowance from the usage query", () => {
   test("locks the composer for someone who opens the chat at 100%", async () => {
     mockCallAiUsage.mockResolvedValue({ ...USAGE, percentUsed: 100 });
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await waitFor(() => expect(result.current.isQuotaExhausted).toBe(true));
     expect(result.current.sendError).toBe("You've used your AI coach allowance for this month.");
@@ -319,7 +319,7 @@ describe("the allowance from the usage query", () => {
 
   test("stays open at 99%", async () => {
     mockCallAiUsage.mockResolvedValue({ ...USAGE, percentUsed: 99 });
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     await waitFor(() => expect(result.current.percentUsed).toBe(99));
     expect(result.current.isQuotaExhausted).toBe(false);
@@ -328,7 +328,7 @@ describe("the allowance from the usage query", () => {
   test("survives a bare number left in the persisted cache by an old build", async () => {
     client.setQueryData(["aiUsage"], 42);
     mockCallAiUsage.mockReturnValue(new Promise(() => undefined));
-    const { result } = renderChat();
+    const { result } = await renderChat();
 
     expect(result.current.percentUsed).toBeNull();
     expect(result.current.isQuotaExhausted).toBe(false);
@@ -337,7 +337,7 @@ describe("the allowance from the usage query", () => {
   test("hands a failed usage fetch to the error handler", async () => {
     const error = new Error("Network request failed");
     mockCallAiUsage.mockRejectedValue(error);
-    renderChat();
+    await renderChat();
 
     await waitFor(() => expect(mockHandleQueryError).toHaveBeenCalledWith(error));
   });
@@ -346,11 +346,11 @@ describe("the allowance from the usage query", () => {
 describe("clearChat", () => {
   test("empties the conversation and any banner, and reports the count", async () => {
     mockCallCoach.mockResolvedValueOnce(reply("a")).mockRejectedValueOnce(new Error("x"));
-    const { result } = renderChat();
+    const { result } = await renderChat();
     await send(result, "one");
     await send(result, "two");
 
-    act(() => result.current.clearChat());
+    await act(() => result.current.clearChat());
 
     expect(result.current.messages).toEqual([]);
     expect(result.current.sendError).toBeNull();
@@ -359,10 +359,10 @@ describe("clearChat", () => {
 
   test("does not clear a quota lock that comes from the server's figure", async () => {
     mockCallAiUsage.mockResolvedValue({ ...USAGE, percentUsed: 100 });
-    const { result } = renderChat();
+    const { result } = await renderChat();
     await waitFor(() => expect(result.current.isQuotaExhausted).toBe(true));
 
-    act(() => result.current.clearChat());
+    await act(() => result.current.clearChat());
 
     expect(result.current.isQuotaExhausted).toBe(true);
   });

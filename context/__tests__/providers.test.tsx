@@ -1,6 +1,7 @@
 /** The thin providers: each must expose its hook's value and refuse to run bare. */
 import { renderHook } from "@testing-library/react-native";
 import React from "react";
+import { renderHookError } from "@/hooks/__tests__/renderHookError";
 import { ActiveProgramProvider, useActiveProgramContext } from "../ActiveProgramContext";
 import { ChatProvider, useChatContext } from "../ChatContext";
 import { InsideBottomSheetProvider, useInsideBottomSheet } from "../InsideBottomSheetContext";
@@ -35,64 +36,60 @@ afterEach(() => {
 });
 
 describe("ChatProvider", () => {
-  test("shares the chat state with its children", () => {
+  test("shares the chat state with its children", async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <ChatProvider>{children}</ChatProvider>
     );
 
-    expect(renderHook(() => useChatContext(), { wrapper }).result.current).toBe(mockChat);
+    expect((await renderHook(() => useChatContext(), { wrapper })).result.current).toBe(mockChat);
   });
 
-  test("refuses to run without a provider", () => {
-    expect(() => renderHook(() => useChatContext())).toThrow(
-      "ChatContext must be used within an ChatProvider",
-    );
+  test("refuses to run without a provider", async () => {
+    expect((await renderHookError(() => useChatContext()))?.message).toContain("ChatContext must be used within an ChatProvider");
   });
 });
 
 describe("ActiveProgramProvider", () => {
-  test("shares every field of the active program state", () => {
+  test("shares every field of the active program state", async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <ActiveProgramProvider>{children}</ActiveProgramProvider>
     );
 
-    expect(renderHook(() => useActiveProgramContext(), { wrapper }).result.current).toEqual(mockActive);
+    expect((await renderHook(() => useActiveProgramContext(), { wrapper })).result.current).toEqual(mockActive);
   });
 
-  test("refuses to run without a provider", () => {
-    expect(() => renderHook(() => useActiveProgramContext())).toThrow(
-      "useActiveProgramContext must be used within an ActiveProgramProvider",
-    );
+  test("refuses to run without a provider", async () => {
+    expect((await renderHookError(() => useActiveProgramContext()))?.message).toContain("useActiveProgramContext must be used within an ActiveProgramProvider");
   });
 });
 
 describe("InsideBottomSheetProvider", () => {
-  test("is false outside any bottom sheet", () => {
-    expect(renderHook(() => useInsideBottomSheet()).result.current).toBe(false);
+  test("is false outside any bottom sheet", async () => {
+    expect((await renderHook(() => useInsideBottomSheet())).result.current).toBe(false);
   });
 
-  test("is true inside, however deeply nested", () => {
+  test("is true inside, however deeply nested", async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <InsideBottomSheetProvider>
         <React.Fragment>{children}</React.Fragment>
       </InsideBottomSheetProvider>
     );
 
-    expect(renderHook(() => useInsideBottomSheet(), { wrapper }).result.current).toBe(true);
+    expect((await renderHook(() => useInsideBottomSheet(), { wrapper })).result.current).toBe(true);
   });
 });
 
 describe("SheetModalProvider", () => {
-  test("has no blur target outside a provider", () => {
-    expect(renderHook(() => useSheetBlurTarget()).result.current).toBeNull();
+  test("has no blur target outside a provider", async () => {
+    expect((await renderHook(() => useSheetBlurTarget())).result.current).toBeNull();
   });
 
-  test("points the sheets at the view wrapping its screens", () => {
+  test("points the sheets at the view wrapping its screens", async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <SheetModalProvider>{children}</SheetModalProvider>
     );
 
-    const blurTarget = renderHook(() => useSheetBlurTarget(), { wrapper }).result.current;
+    const blurTarget = (await renderHook(() => useSheetBlurTarget(), { wrapper })).result.current;
 
     expect(blurTarget?.current).not.toBeNull();
   });

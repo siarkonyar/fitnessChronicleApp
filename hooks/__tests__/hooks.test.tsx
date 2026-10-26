@@ -56,81 +56,81 @@ describe("useSubscriptionTier", () => {
 
   test("reports the tier the server sent", async () => {
     mockCallAiUsage.mockResolvedValue({ percentUsed: 1, resetsAt: null, tier: "max" });
-    const { result } = renderTier();
+    const { result } = await renderTier();
 
     await waitFor(() => expect(result.current).toBe("max"));
   });
 
-  test("is free while loading, so nobody briefly sees a paid badge", () => {
+  test("is free while loading, so nobody briefly sees a paid badge", async () => {
     mockCallAiUsage.mockReturnValue(new Promise(() => undefined));
 
-    expect(renderTier().result.current).toBe("free");
+    expect((await renderTier()).result.current).toBe("free");
   });
 
   test("is free when the usage request fails", async () => {
     mockCallAiUsage.mockRejectedValue(new Error("offline"));
-    const { result } = renderTier();
+    const { result } = await renderTier();
 
     await waitFor(() => expect(mockCallAiUsage).toHaveBeenCalled());
     expect(result.current).toBe("free");
   });
 
-  test("is free for a bare number left in the cache by an old build", () => {
+  test("is free for a bare number left in the cache by an old build", async () => {
     const client = createTestQueryClient();
     client.setQueryData(["aiUsage"], 77);
     mockCallAiUsage.mockReturnValue(new Promise(() => undefined));
 
-    expect(renderTier(client).result.current).toBe("free");
+    expect((await renderTier(client)).result.current).toBe("free");
   });
 });
 
 describe("useAnalyticsConsent", () => {
-  test("switches collection off and clears the id when nobody is signed in", () => {
-    renderHook(() => useAnalyticsConsent());
+  test("switches collection off and clears the id when nobody is signed in", async () => {
+    await renderHook(() => useAnalyticsConsent());
 
     expect(mockSetUserId).toHaveBeenCalledWith(null);
     expect(mockSetCollectionEnabled).toHaveBeenCalledWith(false);
     expect(mockApplyStoredConsent).not.toHaveBeenCalled();
   });
 
-  test("tags events with the uid and applies that user's stored choice", () => {
+  test("tags events with the uid and applies that user's stored choice", async () => {
     mockUser = { uid: "uid-1" };
 
-    renderHook(() => useAnalyticsConsent());
+    await renderHook(() => useAnalyticsConsent());
 
     expect(mockSetUserId).toHaveBeenCalledWith("uid-1");
     expect(mockApplyStoredConsent).toHaveBeenCalledTimes(1);
     expect(mockSetCollectionEnabled).toHaveBeenCalledWith(false);
   });
 
-  test("on sign-out, stops collecting before the next person signs in", () => {
+  test("on sign-out, stops collecting before the next person signs in", async () => {
     mockUser = { uid: "uid-1" };
-    const { rerender } = renderHook(() => useAnalyticsConsent());
+    const { rerender } = await renderHook(() => useAnalyticsConsent());
 
     mockUser = null;
-    rerender({});
+    await rerender({});
 
     expect(mockSetUserId).toHaveBeenLastCalledWith(null);
     expect(mockSetCollectionEnabled).toHaveBeenLastCalledWith(false);
   });
 
-  test("re-reads consent when a different user signs in on the same device", () => {
+  test("re-reads consent when a different user signs in on the same device", async () => {
     mockUser = { uid: "uid-1" };
-    const { rerender } = renderHook(() => useAnalyticsConsent());
+    const { rerender } = await renderHook(() => useAnalyticsConsent());
 
     mockUser = { uid: "uid-2" };
-    rerender({});
+    await rerender({});
 
     expect(mockSetUserId).toHaveBeenLastCalledWith("uid-2");
     expect(mockApplyStoredConsent).toHaveBeenCalledTimes(2);
   });
 
-  test("does not re-run for a new user object with the same uid", () => {
+  test("does not re-run for a new user object with the same uid", async () => {
     mockUser = { uid: "uid-1" };
-    const { rerender } = renderHook(() => useAnalyticsConsent());
+    const { rerender } = await renderHook(() => useAnalyticsConsent());
 
     mockUser = { uid: "uid-1" };
-    rerender({});
+    await rerender({});
 
     expect(mockApplyStoredConsent).toHaveBeenCalledTimes(1);
   });
@@ -140,7 +140,7 @@ describe("useAnalyticsConsent", () => {
     mockApplyStoredConsent.mockRejectedValue(new Error("offline"));
     mockUser = { uid: "uid-1" };
 
-    renderHook(() => useAnalyticsConsent());
+    await renderHook(() => useAnalyticsConsent());
 
     await waitFor(() => expect(warn).toHaveBeenCalled());
     warn.mockRestore();
@@ -148,58 +148,58 @@ describe("useAnalyticsConsent", () => {
 });
 
 describe("useScreenTracking", () => {
-  test("reports each route once", () => {
+  test("reports each route once", async () => {
     mockPathname = "/(tabs)";
-    const { rerender } = renderHook(() => useScreenTracking());
+    const { rerender } = await renderHook(() => useScreenTracking());
 
-    rerender({});
+    await rerender({});
     mockPathname = "/settings";
-    rerender({});
+    await rerender({});
 
     expect(mockLogScreenView.mock.calls).toEqual([["/(tabs)"], ["/settings"]]);
   });
 
-  test("reports nothing before the router knows the route", () => {
+  test("reports nothing before the router knows the route", async () => {
     mockPathname = "";
 
-    renderHook(() => useScreenTracking());
+    await renderHook(() => useScreenTracking());
 
     expect(mockLogScreenView).not.toHaveBeenCalled();
   });
 
-  test("reports a return to an earlier route again", () => {
+  test("reports a return to an earlier route again", async () => {
     mockPathname = "/a";
-    const { rerender } = renderHook(() => useScreenTracking());
+    const { rerender } = await renderHook(() => useScreenTracking());
     mockPathname = "/b";
-    rerender({});
+    await rerender({});
     mockPathname = "/a";
-    rerender({});
+    await rerender({});
 
     expect(mockLogScreenView).toHaveBeenCalledTimes(3);
   });
 });
 
 describe("useThemeColor", () => {
-  test("prefers the colour passed for the current theme", () => {
+  test("prefers the colour passed for the current theme", async () => {
     mockScheme = "dark";
 
-    const { result } = renderHook(() => useThemeColor({ light: "#fff", dark: "#000" }, "text"));
+    const { result } = await renderHook(() => useThemeColor({ light: "#fff", dark: "#000" }, "text"));
 
     expect(result.current).toBe("#000");
   });
 
-  test("falls back to the theme token when no override is given", () => {
+  test("falls back to the theme token when no override is given", async () => {
     mockScheme = "dark";
 
-    const { result } = renderHook(() => useThemeColor({ light: "#fff" }, "text"));
+    const { result } = await renderHook(() => useThemeColor({ light: "#fff" }, "text"));
 
     expect(result.current).toBe(Colors.dark.text);
   });
 
-  test("uses the light theme when the system reports no scheme", () => {
+  test("uses the light theme when the system reports no scheme", async () => {
     mockScheme = null;
 
-    const { result } = renderHook(() => useThemeColor({}, "background"));
+    const { result } = await renderHook(() => useThemeColor({}, "background"));
 
     expect(result.current).toBe(Colors.light.background);
   });

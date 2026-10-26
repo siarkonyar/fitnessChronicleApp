@@ -36,7 +36,12 @@ jest.mock("@/components/ThemedBottomSheetModal", () =>
 jest.mock("@gorhom/bottom-sheet", () => ({
   BottomSheetView: ({ children }: { children: React.ReactNode }) => children,
 }));
-jest.mock("@expo/vector-icons", () => new Proxy({}, { get: () => () => null }));
+// Every icon set renders its glyph name, so a test can press a button by icon.
+jest.mock("@expo/vector-icons", () => {
+  const { Text: MockText } = jest.requireActual("react-native");
+  const MockIcon = ({ name }: { name: string }) => <MockText>{`icon:${name}`}</MockText>;
+  return new Proxy({}, { get: (_target, key) => (key === "__esModule" ? false : MockIcon) });
+});
 jest.mock("@expo/vector-icons/MaterialIcons", () => () => null);
 jest.mock("@react-native-async-storage/async-storage", () => ({
   __esModule: true,
@@ -50,10 +55,10 @@ jest.mock("react-native-safe-area-context", () => ({
 
 const storedProfile = { name: "Siar", birthday: "1995-04-12" };
 
-const editButtons = () => screen.UNSAFE_getAllByProps({ icon: "edit" });
+const editButtons = () => screen.getAllByText("icon:edit");
 
 async function renderSettings() {
-  render(<Settings />, { wrapper: queryWrapper(createTestQueryClient()) });
+  await render(<Settings />, { wrapper: queryWrapper(createTestQueryClient()) });
   await screen.findByText("Siar");
 }
 
@@ -70,7 +75,7 @@ afterEach(() => {
 test("opens the name editor on the stored name", async () => {
   await renderSettings();
 
-  fireEvent.press(editButtons()[0]);
+  await fireEvent.press(editButtons()[0]);
 
   expect(screen.getByDisplayValue("Siar")).toBeTruthy();
 });
@@ -78,10 +83,10 @@ test("opens the name editor on the stored name", async () => {
 test("starts again from the stored name after a cancelled edit", async () => {
   await renderSettings();
 
-  fireEvent.press(editButtons()[0]);
-  fireEvent.changeText(screen.getByDisplayValue("Siar"), "Ada");
-  fireEvent.press(screen.UNSAFE_getByProps({ icon: "x" }));
-  fireEvent.press(editButtons()[0]);
+  await fireEvent.press(editButtons()[0]);
+  await fireEvent.changeText(screen.getByDisplayValue("Siar"), "Ada");
+  await fireEvent.press(screen.getByText("icon:x"));
+  await fireEvent.press(editButtons()[0]);
 
   expect(screen.getByDisplayValue("Siar")).toBeTruthy();
 });
@@ -93,10 +98,10 @@ test("keeps the editor open until the profile has the new name", async () => {
     () => new Promise((resolve) => (finishReload = resolve)),
   );
 
-  fireEvent.press(editButtons()[0]);
-  fireEvent.changeText(screen.getByDisplayValue("Siar"), "Ada");
+  await fireEvent.press(editButtons()[0]);
+  await fireEvent.changeText(screen.getByDisplayValue("Siar"), "Ada");
   await act(async () => {
-    fireEvent.press(screen.UNSAFE_getByProps({ icon: "check" }));
+    await fireEvent.press(screen.getByText("icon:check"));
   });
 
   // Still editing while the profile reloads, so the old name never shows.
@@ -112,7 +117,7 @@ test("keeps the editor open until the profile has the new name", async () => {
 test("opens the birthday editor on the stored birthday", async () => {
   await renderSettings();
 
-  fireEvent.press(editButtons()[1]);
+  await fireEvent.press(editButtons()[1]);
 
   expect(screen.getByDisplayValue("12")).toBeTruthy();
   expect(screen.getByDisplayValue("04")).toBeTruthy();

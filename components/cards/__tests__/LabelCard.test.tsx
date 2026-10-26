@@ -20,6 +20,17 @@ jest.mock("@/hooks/useServerErrorHandler", () => ({
 // the card renders the plain text input, so the sheet input is never shown.
 jest.mock("@gorhom/bottom-sheet", () => ({ BottomSheetTextInput: () => null }));
 
+// The buttons' icons render their glyph name, so a test can press a button by
+// icon. The real icons also load a font asynchronously, which adds act() noise.
+jest.mock("@expo/vector-icons", () => {
+  const { Text: MockText } = jest.requireActual("react-native");
+  return {
+    Feather: function MockFeather({ name }: { name: string }) {
+      return <MockText>{`icon:${name}`}</MockText>;
+    },
+  };
+});
+
 const savedLabel = { id: "label-1", label: "P", description: "Push" };
 
 function renderCard(label = savedLabel) {
@@ -38,34 +49,34 @@ afterEach(() => {
   mockHandleMutationError.mockReset();
 });
 
-test("opens the editor on the saved description", () => {
-  renderCard();
+test("opens the editor on the saved description", async () => {
+  await renderCard();
 
-  fireEvent.press(screen.UNSAFE_getByProps({ icon: "edit" }));
+  await fireEvent.press(screen.getByText("icon:edit"));
 
   expect(screen.getByDisplayValue("Push")).toBeTruthy();
 });
 
 test("starts the next edit from the saved label after a failed save", async () => {
   mockEditLabel.mockRejectedValue(new Error("offline"));
-  renderCard();
+  await renderCard();
 
-  fireEvent.press(screen.UNSAFE_getByProps({ icon: "edit" }));
-  fireEvent.changeText(screen.getByDisplayValue("Push"), "Pull");
+  await fireEvent.press(screen.getByText("icon:edit"));
+  await fireEvent.changeText(screen.getByDisplayValue("Push"), "Pull");
   await act(async () => {
-    fireEvent.press(screen.UNSAFE_getByProps({ icon: "check" }));
+    await fireEvent.press(screen.getByText("icon:check"));
   });
-  fireEvent.press(screen.UNSAFE_getByProps({ icon: "edit" }));
+  await fireEvent.press(screen.getByText("icon:edit"));
 
   expect(mockHandleMutationError).toHaveBeenCalled();
   expect(screen.getByDisplayValue("Push")).toBeTruthy();
   expect(screen.queryByDisplayValue("Pull")).toBeNull();
 });
 
-test("shows a renamed label without entering edit mode", () => {
-  const view = renderCard();
+test("shows a renamed label without entering edit mode", async () => {
+  const view = await renderCard();
 
-  view.rerender(
+  await view.rerender(
     <LabelCard index={0} label={{ ...savedLabel, description: "Legs" }} editable />,
   );
 

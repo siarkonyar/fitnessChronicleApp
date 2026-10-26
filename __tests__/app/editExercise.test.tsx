@@ -73,7 +73,7 @@ afterEach(() => {
 test("fills the form from the loaded exercise", async () => {
   mockGetExerciseLogById.mockResolvedValue(loggedBench);
 
-  render(<EditExercise />, { wrapper: queryWrapper(createTestQueryClient()) });
+  await render(<EditExercise />, { wrapper: queryWrapper(createTestQueryClient()) });
 
   expect(await screen.findByText("title:BENCH PRESS")).toBeTruthy();
   expect(screen.getByText("set:80x5")).toBeTruthy();
@@ -83,7 +83,7 @@ test("fills the form from the loaded exercise", async () => {
 test("refills the form when the exercise reloads with new data", async () => {
   mockGetExerciseLogById.mockResolvedValue(loggedBench);
   const client = createTestQueryClient();
-  render(<EditExercise />, { wrapper: queryWrapper(client) });
+  await render(<EditExercise />, { wrapper: queryWrapper(client) });
   await screen.findByText("set:80x5");
 
   mockGetExerciseLogById.mockResolvedValue({

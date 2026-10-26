@@ -71,7 +71,7 @@ afterEach(() => {
 
 describe("reading the active program", () => {
   test("is loading until both settings and programs arrive", async () => {
-    const { result } = renderActive();
+    const { result } = await renderActive();
 
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -79,14 +79,14 @@ describe("reading the active program", () => {
 
   test("finds the active program and today's day", async () => {
     storedSettings = { measure: "kg", activeProgramId: "ppl", activeProgramDay: 2, activeProgramDayDate: TODAY };
-    const { result } = renderActive();
+    const { result } = await renderActive();
 
     await waitFor(() => expect(result.current.activeProgram?.id).toBe("ppl"));
     expect(result.current.programDay).toBe(2);
   });
 
   test("has no active program when none was chosen", async () => {
-    const { result } = renderActive();
+    const { result } = await renderActive();
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.activeProgram).toBeUndefined();
@@ -94,7 +94,7 @@ describe("reading the active program", () => {
 
   test("has no active program when the chosen one was deleted", async () => {
     storedSettings = { measure: "kg", activeProgramId: "deleted", activeProgramDay: 0, activeProgramDayDate: TODAY };
-    const { result } = renderActive();
+    const { result } = await renderActive();
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.activeProgram).toBeUndefined();
@@ -102,7 +102,7 @@ describe("reading the active program", () => {
 
   test("treats the cleared id \"\" as no program", async () => {
     storedSettings = { measure: "kg", activeProgramId: "", activeProgramDay: 0, activeProgramDayDate: TODAY };
-    const { result } = renderActive();
+    const { result } = await renderActive();
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.activeProgram).toBeUndefined();
@@ -111,7 +111,7 @@ describe("reading the active program", () => {
   test("hands a failed load to the error handler", async () => {
     const error = new Error("Network request failed");
     mockGetPrograms.mockRejectedValue(error);
-    renderActive();
+    await renderActive();
 
     await waitFor(() => expect(mockHandleQueryError).toHaveBeenCalledWith(error));
   });
@@ -120,7 +120,7 @@ describe("reading the active program", () => {
 describe("advancing with the calendar", () => {
   test("moves the stored day forward once, re-anchored to today", async () => {
     storedSettings = { measure: "kg", activeProgramId: "ppl", activeProgramDay: 0, activeProgramDayDate: "2026-06-08" };
-    const { result } = renderActive();
+    const { result } = await renderActive();
 
     await waitFor(() =>
       expect(firstArgs()).toEqual([{ activeProgramDay: 2, activeProgramDayDate: TODAY }]),
@@ -131,7 +131,7 @@ describe("advancing with the calendar", () => {
 
   test("wraps past the last day back to the first", async () => {
     storedSettings = { measure: "kg", activeProgramId: "ppl", activeProgramDay: 2, activeProgramDayDate: "2026-06-09" };
-    renderActive();
+    await renderActive();
 
     await waitFor(() =>
       expect(firstArgs()).toEqual([{ activeProgramDay: 0, activeProgramDayDate: TODAY }]),
@@ -140,7 +140,7 @@ describe("advancing with the calendar", () => {
 
   test("does not write anything on the day the program was chosen", async () => {
     storedSettings = { measure: "kg", activeProgramId: "ppl", activeProgramDay: 1, activeProgramDayDate: TODAY };
-    const { result } = renderActive();
+    const { result } = await renderActive();
 
     await waitFor(() => expect(result.current.activeProgram).toBeDefined());
     expect(mockUpdateUserSettings).not.toHaveBeenCalled();
@@ -148,7 +148,7 @@ describe("advancing with the calendar", () => {
 
   test("does not rewind when the stored date is in the future", async () => {
     storedSettings = { measure: "kg", activeProgramId: "ppl", activeProgramDay: 1, activeProgramDayDate: "2026-06-20" };
-    const { result } = renderActive();
+    const { result } = await renderActive();
 
     await waitFor(() => expect(result.current.activeProgram).toBeDefined());
     expect(mockUpdateUserSettings).not.toHaveBeenCalled();
@@ -158,7 +158,7 @@ describe("advancing with the calendar", () => {
   test("does not advance a program without days", async () => {
     mockGetPrograms.mockResolvedValue([program("empty", 0)]);
     storedSettings = { measure: "kg", activeProgramId: "empty", activeProgramDay: 0, activeProgramDayDate: "2026-06-01" };
-    const { result } = renderActive();
+    const { result } = await renderActive();
 
     await waitFor(() => expect(result.current.activeProgram).toBeDefined());
     expect(mockUpdateUserSettings).not.toHaveBeenCalled();
@@ -167,10 +167,10 @@ describe("advancing with the calendar", () => {
 
 describe("changing the selection", () => {
   test("selecting a program starts it at day 0 today and reports it", async () => {
-    const { result } = renderActive();
+    const { result } = await renderActive();
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    act(() => result.current.selectProgram("full"));
+    await act(() => result.current.selectProgram("full"));
 
     await waitFor(() => expect(result.current.activeProgram?.id).toBe("full"));
     expect(mockUpdateUserSettings).toHaveBeenCalledWith({
@@ -183,10 +183,10 @@ describe("changing the selection", () => {
 
   test("jumping to a day keeps the anchor date", async () => {
     storedSettings = { measure: "kg", activeProgramId: "ppl", activeProgramDay: 0, activeProgramDayDate: TODAY };
-    const { result } = renderActive();
+    const { result } = await renderActive();
     await waitFor(() => expect(result.current.activeProgram).toBeDefined());
 
-    act(() => result.current.selectProgramDay(2));
+    await act(() => result.current.selectProgramDay(2));
 
     await waitFor(() => expect(result.current.programDay).toBe(2));
     expect(mockUpdateUserSettings).toHaveBeenCalledWith({ activeProgramDay: 2 });
@@ -194,10 +194,10 @@ describe("changing the selection", () => {
 
   test("removing the selection clears the id with an empty string", async () => {
     storedSettings = { measure: "kg", activeProgramId: "ppl", activeProgramDay: 1, activeProgramDayDate: TODAY };
-    const { result } = renderActive();
+    const { result } = await renderActive();
     await waitFor(() => expect(result.current.activeProgram).toBeDefined());
 
-    act(() => result.current.removeProgramSelection());
+    await act(() => result.current.removeProgramSelection());
 
     await waitFor(() => expect(result.current.activeProgram).toBeUndefined());
     expect(mockUpdateUserSettings).toHaveBeenCalledWith({
@@ -210,10 +210,10 @@ describe("changing the selection", () => {
   test("a failed selection goes to the error handler and reports nothing", async () => {
     const error = new Error("permission-denied");
     mockUpdateUserSettings.mockRejectedValue(error);
-    const { result } = renderActive();
+    const { result } = await renderActive();
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    act(() => result.current.selectProgram("ppl"));
+    await act(() => result.current.selectProgram("ppl"));
 
     await waitFor(() => expect(mockHandleMutationError).toHaveBeenCalledWith(error));
     expect(mockLogEvent).not.toHaveBeenCalled();

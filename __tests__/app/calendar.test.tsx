@@ -66,27 +66,27 @@ afterEach(() => {
 });
 
 test("selects today when the screen opens", async () => {
-  renderCalendar();
+  await renderCalendar();
 
   expect(await screen.findByText("selected:2026-10-26")).toBeTruthy();
 });
 
 test("moves the selection to the new today after midnight", async () => {
-  const view = renderCalendar();
+  const view = await renderCalendar();
   await screen.findByText("selected:2026-10-26");
 
   jest.setSystemTime(new Date(2026, 9, 27, 0, 1));
-  view.rerender(<CalendarScreen />);
+  await view.rerender(<CalendarScreen />);
 
   expect(await screen.findByText("selected:2026-10-27")).toBeTruthy();
 });
 
 test("keeps a picked day while the date stays the same", async () => {
-  const view = renderCalendar();
+  const view = await renderCalendar();
   await screen.findByText("selected:2026-10-26");
 
-  fireEvent.press(screen.getByText("20"));
-  view.rerender(<CalendarScreen />);
+  await fireEvent.press(screen.getByText("20"));
+  await view.rerender(<CalendarScreen />);
 
   expect(screen.getByText("selected:2026-10-20")).toBeTruthy();
 });

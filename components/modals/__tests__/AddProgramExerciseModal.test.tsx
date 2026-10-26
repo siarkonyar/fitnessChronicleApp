@@ -59,7 +59,7 @@ function modal(props: { visible: boolean; initialExercise?: typeof bench }) {
 }
 
 test("opens filled with the exercise being edited", async () => {
-  render(modal({ visible: true, initialExercise: bench }));
+  await render(modal({ visible: true, initialExercise: bench }));
 
   expect(await screen.findByText("title:bench press")).toBeTruthy();
   expect(screen.getByText("set:warmup:10")).toBeTruthy();
@@ -67,18 +67,18 @@ test("opens filled with the exercise being edited", async () => {
 });
 
 test("fills again from the next exercise each time it reopens", async () => {
-  const view = render(modal({ visible: true, initialExercise: bench }));
+  const view = await render(modal({ visible: true, initialExercise: bench }));
   await screen.findByText("title:bench press");
 
-  view.rerender(modal({ visible: false, initialExercise: bench }));
-  view.rerender(modal({ visible: true, initialExercise: squat }));
+  await view.rerender(modal({ visible: false, initialExercise: bench }));
+  await view.rerender(modal({ visible: true, initialExercise: squat }));
 
   expect(await screen.findByText("title:squat")).toBeTruthy();
   expect(screen.getByText("set:normal:5")).toBeTruthy();
 });
 
 test("opens empty when adding a new exercise", async () => {
-  render(modal({ visible: true }));
+  await render(modal({ visible: true }));
 
   expect(await screen.findByText("title:")).toBeTruthy();
   expect(screen.queryByText(/^set:/)).toBeNull();

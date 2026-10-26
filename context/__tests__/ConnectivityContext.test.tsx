@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import React from "react";
+import { renderHookError } from "@/hooks/__tests__/renderHookError";
 import { ConnectivityProvider, useConnectivity } from "../ConnectivityContext";
 
 type NetState = { isConnected: boolean | null; isInternetReachable: boolean | null; type: string };
@@ -33,7 +34,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 const renderConnectivity = async () => {
-  const rendered = renderHook(() => useConnectivity(), { wrapper });
+  const rendered = await renderHook(() => useConnectivity(), { wrapper });
   await waitFor(() => expect(rendered.result.current.connectivityLoading).toBe(false));
   return rendered;
 };
@@ -56,19 +57,21 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-test("useConnectivity refuses to run outside the provider", () => {
-  expect(() => renderHook(() => useConnectivity())).toThrow(
-    "useConnectivity must be used within ConnectivityProvider",
-  );
+test("useConnectivity refuses to run outside the provider", async () => {
+  expect((await renderHookError(() => useConnectivity()))?.message).toContain("useConnectivity must be used within ConnectivityProvider");
 });
 
 describe("reading the connection", () => {
   test("starts loading and assumes online, then reports the real state", async () => {
-    const { result } = renderHook(() => useConnectivity(), { wrapper });
+    // Held open, because an awaited render already flushes a settled read.
+    let finishFetch: (state: NetState) => void = () => undefined;
+    mockFetch.mockReturnValue(new Promise<NetState>((resolve) => (finishFetch = resolve)));
+    const { result } = await renderHook(() => useConnectivity(), { wrapper });
 
     expect(result.current.connectivityLoading).toBe(true);
     expect(result.current.isOnline).toBe(true);
 
+    await act(async () => finishFetch(WIFI));
     await waitFor(() => expect(result.current.connectivityLoading).toBe(false));
     expect(result.current.lastState).toEqual(WIFI);
   });
@@ -98,17 +101,17 @@ describe("reading the connection", () => {
   test("follows changes reported by the listener", async () => {
     const { result } = await renderConnectivity();
 
-    change(NO_SIGNAL);
+    await change(NO_SIGNAL);
     expect(result.current.isOnline).toBe(false);
 
-    change(WIFI);
+    await change(WIFI);
     expect(result.current.isOnline).toBe(true);
   });
 
   test("stops listening on unmount", async () => {
     const { unmount } = await renderConnectivity();
 
-    unmount();
+    await unmount();
 
     expect(mockUnsubscribe).toHaveBeenCalled();
   });
@@ -118,10 +121,10 @@ describe("offline analytics", () => {
   test("reports losing the connection once per drop", async () => {
     await renderConnectivity();
 
-    change(NO_SIGNAL);
-    change(NO_SIGNAL); // a second identical event while still offline
-    change(WIFI);
-    change(NO_SIGNAL);
+    await change(NO_SIGNAL);
+    await change(NO_SIGNAL); // a second identical event while still offline
+    await change(WIFI);
+    await change(NO_SIGNAL);
 
     expect(offlineEvents()).toBe(2);
   });
@@ -129,7 +132,7 @@ describe("offline analytics", () => {
   test("reports nothing while the connection stays up", async () => {
     await renderConnectivity();
 
-    change(WIFI);
+    await change(WIFI);
 
     expect(offlineEvents()).toBe(0);
   });
@@ -150,10 +153,10 @@ describe("forcing a state", () => {
   test("forceOffline wins over the listener until refresh", async () => {
     const { result } = await renderConnectivity();
 
-    act(() => result.current.forceOffline());
+    await act(() => result.current.forceOffline());
     expect(result.current.isOnline).toBe(false);
 
-    act(() => result.current.refresh());
+    await act(() => result.current.refresh());
     await waitFor(() => expect(result.current.isOnline).toBe(true));
   });
 
@@ -161,7 +164,7 @@ describe("forcing a state", () => {
     mockFetch.mockResolvedValue(NO_SIGNAL);
     const { result } = await renderConnectivity();
 
-    act(() => result.current.forceOnline());
+    await act(() => result.current.forceOnline());
 
     expect(result.current.isOnline).toBe(true);
     expect(result.current.connectivityLoading).toBe(false);
@@ -171,7 +174,7 @@ describe("forcing a state", () => {
     const { result } = await renderConnectivity();
     const unsubscribesBefore = mockUnsubscribe.mock.calls.length;
 
-    act(() => result.current.forceOnline());
+    await act(() => result.current.forceOnline());
 
     expect(mockUnsubscribe.mock.calls.length).toBe(unsubscribesBefore + 1);
   });
@@ -180,7 +183,7 @@ describe("forcing a state", () => {
     const { result } = await renderConnectivity();
     mockFetch.mockResolvedValue(NO_SIGNAL);
 
-    act(() => result.current.refresh());
+    await act(() => result.current.refresh());
 
     await waitFor(() => expect(result.current.isOnline).toBe(false));
     expect(mockFetch).toHaveBeenCalledTimes(2);
