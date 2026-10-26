@@ -15,9 +15,9 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  useColorScheme,
   View,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import {
   SafeAreaView,
   useSafeAreaInsets,

@@ -1,7 +1,8 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import React from "react";
-import { TouchableOpacity, useColorScheme, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 const DISABLED_OPACITY = 0.4;
 

@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import React from "react";
-import { useColorScheme } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 

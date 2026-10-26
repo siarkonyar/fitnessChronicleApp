@@ -14,7 +14,8 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
-import { ActivityIndicator, useColorScheme, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function TodayLabelCard() {
   const theme = useColorScheme() ?? "light";

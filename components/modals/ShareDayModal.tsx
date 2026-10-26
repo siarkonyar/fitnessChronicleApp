@@ -20,9 +20,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { captureRef } from "react-native-view-shot";
 import { z } from "zod";
 import LogoIcon from "../LogoIcon";

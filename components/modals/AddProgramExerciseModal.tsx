@@ -5,7 +5,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { getDefaultMeasurement, getDefaultRepType } from "@/lib/offlineStorage";
 import { ProgramExerciseSchema } from "@/types/types";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { SheetModalProvider } from "@/context/SheetBlurTargetContext";
 import React, { useEffect, useState } from "react";
 import {
   Keyboard,
@@ -152,7 +152,7 @@ export default function AddProgramExerciseModal({
       onRequestClose={handleClose}
     >
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <BottomSheetModalProvider>
+        <SheetModalProvider>
           <ThemedView
             className="flex-1"
             lightColor={Colors.light.background}
@@ -237,7 +237,7 @@ export default function AddProgramExerciseModal({
               </ScrollView>
             </KeyboardAvoidingView>
           </ThemedView>
-        </BottomSheetModalProvider>
+        </SheetModalProvider>
       </GestureHandlerRootView>
     </Modal>
   );

@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/Colors";
 import { ExerciseLogSchema } from "@/types/types";
-import { Text, View, useColorScheme } from "react-native";
+import { Text, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { z } from "zod";
 
 type ExerciseLog = z.infer<typeof ExerciseLogSchema>;

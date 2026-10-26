@@ -21,9 +21,9 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Google and Apple each report a dismissed sign-in sheet their own way, and
 // neither uses a Firebase error code.

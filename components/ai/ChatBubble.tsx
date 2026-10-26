@@ -4,7 +4,8 @@ import { REPORT_EMAIL_ADDRESS } from "@/lib/ai/report";
 import { ChatMessageSchema } from "@/types/types";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { Alert, Linking, TouchableOpacity, useColorScheme, View } from "react-native";
+import { Alert, Linking, TouchableOpacity, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { z } from "zod";
 
 type ChatMessage = z.infer<typeof ChatMessageSchema>;

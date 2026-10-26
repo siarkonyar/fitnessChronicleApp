@@ -6,7 +6,7 @@ import { ConnectivityProvider } from "@/context/ConnectivityContext";
 import { useAnalyticsConsent } from "@/hooks/useAnalyticsConsent";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { SheetModalProvider } from "@/context/SheetBlurTargetContext";
 import NetInfo from "@react-native-community/netinfo";
 import appCheck from "@react-native-firebase/app-check";
 import {
@@ -77,7 +77,7 @@ export default function RootLayout() {
       <AuthProvider>
         <ConnectivityProvider>
           <AccountQueryProvider>
-            <BottomSheetModalProvider>
+            <SheetModalProvider>
               {posthog ? (
                 <PostHogProvider client={posthog} autocapture={false}>
                   <AppSetup />
@@ -85,7 +85,7 @@ export default function RootLayout() {
               ) : (
                 <AppSetup />
               )}
-            </BottomSheetModalProvider>
+            </SheetModalProvider>
           </AccountQueryProvider>
         </ConnectivityProvider>
       </AuthProvider>

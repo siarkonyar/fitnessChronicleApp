@@ -13,8 +13,8 @@ import {
   Platform,
   TouchableOpacity,
   View,
-  useColorScheme,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { LineChart, lineDataItem } from "react-native-gifted-charts";
 import { z } from "zod";
 import { Button } from "../Button";

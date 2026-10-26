@@ -1,7 +1,8 @@
 import { ThemedView, type ThemedViewProps } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import React from "react";
-import { StyleSheet, useColorScheme } from "react-native";
+import { StyleSheet } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 type CardType = "default" | "exercise";
 

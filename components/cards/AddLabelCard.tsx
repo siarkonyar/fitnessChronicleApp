@@ -1,7 +1,8 @@
 import { Colors } from "@/constants/Colors";
 import { useInsideBottomSheet } from "@/context/InsideBottomSheetContext";
 import React from "react";
-import { useColorScheme, View } from "react-native";
+import { View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { ThemedBottomSheetTextInput } from "../ThemedBottomSheetTextInput";
 import { ThemedTextInput } from "../ThemedTextInput";
 import { ThemedView } from "../ThemedView";

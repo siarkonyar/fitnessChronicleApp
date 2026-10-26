@@ -5,13 +5,13 @@ import React, { ReactNode, useState } from "react";
 import {
   Pressable,
   Text,
-  useColorScheme,
   View,
   type LayoutChangeEvent,
   type PressableProps,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Wide off-screen canvas so the measuring text never wraps or truncates,
 // letting us read its true single-line width.

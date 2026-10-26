@@ -21,7 +21,8 @@ import { isProfileComplete } from "@/lib/profile";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useCallback, useEffect } from "react";
-import { useColorScheme, View } from "react-native";
+import { View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import Animated, {
   Easing,
   runOnJS,

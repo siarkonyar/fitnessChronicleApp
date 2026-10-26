@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Text, useColorScheme, View } from "react-native";
+import { Text, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 import {
   FirebaseAuthTypes,

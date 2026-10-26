@@ -19,9 +19,9 @@ import {
   RefreshControl,
   ScrollView,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 function calculateAge(birthday: string): number {
   const today = new Date();

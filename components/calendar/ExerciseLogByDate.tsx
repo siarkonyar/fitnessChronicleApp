@@ -17,7 +17,8 @@ import { getExerciseLogByDate } from "@/lib/firebase/exercise";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";
-import { ActivityIndicator, View, useColorScheme } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { Button } from "../Button";
 import DateLabelAssignment from "./DateLabelAssignment";
 

@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/Colors";
 import React from "react";
-import { ActivityIndicator, useColorScheme, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 /**
  * Shaped to match a model-side ChatBubble so the real reply swaps in

@@ -26,8 +26,8 @@ import {
   RefreshControl,
   ScrollView,
   View,
-  useColorScheme,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import {
   SafeAreaView,
   useSafeAreaInsets,

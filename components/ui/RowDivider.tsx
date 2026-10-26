@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
-import { useColorScheme, View } from "react-native";
+import { View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export function RowDivider() {
   const theme = useColorScheme() ?? "light";

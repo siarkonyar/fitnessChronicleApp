@@ -4,7 +4,8 @@ import AppTextInput from "@/components/ui/AppTextInput";
 import { Colors } from "@/constants/Colors";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { useColorScheme, View } from "react-native";
+import { View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 const MAX_INPUT_HEIGHT_CLASS = "max-h-32";
 const DISABLED_SEND_OPACITY = 0.4;

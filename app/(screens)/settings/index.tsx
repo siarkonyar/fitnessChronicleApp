@@ -48,8 +48,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useColorScheme,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Settings() {

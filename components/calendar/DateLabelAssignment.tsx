@@ -18,9 +18,9 @@ import React, { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  useColorScheme,
   View,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { Button } from "../Button";
 import LabelCard from "../cards/LabelCard";
 import LabelList from "../lists/LabelList";

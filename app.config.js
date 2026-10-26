@@ -7,7 +7,6 @@ export default {
     icon: "./assets/images/icon.png",
     scheme: "fitnesschronicle",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
     ios: {
       supportsTablet: true,
       bundleIdentifier: process.env.APP_ENV === 'production' ? "com.siar.konyar.fitnessChronicle" : "com.siar.konyar.fitnessChronicle-dev",
@@ -46,7 +45,6 @@ export default {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff"
       },
-      edgeToEdgeEnabled: true,
       package: process.env.APP_ENV === 'production' ? "com.siar.konyar.fitnessChronicle" : "com.siar.konyar.fitnessChronicle_dev",
       googleServicesFile: "./google-services.json"
     },

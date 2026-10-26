@@ -4,11 +4,11 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  useColorScheme,
   type PressableProps,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export type ButtonProps = Omit<PressableProps, "children"> & {
   type?: "default" | "danger" | "primary";

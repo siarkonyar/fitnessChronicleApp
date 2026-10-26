@@ -4,6 +4,7 @@ import React from "react";
 import { ActiveProgramProvider, useActiveProgramContext } from "../ActiveProgramContext";
 import { ChatProvider, useChatContext } from "../ChatContext";
 import { InsideBottomSheetProvider, useInsideBottomSheet } from "../InsideBottomSheetContext";
+import { SheetModalProvider, useSheetBlurTarget } from "../SheetBlurTargetContext";
 
 const mockChat = { messages: [], sendMessage: jest.fn(), isSending: false };
 const mockActive = {
@@ -19,6 +20,11 @@ const mockActive = {
 
 jest.mock("@/hooks/useChatBox", () => ({ useChatBox: () => mockChat }));
 jest.mock("@/hooks/useActiveProgram", () => ({ useActiveProgram: () => mockActive }));
+// The real provider needs the native gesture and animation runtimes; only the
+// children it renders matter here.
+jest.mock("@gorhom/bottom-sheet", () => ({
+  BottomSheetModalProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -73,5 +79,21 @@ describe("InsideBottomSheetProvider", () => {
     );
 
     expect(renderHook(() => useInsideBottomSheet(), { wrapper }).result.current).toBe(true);
+  });
+});
+
+describe("SheetModalProvider", () => {
+  test("has no blur target outside a provider", () => {
+    expect(renderHook(() => useSheetBlurTarget()).result.current).toBeNull();
+  });
+
+  test("points the sheets at the view wrapping its screens", () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <SheetModalProvider>{children}</SheetModalProvider>
+    );
+
+    const blurTarget = renderHook(() => useSheetBlurTarget(), { wrapper }).result.current;
+
+    expect(blurTarget?.current).not.toBeNull();
   });
 });

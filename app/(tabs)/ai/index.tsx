@@ -19,7 +19,8 @@ import { ProgramSchema } from "@/types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
-import { ScrollView, useColorScheme, View } from "react-native";
+import { ScrollView, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { z } from "zod";
 
 type Program = z.infer<typeof ProgramSchema>;

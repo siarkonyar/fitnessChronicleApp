@@ -19,8 +19,8 @@ import {
   Pressable,
   TextInput,
   View,
-  useColorScheme,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import Animated, { Easing, FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {

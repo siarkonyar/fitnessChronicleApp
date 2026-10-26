@@ -1,7 +1,8 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import React from "react";
-import { useColorScheme, View } from "react-native";
+import { View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 interface UsageBarProps {
   /** 0-100, or null when the server hasn't told us yet. */

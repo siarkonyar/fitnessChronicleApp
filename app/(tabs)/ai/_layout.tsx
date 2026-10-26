@@ -13,8 +13,8 @@ import {
   Platform,
   Pressable,
   View,
-  useColorScheme,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function AIStackLayout() {
   const theme = useColorScheme() ?? "light";

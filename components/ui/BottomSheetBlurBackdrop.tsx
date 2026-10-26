@@ -2,6 +2,7 @@ import {
   SHEET_BLUR_INTENSITY,
   SHEET_SCRIM_COLOR,
 } from "@/constants/BottomSheetTheme";
+import { useSheetBlurTarget } from "@/context/SheetBlurTargetContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import {
   BottomSheetBackdrop,
@@ -24,6 +25,7 @@ export default function BottomSheetBlurBackdrop(
   props: BottomSheetBackdropProps,
 ) {
   const theme = useColorScheme() ?? "light";
+  const blurTarget = useSheetBlurTarget();
 
   return (
     <BottomSheetBackdrop
@@ -38,9 +40,11 @@ export default function BottomSheetBlurBackdrop(
       style={[props.style, { backgroundColor: SHEET_SCRIM_COLOR[theme] }]}
     >
       <BlurView
-        // Android renders a plain translucent view without this and applies no
-        // blur at all; iOS ignores it.
-        experimentalBlurMethod="dimezisBlurView"
+        // Android blurs only with a blur method and a target to blur, the
+        // screens wrapped by SheetModalProvider; without either it renders a
+        // plain translucent view. iOS ignores both.
+        blurMethod="dimezisBlurView"
+        blurTarget={blurTarget ?? undefined}
         intensity={SHEET_BLUR_INTENSITY}
         tint={theme}
         // Taps must fall through to the backdrop's own gesture handler.

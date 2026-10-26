@@ -12,7 +12,8 @@ import {
 } from "@react-native-firebase/auth";
 import { BlurView } from "expo-blur";
 import { useState } from "react";
-import { Platform, Pressable, Text, useColorScheme, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { SvgXml } from "react-native-svg";
 
 export default function AuthButtons() {

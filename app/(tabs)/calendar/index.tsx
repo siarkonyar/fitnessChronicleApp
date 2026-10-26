@@ -12,9 +12,9 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { Calendar } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
 
